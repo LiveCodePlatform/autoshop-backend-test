@@ -26,6 +26,7 @@ import warehouseProfileRouter from "./routes/warehouseProfile.route.js";
 import storefrontProfileRouter from "./routes/storefrontProfile.route.js";
 import warehouseInventoryRouter from "./routes/warehouseInventory.route.js";
 import adminRouter from "./routes/admin.route.js";
+import supplierProfileRouter from "./routes/supplierProfile.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -64,6 +65,7 @@ app.use("/api/v2", warehouseProfileRouter);
 app.use("/api/v2", storefrontProfileRouter);
 app.use("/api/v2", warehouseInventoryRouter);
 app.use("/api/v2", adminRouter);
+app.use("/api/v2", supplierProfileRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================
