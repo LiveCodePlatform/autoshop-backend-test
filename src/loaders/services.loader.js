@@ -25,6 +25,8 @@ import { SupplierProfileRepository } from "../repositories/supplierProfile.repos
 import { SupplierProfileService } from "../services/supplierProfile.service.js";
 import { CreditPersonaRepository } from "../repositories/creditPersona.repository.js";
 import { CreditPersonaService } from "../services/creditPersona.service.js";
+import { ExpenseRepository } from "../repositories/expense.repository.js";
+import { ExpenseService } from "../services/expense.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -36,6 +38,7 @@ let warehouseInventoryRepository = null;
 let adminRepository = null;
 let supplierProfileRepository = null;
 let creditPersonaRepository = null;
+let expenseRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -86,6 +89,13 @@ export const getCreditPersonaRepository = () => {
   return creditPersonaRepository;
 };
 
+export const getExpenseRepository = () => {
+  if (!expenseRepository) {
+    expenseRepository = new ExpenseRepository();
+  }
+  return expenseRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -97,6 +107,7 @@ let warehouseInventoryService = null;
 let adminService = null;
 let supplierProfileService = null;
 let creditPersonaService = null;
+let expenseService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -178,6 +189,15 @@ export const getCreditPersonaService = () => {
   return creditPersonaService;
 };
 
+export const getExpenseService = () => {
+  if (!expenseService) {
+    // Inject repository dependency
+    const repository = getExpenseRepository();
+    expenseService = new ExpenseService(repository);
+  }
+  return expenseService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -193,6 +213,7 @@ export const loadServices = () => {
   getAdminService();
   getSupplierProfileService();
   getCreditPersonaService();
+  getExpenseService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -218,6 +239,8 @@ export const shutdownServices = () => {
   supplierProfileService = null;
   creditPersonaRepository = null;
   creditPersonaService = null;
+  expenseRepository = null;
+  expenseService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -239,4 +262,6 @@ export default {
   getSupplierProfileService,
   getCreditPersonaRepository,
   getCreditPersonaService,
+  getExpenseRepository,
+  getExpenseService,
 };
