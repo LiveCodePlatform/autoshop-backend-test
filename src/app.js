@@ -21,7 +21,11 @@ import AppError from "./errors/AppError.js";
 // Routes - New Architecture
 // ============================================
 import inventoryRouter from "./routes/inventory.route.js";
-
+import stockAuditLogRouter from "./routes/stockAuditLog.route.js";
+import warehouseProfileRouter from "./routes/warehouseProfile.route.js";
+import storefrontProfileRouter from "./routes/storefrontProfile.route.js";
+import warehouseInventoryRouter from "./routes/warehouseInventory.route.js";
+import adminRouter from "./routes/admin.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -55,7 +59,11 @@ app.use(mmTimeZoneMiddleware);
 // Route Mounting
 // ============================================
 app.use("/api/v2", inventoryRouter);
-
+app.use("/api/v2", stockAuditLogRouter);
+app.use("/api/v2", warehouseProfileRouter);
+app.use("/api/v2", storefrontProfileRouter);
+app.use("/api/v2", warehouseInventoryRouter);
+app.use("/api/v2", adminRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================

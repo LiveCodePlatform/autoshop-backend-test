@@ -60,6 +60,17 @@ export const loadDatabase = async () => {
  */
 const handleGRNIndexMigration = async () => {
   try {
+    // Check if collection exists before accessing indexes
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collectionExists = collections.some(
+      (col) => col.name === "goodsrecievednotes"
+    );
+
+    if (!collectionExists) {
+      // Collection doesn't exist yet, skip index migration
+      return;
+    }
+
     const collection = mongoose.connection.db.collection("goodsrecievednotes");
     const indexes = await collection.indexes();
 
@@ -76,10 +87,16 @@ const handleGRNIndexMigration = async () => {
       );
     }
   } catch (indexError) {
-    // Index might not exist, which is fine
-    if (indexError.code === 27 || indexError.codeName === "IndexNotFound") {
-      // Index doesn't exist, which is expected after first run
+    // Index might not exist, or collection might not exist, which is fine
+    if (
+      indexError.code === 27 ||
+      indexError.codeName === "IndexNotFound" ||
+      indexError.message?.includes("ns does not exist")
+    ) {
+      // Index or collection doesn't exist, which is expected
+      // Silently skip - no need to log
     } else {
+      // Log other unexpected errors
       console.log(
         "Note: Could not drop purchasingId unique index:",
         indexError.message

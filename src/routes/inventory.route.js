@@ -3,8 +3,12 @@ import {
   createInventory,
   getAllInventory,
   getInventoryById,
+  updateInventory,
 } from "../controllers/inventory.controller.js";
-import { validateCreateInventory } from "../validators/inventory.validator.js";
+import {
+  validateCreateInventory,
+  validateUpdateInventory,
+} from "../validators/inventory.validator.js";
 
 const router = Router();
 
@@ -16,5 +20,8 @@ router.get("/inventory/:id", getInventoryById);
 
 // Create new inventory item (with validation middleware)
 router.post("/inventory", validateCreateInventory, createInventory);
+
+// Update inventory item metadata (with validation middleware)
+router.patch("/inventory/:id", validateUpdateInventory, updateInventory);
 
 export default router;

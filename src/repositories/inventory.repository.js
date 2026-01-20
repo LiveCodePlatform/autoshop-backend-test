@@ -37,6 +37,18 @@ export class InventoryRepository {
   async findByIdAndUpdate(id, updateData, options) {
     return await Inventory.findByIdAndUpdate(id, updateData, options);
   }
+
+  async findByIdAndSave(id, updateFn) {
+    // Find the document, apply updates, and save (ensures validators run on complete document)
+    const document = await Inventory.findById(id);
+    if (!document) {
+      return null;
+    }
+    // Apply updates using the provided function
+    updateFn(document);
+    // Save the document (this will run all validators with the complete merged document)
+    return await document.save();
+  }
 }
 
 export default InventoryRepository;

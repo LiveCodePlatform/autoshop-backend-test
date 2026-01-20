@@ -197,5 +197,5 @@ inventorySchema.virtual("profitAmount").get(function () {
 //   next();
 // });
 
-const Inventory = mongoose.model("NewInventory", inventorySchema);
+const Inventory = mongoose.model("Inventory", inventorySchema);
 export default Inventory;

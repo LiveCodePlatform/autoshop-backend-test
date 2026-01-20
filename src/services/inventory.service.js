@@ -7,6 +7,7 @@
 import { InventoryRepository } from "../repositories/inventory.repository.js";
 import {
   CreateInventoryDTO,
+  UpdateInventoryDTO,
   InventoryResponseDTO,
   InventoryListResponseDTO,
 } from "../dtos/inventory.dto.js";
@@ -174,6 +175,113 @@ export class InventoryService {
 
     // Return DTO
     return new InventoryResponseDTO(inventory);
+  }
+
+  /**
+   * Update inventory item metadata
+   * @param {string} id - Inventory ID
+   * @param {Object} data - Update data
+   * @returns {Promise<InventoryResponseDTO>} Updated inventory DTO
+   * @throws {CastError} If invalid ID format
+   * @throws {NotFoundError} If inventory not found
+   * @throws {ValidationError} If uniqueness check fails or validation fails
+   */
+  async updateInventory(id, data) {
+    // Validate MongoDB ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new CastError("Invalid inventory ID format", "id");
+    }
+
+    // Check if inventory exists
+    const existingInventory = await this.repository.findById(id);
+    if (!existingInventory) {
+      throw new NotFoundError("Inventory", id);
+    }
+
+    // Transform data using DTO
+    const dto = new UpdateInventoryDTO(data);
+    const updateData = dto.toUpdateModel();
+
+    // Business logic: Check for uniqueness conflicts if unique fields are being updated
+    if (updateData[INVENTORY_FIELDS.PRODUCT_CODE]) {
+      const existingProduct = await this.repository.findOne({
+        productCode: updateData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
+        _id: { $ne: id },
+      });
+      if (existingProduct) {
+        throw new ValidationError(
+          "Product code already exists",
+          INVENTORY_FIELDS.PRODUCT_CODE
+        );
+      }
+    }
+
+    if (updateData[INVENTORY_FIELDS.SKU]) {
+      const existingSKU = await this.repository.findOne({
+        SKU: updateData[INVENTORY_FIELDS.SKU].toUpperCase(),
+        _id: { $ne: id },
+      });
+      if (existingSKU) {
+        throw new ValidationError("SKU already exists", INVENTORY_FIELDS.SKU);
+      }
+    }
+
+    if (updateData[INVENTORY_FIELDS.BARCODE]) {
+      const existingBarcode = await this.repository.findOne({
+        barcode: updateData[INVENTORY_FIELDS.BARCODE],
+        _id: { $ne: id },
+      });
+      if (existingBarcode) {
+        throw new ValidationError(
+          "Barcode already exists",
+          INVENTORY_FIELDS.BARCODE
+        );
+      }
+    }
+
+    if (updateData[INVENTORY_FIELDS.SALE_CODE]) {
+      const existingSaleCode = await this.repository.findOne({
+        saleCode: updateData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
+        _id: { $ne: id },
+      });
+      if (existingSaleCode) {
+        throw new ValidationError(
+          "Sale code already exists",
+          INVENTORY_FIELDS.SALE_CODE
+        );
+      }
+    }
+
+    // Business logic: Validate sellingPrice >= buyingPrice
+    // Merge updateData with existing data to get the final values
+    const finalBuyingPrice =
+      updateData[INVENTORY_FIELDS.BUYING_PRICE] !== undefined
+        ? updateData[INVENTORY_FIELDS.BUYING_PRICE]
+        : existingInventory.buyingPrice;
+    const finalSellingPrice =
+      updateData[INVENTORY_FIELDS.SELLING_PRICE] !== undefined
+        ? updateData[INVENTORY_FIELDS.SELLING_PRICE]
+        : existingInventory.sellingPrice;
+
+    if (finalSellingPrice < finalBuyingPrice) {
+      throw new ValidationError(
+        `Selling price (${finalSellingPrice}) should be greater than or equal to buying price (${finalBuyingPrice})`,
+        INVENTORY_FIELDS.SELLING_PRICE
+      );
+    }
+
+    // Apply updates to the existing document and save
+    // This ensures validators have access to the complete merged document
+    const updatedInventory = await this.repository.findByIdAndSave(id, (doc) => {
+      Object.keys(updateData).forEach((key) => {
+        if (updateData[key] !== undefined) {
+          doc[key] = updateData[key];
+        }
+      });
+    });
+
+    // Return DTO
+    return new InventoryResponseDTO(updatedInventory);
   }
 }
 
