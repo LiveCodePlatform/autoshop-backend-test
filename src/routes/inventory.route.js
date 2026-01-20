@@ -1,23 +1,20 @@
-import express from "express";
+import { Router } from "express";
 import {
   createInventory,
   getAllInventory,
   getInventoryById,
-  updateInventory,
 } from "../controllers/inventory.controller.js";
+import { validateCreateInventory } from "../validators/inventory.validator.js";
 
-const router = express.Router();
+const router = Router();
 
-// Create new inventory item
-router.post("/inventory", createInventory);
-
-// Get all inventory items
+// Get all inventory items with pagination and filters
 router.get("/inventory", getAllInventory);
 
-// Get inventory item by ID
+// Get inventory item by ID with stock availability
 router.get("/inventory/:id", getInventoryById);
 
-// Update inventory metadata
-router.patch("/inventory/:id", updateInventory);
+// Create new inventory item (with validation middleware)
+router.post("/inventory", validateCreateInventory, createInventory);
 
 export default router;

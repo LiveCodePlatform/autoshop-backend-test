@@ -25,7 +25,7 @@ class AppError extends Error {
 
     // Capture stack trace
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
+    Error.captureStackTrace(this, this.constructor);
     }
 
     // Set name to constructor name

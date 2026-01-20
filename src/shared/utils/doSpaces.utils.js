@@ -1,4 +1,4 @@
-import s3Client from "../configs/doSpaces.config.js";
+import s3Client from "../../legacy/configs/doSpaces.config.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";

@@ -14,8 +14,8 @@
  */
 
 import { loadDatabase } from "./database.loader.js";
+import { loadServices } from "./services.loader.js";
 // import { loadRedis } from "./redis.loader.js"; // Optional: if using Redis
-// import { loadServices } from "./services.loader.js"; // Optional: for DI container
 
 /**
  * Load all application dependencies
@@ -30,11 +30,11 @@ export const loadApp = async () => {
     // Load database connection
     await loadDatabase();
 
+    // Load services/repositories (DI container)
+    loadServices();
+
     // Load Redis (if needed)
     // await loadRedis();
-
-    // Load services/repositories (if using DI container)
-    // await loadServices();
 
     console.log("✅ All dependencies loaded successfully!");
   } catch (error) {
@@ -52,6 +52,10 @@ export const loadApp = async () => {
 export const shutdownApp = async () => {
   try {
     console.log("🛑 Shutting down application...");
+
+    // Shutdown services
+    const { shutdownServices } = await import("./services.loader.js");
+    shutdownServices();
 
     // Close database connection
     const mongoose = await import("mongoose");
