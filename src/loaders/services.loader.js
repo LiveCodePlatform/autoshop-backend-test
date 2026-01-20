@@ -23,6 +23,8 @@ import { AdminRepository } from "../repositories/admin.repository.js";
 import { AdminService } from "../services/admin.service.js";
 import { SupplierProfileRepository } from "../repositories/supplierProfile.repository.js";
 import { SupplierProfileService } from "../services/supplierProfile.service.js";
+import { CreditPersonaRepository } from "../repositories/creditPersona.repository.js";
+import { CreditPersonaService } from "../services/creditPersona.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -33,6 +35,7 @@ let locationProfileRepository = null;
 let warehouseInventoryRepository = null;
 let adminRepository = null;
 let supplierProfileRepository = null;
+let creditPersonaRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -76,6 +79,13 @@ export const getSupplierProfileRepository = () => {
   return supplierProfileRepository;
 };
 
+export const getCreditPersonaRepository = () => {
+  if (!creditPersonaRepository) {
+    creditPersonaRepository = new CreditPersonaRepository();
+  }
+  return creditPersonaRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -86,6 +96,7 @@ let storefrontProfileService = null;
 let warehouseInventoryService = null;
 let adminService = null;
 let supplierProfileService = null;
+let creditPersonaService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -158,6 +169,15 @@ export const getSupplierProfileService = () => {
   return supplierProfileService;
 };
 
+export const getCreditPersonaService = () => {
+  if (!creditPersonaService) {
+    // Inject repository dependency
+    const repository = getCreditPersonaRepository();
+    creditPersonaService = new CreditPersonaService(repository);
+  }
+  return creditPersonaService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -172,6 +192,7 @@ export const loadServices = () => {
   getWarehouseInventoryService();
   getAdminService();
   getSupplierProfileService();
+  getCreditPersonaService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -195,6 +216,8 @@ export const shutdownServices = () => {
   adminService = null;
   supplierProfileRepository = null;
   supplierProfileService = null;
+  creditPersonaRepository = null;
+  creditPersonaService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -214,4 +237,6 @@ export default {
   getAdminService,
   getSupplierProfileRepository,
   getSupplierProfileService,
+  getCreditPersonaRepository,
+  getCreditPersonaService,
 };
