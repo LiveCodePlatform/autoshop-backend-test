@@ -27,6 +27,8 @@ import { CreditPersonaRepository } from "../repositories/creditPersona.repositor
 import { CreditPersonaService } from "../services/creditPersona.service.js";
 import { ExpenseRepository } from "../repositories/expense.repository.js";
 import { ExpenseService } from "../services/expense.service.js";
+import { PurchasingRepository } from "../repositories/purchasing.repository.js";
+import { PurchasingService } from "../services/purchasing.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -39,6 +41,7 @@ let adminRepository = null;
 let supplierProfileRepository = null;
 let creditPersonaRepository = null;
 let expenseRepository = null;
+let purchasingRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -96,6 +99,13 @@ export const getExpenseRepository = () => {
   return expenseRepository;
 };
 
+export const getPurchasingRepository = () => {
+  if (!purchasingRepository) {
+    purchasingRepository = new PurchasingRepository();
+  }
+  return purchasingRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -108,6 +118,7 @@ let adminService = null;
 let supplierProfileService = null;
 let creditPersonaService = null;
 let expenseService = null;
+let purchasingService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -198,6 +209,15 @@ export const getExpenseService = () => {
   return expenseService;
 };
 
+export const getPurchasingService = () => {
+  if (!purchasingService) {
+    // Inject repository dependency
+    const repository = getPurchasingRepository();
+    purchasingService = new PurchasingService(repository);
+  }
+  return purchasingService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -214,6 +234,7 @@ export const loadServices = () => {
   getSupplierProfileService();
   getCreditPersonaService();
   getExpenseService();
+  getPurchasingService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -241,6 +262,8 @@ export const shutdownServices = () => {
   creditPersonaService = null;
   expenseRepository = null;
   expenseService = null;
+  purchasingRepository = null;
+  purchasingService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -264,4 +287,6 @@ export default {
   getCreditPersonaService,
   getExpenseRepository,
   getExpenseService,
+  getPurchasingRepository,
+  getPurchasingService,
 };

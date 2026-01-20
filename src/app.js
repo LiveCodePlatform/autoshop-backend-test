@@ -29,6 +29,7 @@ import adminRouter from "./routes/admin.route.js";
 import supplierProfileRouter from "./routes/supplierProfile.route.js";
 import creditPersonaRouter from "./routes/creditPersona.route.js";
 import expenseRouter from "./routes/expense.route.js";
+import purchasingRouter from "./routes/purchasing.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -70,6 +71,7 @@ app.use("/api/v2", adminRouter);
 app.use("/api/v2", supplierProfileRouter);
 app.use("/api/v2", creditPersonaRouter);
 app.use("/api/v2", expenseRouter);
+app.use("/api/v2", purchasingRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================
