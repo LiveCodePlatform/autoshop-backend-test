@@ -19,6 +19,8 @@ import { WarehouseProfileService } from "../services/warehouseProfile.service.js
 import { StorefrontProfileService } from "../services/storefrontProfile.service.js";
 import { WarehouseInventoryRepository } from "../repositories/warehouseStock.repository.js";
 import { WarehouseInventoryService } from "../services/warehouseInventory.service.js";
+import { StorefrontInventoryRepository } from "../repositories/storefrontInventory.repository.js";
+import { StorefrontInventoryService } from "../services/storefrontInventory.service.js";
 import { AdminRepository } from "../repositories/admin.repository.js";
 import { AdminService } from "../services/admin.service.js";
 import { SupplierProfileRepository } from "../repositories/supplierProfile.repository.js";
@@ -41,6 +43,7 @@ let inventoryRepository = null;
 let stockAuditLogRepository = null;
 let locationProfileRepository = null;
 let warehouseInventoryRepository = null;
+let storefrontInventoryRepository = null;
 let adminRepository = null;
 let supplierProfileRepository = null;
 let creditPersonaRepository = null;
@@ -75,6 +78,13 @@ export const getWarehouseInventoryRepository = () => {
     warehouseInventoryRepository = new WarehouseInventoryRepository();
   }
   return warehouseInventoryRepository;
+};
+
+export const getStorefrontInventoryRepository = () => {
+  if (!storefrontInventoryRepository) {
+    storefrontInventoryRepository = new StorefrontInventoryRepository();
+  }
+  return storefrontInventoryRepository;
 };
 
 export const getAdminRepository = () => {
@@ -134,6 +144,7 @@ let stockAuditLogService = null;
 let warehouseProfileService = null;
 let storefrontProfileService = null;
 let warehouseInventoryService = null;
+let storefrontInventoryService = null;
 let adminService = null;
 let supplierProfileService = null;
 let creditPersonaService = null;
@@ -193,6 +204,23 @@ export const getWarehouseInventoryService = () => {
     );
   }
   return warehouseInventoryService;
+};
+
+export const getStorefrontInventoryService = () => {
+  if (!storefrontInventoryService) {
+    // Inject repository dependencies
+    const repository = getStorefrontInventoryRepository();
+    const inventoryRepository = getInventoryRepository();
+    const locationRepository = getLocationProfileRepository();
+    const stockAuditLogService = getStockAuditLogService();
+    storefrontInventoryService = new StorefrontInventoryService(
+      repository,
+      inventoryRepository,
+      locationRepository,
+      stockAuditLogService
+    );
+  }
+  return storefrontInventoryService;
 };
 
 export const getAdminService = () => {
