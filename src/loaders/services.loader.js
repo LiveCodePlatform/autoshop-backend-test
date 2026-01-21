@@ -29,6 +29,10 @@ import { ExpenseRepository } from "../repositories/expense.repository.js";
 import { ExpenseService } from "../services/expense.service.js";
 import { PurchasingRepository } from "../repositories/purchasing.repository.js";
 import { PurchasingService } from "../services/purchasing.service.js";
+import { TransferRepository } from "../repositories/transfer.repository.js";
+import { TransferService } from "../services/transfer.service.js";
+import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.repository.js";
+import { GoodsRecievedNoteService } from "../services/goodsRecievedNote.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -42,6 +46,8 @@ let supplierProfileRepository = null;
 let creditPersonaRepository = null;
 let expenseRepository = null;
 let purchasingRepository = null;
+let transferRepository = null;
+let goodsRecievedNoteRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -106,6 +112,20 @@ export const getPurchasingRepository = () => {
   return purchasingRepository;
 };
 
+export const getTransferRepository = () => {
+  if (!transferRepository) {
+    transferRepository = new TransferRepository();
+  }
+  return transferRepository;
+};
+
+export const getGoodsRecievedNoteRepository = () => {
+  if (!goodsRecievedNoteRepository) {
+    goodsRecievedNoteRepository = new GoodsRecievedNoteRepository();
+  }
+  return goodsRecievedNoteRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -119,6 +139,8 @@ let supplierProfileService = null;
 let creditPersonaService = null;
 let expenseService = null;
 let purchasingService = null;
+let transferService = null;
+let goodsRecievedNoteService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -218,6 +240,24 @@ export const getPurchasingService = () => {
   return purchasingService;
 };
 
+export const getTransferService = () => {
+  if (!transferService) {
+    // Inject repository dependency
+    const repository = getTransferRepository();
+    transferService = new TransferService(repository);
+  }
+  return transferService;
+};
+
+export const getGoodsRecievedNoteService = () => {
+  if (!goodsRecievedNoteService) {
+    // Inject repository dependency
+    const repository = getGoodsRecievedNoteRepository();
+    goodsRecievedNoteService = new GoodsRecievedNoteService(repository);
+  }
+  return goodsRecievedNoteService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -235,6 +275,8 @@ export const loadServices = () => {
   getCreditPersonaService();
   getExpenseService();
   getPurchasingService();
+  getTransferService();
+  getGoodsRecievedNoteService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -264,6 +306,10 @@ export const shutdownServices = () => {
   expenseService = null;
   purchasingRepository = null;
   purchasingService = null;
+  transferRepository = null;
+  transferService = null;
+  goodsRecievedNoteRepository = null;
+  goodsRecievedNoteService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -289,4 +335,8 @@ export default {
   getExpenseService,
   getPurchasingRepository,
   getPurchasingService,
+  getTransferRepository,
+  getTransferService,
+  getGoodsRecievedNoteRepository,
+  getGoodsRecievedNoteService,
 };

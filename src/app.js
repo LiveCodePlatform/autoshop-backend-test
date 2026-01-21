@@ -30,6 +30,8 @@ import supplierProfileRouter from "./routes/supplierProfile.route.js";
 import creditPersonaRouter from "./routes/creditPersona.route.js";
 import expenseRouter from "./routes/expense.route.js";
 import purchasingRouter from "./routes/purchasing.route.js";
+import goodsRecievedNoteRouter from "./routes/goodsRecievedNote.route.js";
+import transferRouter from "./routes/transfer.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -72,6 +74,8 @@ app.use("/api/v2", supplierProfileRouter);
 app.use("/api/v2", creditPersonaRouter);
 app.use("/api/v2", expenseRouter);
 app.use("/api/v2", purchasingRouter);
+app.use("/api/v2", goodsRecievedNoteRouter);
+app.use("/api/v2", transferRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================
