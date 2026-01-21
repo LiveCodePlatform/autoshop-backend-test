@@ -35,6 +35,8 @@ import { TransferRepository } from "../repositories/transfer.repository.js";
 import { TransferService } from "../services/transfer.service.js";
 import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.repository.js";
 import { GoodsRecievedNoteService } from "../services/goodsRecievedNote.service.js";
+import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
+import { CreditRecordService } from "../services/creditRecord.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -51,6 +53,7 @@ let expenseRepository = null;
 let purchasingRepository = null;
 let transferRepository = null;
 let goodsRecievedNoteRepository = null;
+let creditRecordRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -136,6 +139,13 @@ export const getGoodsRecievedNoteRepository = () => {
   return goodsRecievedNoteRepository;
 };
 
+export const getCreditRecordRepository = () => {
+  if (!creditRecordRepository) {
+    creditRecordRepository = new CreditRecordRepository();
+  }
+  return creditRecordRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -152,6 +162,7 @@ let expenseService = null;
 let purchasingService = null;
 let transferService = null;
 let goodsRecievedNoteService = null;
+let creditRecordService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -286,6 +297,15 @@ export const getGoodsRecievedNoteService = () => {
   return goodsRecievedNoteService;
 };
 
+export const getCreditRecordService = () => {
+  if (!creditRecordService) {
+    // Inject repository dependency
+    const repository = getCreditRecordRepository();
+    creditRecordService = new CreditRecordService(repository);
+  }
+  return creditRecordService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -305,6 +325,7 @@ export const loadServices = () => {
   getPurchasingService();
   getTransferService();
   getGoodsRecievedNoteService();
+  getCreditRecordService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -338,6 +359,8 @@ export const shutdownServices = () => {
   transferService = null;
   goodsRecievedNoteRepository = null;
   goodsRecievedNoteService = null;
+  creditRecordRepository = null;
+  creditRecordService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -367,4 +390,6 @@ export default {
   getTransferService,
   getGoodsRecievedNoteRepository,
   getGoodsRecievedNoteService,
+  getCreditRecordRepository,
+  getCreditRecordService,
 };
