@@ -36,6 +36,8 @@ import storefrontInventoryRouter from "./routes/storefrontInventory.route.js";
 import creditRecordRouter from "./routes/creditRecord.route.js";
 import orderRouter from "./routes/order.route.js";
 import saleReportRouter from "./routes/saleReport.route.js";
+import locationProfileRouter from "./routes/locationProfile.route.js";
+import socialMediaSaleInventoryRouter from "./routes/socialMediaSaleInventory.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -84,6 +86,8 @@ app.use("/api/v2", storefrontInventoryRouter);
 app.use("/api/v2", creditRecordRouter);
 app.use("/api/v2", orderRouter);
 app.use("/api/v2", saleReportRouter);
+app.use("/api/v2", locationProfileRouter);
+app.use("/api/v2", socialMediaSaleInventoryRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================

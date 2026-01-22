@@ -43,7 +43,36 @@ class AdminController {
   });
 
   /**
+   * Get all accounts
+   * GET /api/admin
+   */
+  getAllAccounts = asyncErrorHandler(async (req, res, next) => {
+    const result = await this.service.getAllAccounts();
+
+    res.status(200).json({
+      success: true,
+      message: "Accounts retrieved successfully",
+      data: result,
+    });
+  });
+
+  /**
    * Get admin by ID
+   * GET /api/admin/:accountId
+   */
+  getAccountById = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.getAccountById(accountId);
+
+    res.status(200).json({
+      success: true,
+      message: "Account retrieved successfully",
+      data: result,
+    });
+  });
+
+  /**
+   * Get admin by ID (alias)
    * GET /api/admin/:id
    */
   getAdminById = asyncErrorHandler(async (req, res, next) => {
@@ -59,6 +88,21 @@ class AdminController {
 
   /**
    * Update admin
+   * PATCH /api/admin/:accountId
+   */
+  updateUser = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.updateUser(accountId, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: result,
+    });
+  });
+
+  /**
+   * Update admin (alias)
    * PATCH /api/admin/:id
    */
   updateAdmin = asyncErrorHandler(async (req, res, next) => {
@@ -71,10 +115,82 @@ class AdminController {
       data: result.toJSON(),
     });
   });
+
+  /**
+   * Update password
+   * PATCH /api/admin/update-password/:accountId
+   */
+  updatePassword = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.updatePassword(accountId, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      data: result,
+    });
+  });
+
+  /**
+   * Soft delete admin
+   * PATCH /api/admin/soft-delete/:accountId
+   */
+  userSoftDelete = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.userSoftDelete(accountId);
+
+    res.status(200).json({
+      success: true,
+      message: "User soft deleted successfully",
+      data: result,
+    });
+  });
+
+  /**
+   * Restore soft deleted admin
+   * PATCH /api/admin/restore/:accountId
+   */
+  userRestore = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.userRestore(accountId);
+
+    res.status(200).json({
+      success: true,
+      message: "User restored successfully",
+      data: result,
+    });
+  });
+
+  /**
+   * Delete admin permanently
+   * DELETE /api/admin/:accountId
+   */
+  userDelete = asyncErrorHandler(async (req, res, next) => {
+    const { accountId } = req.params;
+    const result = await this.service.userDelete(accountId);
+
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+      data: result,
+    });
+  });
 }
 
 // Export instance
 const adminController = new AdminController();
-export const { signup, login, getAdminById, updateAdmin } = adminController;
+export const {
+  signup,
+  login,
+  getAllAccounts,
+  getAccountById,
+  getAdminById,
+  updateUser,
+  updateAdmin,
+  updatePassword,
+  userSoftDelete,
+  userRestore,
+  userDelete,
+} = adminController;
 
 export default adminController;

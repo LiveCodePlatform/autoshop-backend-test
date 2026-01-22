@@ -15,6 +15,7 @@ import { InventoryService } from "../services/inventory.service.js";
 import { StockAuditLogRepository } from "../repositories/stockAuditLog.repository.js";
 import { StockAuditLogService } from "../services/stockAuditLog.service.js";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
+import { LocationProfileService } from "../services/locationProfile.service.js";
 import { WarehouseProfileService } from "../services/warehouseProfile.service.js";
 import { StorefrontProfileService } from "../services/storefrontProfile.service.js";
 import { WarehouseInventoryRepository } from "../repositories/warehouseStock.repository.js";
@@ -40,6 +41,8 @@ import { CreditRecordService } from "../services/creditRecord.service.js";
 import { OrderRepository } from "../repositories/order.repository.js";
 import { OrderService } from "../services/order.service.js";
 import { SaleReportService } from "../services/saleReport.service.js";
+import { SocialMediaSaleInventoryRepository } from "../repositories/socialMediaSaleInventory.repository.js";
+import { SocialMediaSaleInventoryService } from "../services/socialMediaSaleInventory.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -58,6 +61,7 @@ let transferRepository = null;
 let goodsRecievedNoteRepository = null;
 let creditRecordRepository = null;
 let orderRepository = null;
+let socialMediaSaleInventoryRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -157,11 +161,19 @@ export const getOrderRepository = () => {
   return orderRepository;
 };
 
+export const getSocialMediaSaleInventoryRepository = () => {
+  if (!socialMediaSaleInventoryRepository) {
+    socialMediaSaleInventoryRepository = new SocialMediaSaleInventoryRepository();
+  }
+  return socialMediaSaleInventoryRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
 let inventoryService = null;
 let stockAuditLogService = null;
+let locationProfileService = null;
 let warehouseProfileService = null;
 let storefrontProfileService = null;
 let warehouseInventoryService = null;
@@ -176,6 +188,7 @@ let goodsRecievedNoteService = null;
 let creditRecordService = null;
 let orderService = null;
 let saleReportService = null;
+let socialMediaSaleInventoryService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -193,6 +206,15 @@ export const getStockAuditLogService = () => {
     stockAuditLogService = new StockAuditLogService(repository);
   }
   return stockAuditLogService;
+};
+
+export const getLocationProfileService = () => {
+  if (!locationProfileService) {
+    // Inject repository dependency
+    const repository = getLocationProfileRepository();
+    locationProfileService = new LocationProfileService(repository);
+  }
+  return locationProfileService;
 };
 
 export const getWarehouseProfileService = () => {
@@ -373,6 +395,19 @@ export const getSaleReportService = () => {
   return saleReportService;
 };
 
+export const getSocialMediaSaleInventoryService = () => {
+  if (!socialMediaSaleInventoryService) {
+    // Inject repository dependencies
+    const repository = getSocialMediaSaleInventoryRepository();
+    const inventoryRepository = getInventoryRepository();
+    socialMediaSaleInventoryService = new SocialMediaSaleInventoryService(
+      repository,
+      inventoryRepository
+    );
+  }
+  return socialMediaSaleInventoryService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -395,6 +430,7 @@ export const loadServices = () => {
   getCreditRecordService();
   getOrderService();
   getSaleReportService();
+  getSocialMediaSaleInventoryService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -433,6 +469,8 @@ export const shutdownServices = () => {
   orderRepository = null;
   orderService = null;
   saleReportService = null;
+  socialMediaSaleInventoryRepository = null;
+  socialMediaSaleInventoryService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -467,4 +505,6 @@ export default {
   getOrderRepository,
   getOrderService,
   getSaleReportService,
+  getSocialMediaSaleInventoryRepository,
+  getSocialMediaSaleInventoryService,
 };
