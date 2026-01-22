@@ -66,11 +66,15 @@ export class OrderRepository {
   }
 
   async find(query, options = {}) {
-    const { sort, skip, limit, populate, session } = options;
+    const { sort, skip, limit, populate, session, select } = options;
     let queryBuilder = Order.find(query);
 
     if (session) {
       queryBuilder = queryBuilder.session(session);
+    }
+
+    if (select) {
+      queryBuilder = queryBuilder.select(select);
     }
 
     if (populate) {
@@ -143,6 +147,15 @@ export class OrderRepository {
 
     // Format: ORD-YYYY-MM-DD-NNNNNN (e.g., ORD-2024-01-15-000001)
     return `${prefix}${sequence.toString().padStart(6, "0")}`;
+  }
+
+  /**
+   * Aggregate orders using MongoDB aggregation pipeline
+   * @param {Array} pipeline - MongoDB aggregation pipeline
+   * @returns {Promise<Array>} Aggregation results
+   */
+  async aggregate(pipeline) {
+    return await Order.aggregate(pipeline);
   }
 }
 

@@ -72,11 +72,15 @@ export class CreditRecordRepository {
   }
 
   async find(query, options = {}) {
-    const { sort, skip, limit, session, populate } = options;
+    const { sort, skip, limit, session, populate, select } = options;
     let queryBuilder = CreditRecord.find(query);
 
     if (session) {
       queryBuilder = queryBuilder.session(session);
+    }
+
+    if (select) {
+      queryBuilder = queryBuilder.select(select);
     }
 
     if (populate) {

@@ -39,6 +39,7 @@ import { CreditRecordRepository } from "../repositories/creditRecord.repository.
 import { CreditRecordService } from "../services/creditRecord.service.js";
 import { OrderRepository } from "../repositories/order.repository.js";
 import { OrderService } from "../services/order.service.js";
+import { SaleReportService } from "../services/saleReport.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -174,6 +175,7 @@ let transferService = null;
 let goodsRecievedNoteService = null;
 let creditRecordService = null;
 let orderService = null;
+let saleReportService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -336,6 +338,21 @@ export const getOrderService = () => {
   return orderService;
 };
 
+export const getSaleReportService = () => {
+  if (!saleReportService) {
+    // Inject repository dependencies
+    const orderRepository = getOrderRepository();
+    const locationProfileRepository = getLocationProfileRepository();
+    const creditRecordRepository = getCreditRecordRepository();
+    saleReportService = new SaleReportService(
+      orderRepository,
+      locationProfileRepository,
+      creditRecordRepository
+    );
+  }
+  return saleReportService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -357,6 +374,7 @@ export const loadServices = () => {
   getGoodsRecievedNoteService();
   getCreditRecordService();
   getOrderService();
+  getSaleReportService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -394,6 +412,7 @@ export const shutdownServices = () => {
   creditRecordService = null;
   orderRepository = null;
   orderService = null;
+  saleReportService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -427,4 +446,5 @@ export default {
   getCreditRecordService,
   getOrderRepository,
   getOrderService,
+  getSaleReportService,
 };
