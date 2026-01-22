@@ -21,12 +21,12 @@ import AppError from "./errors/AppError.js";
 // Routes - New Architecture
 // ============================================
 import {
+  adminRouter,
   inventoryRouter,
   stockAuditLogRouter,
   warehouseProfileRouter,
   storefrontProfileRouter,
   warehouseInventoryRouter,
-  adminRouter,
   supplierProfileRouter,
   creditPersonaRouter,
   expenseRouter,
@@ -72,12 +72,12 @@ app.use(mmTimeZoneMiddleware);
 // ============================================
 // Route Mounting
 // ============================================
+app.use("/api/v2", adminRouter);
 app.use("/api/v2", inventoryRouter);
 app.use("/api/v2", stockAuditLogRouter);
 app.use("/api/v2", warehouseProfileRouter);
 app.use("/api/v2", storefrontProfileRouter);
 app.use("/api/v2", warehouseInventoryRouter);
-app.use("/api/v2", adminRouter);
 app.use("/api/v2", supplierProfileRouter);
 app.use("/api/v2", creditPersonaRouter);
 app.use("/api/v2", expenseRouter);

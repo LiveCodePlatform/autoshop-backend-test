@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import {
-  SUPPLIER_PROFILE_DEFAULTS,
-} from "../types/supplierProfile.types.js";
+import { SUPPLIER_PROFILE_DEFAULTS } from "../types/supplierProfile.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/supplierProfile.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const supplierProfileSchema = new mongoose.Schema(
   {
@@ -45,8 +44,7 @@ const supplierProfileSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

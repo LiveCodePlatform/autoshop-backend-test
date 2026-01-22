@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import {
-  CREDIT_PERSONA_DEFAULTS,
-} from "../types/creditPersona.types.js";
+import { CREDIT_PERSONA_DEFAULTS } from "../types/creditPersona.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/creditPersona.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const creditPersonSchema = new mongoose.Schema(
   {
@@ -53,8 +52,7 @@ const creditPersonSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

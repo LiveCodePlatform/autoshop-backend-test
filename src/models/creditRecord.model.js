@@ -6,6 +6,7 @@ import {
 } from "../types/creditRecord.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/creditRecord.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const creditRecordSchema = new mongoose.Schema(
   {
@@ -65,8 +66,7 @@ const creditRecordSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import {
-  EXPENSE_DEFAULTS,
-} from "../types/expense.types.js";
+import { EXPENSE_DEFAULTS } from "../types/expense.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/expense.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const expenseSchema = new mongoose.Schema(
   {
@@ -23,10 +22,7 @@ const expenseSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: [true, "Amount is required"],
-      min: [
-        VALIDATION_CONSTRAINTS.AMOUNT.MIN,
-        "Amount cannot be negative",
-      ],
+      min: [VALIDATION_CONSTRAINTS.AMOUNT.MIN, "Amount cannot be negative"],
     },
     date: {
       type: Date,
@@ -55,8 +51,7 @@ const expenseSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

@@ -97,12 +97,10 @@ export const loginSchema = Joi.object({
       "any.required": "Name is required",
     }),
 
-  [ADMIN_FIELDS.PASSWORD]: Joi.string()
-    .required()
-    .messages({
-      "string.empty": "Password is required",
-      "any.required": "Password is required",
-    }),
+  [ADMIN_FIELDS.PASSWORD]: Joi.string().required().messages({
+    "string.empty": "Password is required",
+    "any.required": "Password is required",
+  }),
 });
 
 /**
@@ -223,10 +221,131 @@ export const validateLogin = (req, res, next) => {
 };
 
 /**
+ * Validation schema for updating password
+ */
+export const updatePasswordSchema = Joi.object({
+  newPassword: Joi.string()
+    .min(VALIDATION_CONSTRAINTS.PASSWORD.MIN_LENGTH)
+    .max(VALIDATION_CONSTRAINTS.PASSWORD.MAX_LENGTH)
+    .required()
+    .messages({
+      "string.empty": "Please provide a new password.",
+      "string.min": `Password must be at least ${VALIDATION_CONSTRAINTS.PASSWORD.MIN_LENGTH} characters long`,
+      "string.max": `Password cannot exceed ${VALIDATION_CONSTRAINTS.PASSWORD.MAX_LENGTH} characters`,
+      "any.required": "Please provide a new password.",
+    }),
+
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({
+      "any.only": "New password and confirm password do not match.",
+      "any.required": "Confirm password is required",
+    }),
+});
+
+/**
  * Validation middleware for updating admin
  */
 export const validateUpdateAdmin = (req, res, next) => {
   const { error, value } = updateAdminSchema.validate(req.body, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  if (error) {
+    const errors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+    }));
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+    });
+  }
+
+  req.body = value;
+  next();
+};
+
+/**
+ * Common typos for password fields
+ */
+const PASSWORD_FIELD_TYPOS = {
+  newPassword: [
+    "newPassowrd",
+    "newPassord",
+    "newPasswrd",
+    "newPasword",
+    "newPasswor",
+    "newPasswod",
+  ],
+  confirmPassword: [
+    "confirmPassowrd",
+    "confirmPassord",
+    "confirmPasswrd",
+    "confirmPasword",
+    "confirmPasswor",
+    "confirmPasswod",
+    "confirmPasswrod",
+  ],
+};
+
+/**
+ * Check for common typos in request body
+ * @param {Object} body - Request body
+ * @returns {Array} Array of typo errors
+ */
+const detectPasswordFieldTypos = (body) => {
+  const errors = [];
+  const bodyKeys = Object.keys(body);
+
+  // Check for newPassword typos
+  if (!body.newPassword) {
+    for (const typo of PASSWORD_FIELD_TYPOS.newPassword) {
+      if (bodyKeys.includes(typo)) {
+        errors.push({
+          field: typo,
+          message: `Did you mean "newPassword"? Please use the correct field name.`,
+        });
+        break;
+      }
+    }
+  }
+
+  // Check for confirmPassword typos
+  if (!body.confirmPassword) {
+    for (const typo of PASSWORD_FIELD_TYPOS.confirmPassword) {
+      if (bodyKeys.includes(typo)) {
+        errors.push({
+          field: typo,
+          message: `Did you mean "confirmPassword"? Please use the correct field name.`,
+        });
+        break;
+      }
+    }
+  }
+
+  return errors;
+};
+
+/**
+ * Validation middleware for updating password
+ */
+export const validateUpdatePassword = (req, res, next) => {
+  // Check for common typos first
+  const typoErrors = detectPasswordFieldTypos(req.body);
+  if (typoErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: typoErrors,
+    });
+  }
+
+  const { error, value } = updatePasswordSchema.validate(req.body, {
     abortEarly: false,
     stripUnknown: true,
   });
@@ -255,8 +374,10 @@ export default {
   createAdminSchema,
   loginSchema,
   updateAdminSchema,
+  updatePasswordSchema,
   validateCreateAdmin,
   validateLogin,
   validateUpdateAdmin,
+  validateUpdatePassword,
   VALIDATION_CONSTRAINTS,
 };

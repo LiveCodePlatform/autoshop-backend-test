@@ -186,7 +186,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin._id,
+      accountId: admin.id || admin._id.toString(),
       name: admin.name,
     };
   }
@@ -220,7 +220,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin._id,
+      accountId: admin.id || admin._id.toString(),
       name: admin.name,
     };
   }
@@ -246,7 +246,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin._id,
+      accountId: admin.id || admin._id.toString(),
       name: admin.name,
     };
   }
@@ -268,7 +268,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin._id,
+      accountId: admin.id || admin._id.toString(),
       name: admin.name,
     };
   }
@@ -323,7 +323,7 @@ export class AdminService {
 
     // Return response (matches legacy structure exactly)
     return {
-      accountId: admin._id,
+      accountId: admin.id || admin._id.toString(),
       name: admin.name,
       role: admin.role,
       locationId: admin.locationId,

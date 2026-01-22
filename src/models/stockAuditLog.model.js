@@ -10,6 +10,7 @@ import {
 } from "../types/stockAuditLog.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/stockAuditLog.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 const Schema = mongoose.Schema;
 
 const stockLogSchema = new Schema(
@@ -104,8 +105,7 @@ const stockLogSchema = new Schema(
   {
     timestamps: true, // Adds createdAt and updatedAt automatically
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

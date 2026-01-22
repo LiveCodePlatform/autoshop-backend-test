@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import {
-  SOCIAL_MEDIA_SALE_INVENTORY_DEFAULTS,
-} from "../types/socialMediaSaleInventory.types.js";
+import { SOCIAL_MEDIA_SALE_INVENTORY_DEFAULTS } from "../types/socialMediaSaleInventory.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/socialMediaSaleInventory.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const socialMediaSaleInventorySchema = new mongoose.Schema(
   {
@@ -15,10 +14,7 @@ const socialMediaSaleInventorySchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Quantity is required"],
-      min: [
-        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
-        "Quantity cannot be negative",
-      ],
+      min: [VALIDATION_CONSTRAINTS.QUANTITY.MIN, "Quantity cannot be negative"],
       default: SOCIAL_MEDIA_SALE_INVENTORY_DEFAULTS.QUANTITY,
     },
     sellingGuidePrompt: {
@@ -51,8 +47,7 @@ const socialMediaSaleInventorySchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

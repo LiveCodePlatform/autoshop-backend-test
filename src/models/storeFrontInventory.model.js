@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
-import {
-  STOREFRONT_INVENTORY_DEFAULTS,
-} from "../types/storefrontInventory.types.js";
+import { STOREFRONT_INVENTORY_DEFAULTS } from "../types/storefrontInventory.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/storefrontInventory.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const storefrontInventorySchema = new mongoose.Schema(
   {
@@ -20,10 +19,7 @@ const storefrontInventorySchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Quantity is required"],
-      min: [
-        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
-        "Quantity cannot be negative",
-      ],
+      min: [VALIDATION_CONSTRAINTS.QUANTITY.MIN, "Quantity cannot be negative"],
       default: STOREFRONT_INVENTORY_DEFAULTS.QUANTITY, // ✅ Uses types for default
     },
     // Low stock alert flag (calculated based on Inventory reorderPoint)
@@ -39,8 +35,7 @@ const storefrontInventorySchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

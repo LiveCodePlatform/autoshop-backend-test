@@ -9,6 +9,7 @@ import {
 } from "../types/locationProfile.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/locationProfile.common.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const locationProfileSchema = new mongoose.Schema(
   {
@@ -123,8 +124,7 @@ const locationProfileSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

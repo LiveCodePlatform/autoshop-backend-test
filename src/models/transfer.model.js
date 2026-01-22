@@ -10,6 +10,7 @@ import {
 } from "../types/transfer.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/transfer.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 // Transfer Line Item Schema
 const transferLineItemSchema = new mongoose.Schema(
@@ -46,8 +47,7 @@ const transferLineItemSchema = new mongoose.Schema(
   {
     _id: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 
@@ -144,8 +144,7 @@ const transferSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

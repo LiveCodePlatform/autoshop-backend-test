@@ -8,6 +8,7 @@ import {
 } from "../types/goodsRecievedNote.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/goodsRecievedNote.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 // GRN Line Item Schema
 // Note: inventoryId is automatically filled from PO products by productCode in the controller
@@ -202,8 +203,7 @@ const goodsRecievedNoteSchema = new mongoose.Schema(
   {
     timestamps: true,
     id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

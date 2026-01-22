@@ -7,6 +7,7 @@ import {
 } from "../types/inventory.types.js";
 // Import constraints from validators to ensure consistency
 import { VALIDATION_CONSTRAINTS } from "../validators/inventory.validator.js";
+import { mongooseSchemaOptions } from "../shared/utils/mongooseTransform.utils.js";
 
 const inventorySchema = new mongoose.Schema(
   {
@@ -152,9 +153,7 @@ const inventorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    id: false,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    ...mongooseSchemaOptions,
   }
 );
 

@@ -21,6 +21,7 @@ import {
   validateCreateAdmin,
   validateLogin,
   validateUpdateAdmin,
+  validateUpdatePassword,
 } from "../validators/admin.validator.js";
 
 const router = Router();
@@ -65,7 +66,11 @@ router.patch("/admin/:accountId", validateUpdateAdmin, updateUser);
  * @desc    Update admin password
  * @access  Private (add protect middleware if needed)
  */
-router.patch("/admin/update-password/:accountId", updatePassword);
+router.patch(
+  "/admin/update-password/:accountId",
+  validateUpdatePassword,
+  updatePassword
+);
 
 /**
  * @route   PATCH /api/admin/soft-delete/:accountId
