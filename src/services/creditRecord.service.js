@@ -5,6 +5,8 @@
  */
 
 import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
+import { CreditPersonaRepository } from "../repositories/creditPersona.repository.js";
+import { OrderRepository } from "../repositories/order.repository.js";
 import {
   CreateCreditRecordDTO,
   CreditRecordResponseDTO,
@@ -18,16 +20,17 @@ import { CREDIT_RECORD_FIELDS } from "../types/creditRecord.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-import { OrderRepository } from "../repositories/order.repository.js";
 
 export class CreditRecordService {
   /**
    * @param {CreditRecordRepository} repository - Injected repository instance (optional, fallback creates new instance)
    * @param {OrderRepository} orderRepository - Injected order repository instance
+   * @param {CreditPersonaRepository} creditPersonaRepository - Injected credit persona repository instance
    */
-  constructor(repository, orderRepository) {
+  constructor(repository, orderRepository, creditPersonaRepository) {
     this.repository = repository || new CreditRecordRepository();
     this.orderRepository = orderRepository || new OrderRepository();
+    this.creditPersonaRepository = creditPersonaRepository || new CreditPersonaRepository();
   }
 
   /**
@@ -131,7 +134,7 @@ export class CreditRecordService {
         // 6. Update order's paidAmount to include this credit payment
         // This denormalizes the data for easier querying
         order.paidAmount = (order.paidAmount || 0) + paidAmount;
-        await order.save({ session });
+        await this.orderRepository.save(order, { session });
 
         // 7. Reload order to get updated paidAmount (or we can use the updated value directly)
         const updatedTotalPaid = order.paidAmount;
@@ -376,18 +379,20 @@ export class CreditRecordService {
       throw new CastError("Invalid credit person ID format", "creditPersonId");
     }
 
-    // Validate credit person exists
-    const creditPerson = await CreditPerson.findById(creditPersonId);
+    // Validate credit person exists (uses repository)
+    const creditPerson = await this.creditPersonaRepository.findById(creditPersonId);
     if (!creditPerson) {
       throw new NotFoundError("Credit person");
     }
 
-    // Find all orders for this credit person (only credit orders) - for summary information
-    const orders = await Order.find({
+    // Find all orders for this credit person (only credit orders) - for summary information (uses repository)
+    const orders = await this.orderRepository.find({
       creditPersonId: creditPersonId,
       paymentType: "credit",
       isDeleted: false,
-    }).select("_id orderNumber finalAmount paidAmount");
+    }, {
+      select: "_id orderNumber finalAmount paidAmount"
+    });
 
     // Build query for credit records - now we can query directly by creditPersonId (much faster!)
     const query = {

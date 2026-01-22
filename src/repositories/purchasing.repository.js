@@ -65,6 +65,20 @@ export class PurchasingRepository {
   async findOneAndUpdate(query, updateData, options) {
     return await Purchasing.findOneAndUpdate(query, updateData, options);
   }
+
+  /**
+   * Save a modified document instance
+   * @param {Object} document - Modified document instance
+   * @param {Object} options - Options including session for transactions
+   * @returns {Promise<Object>} Saved document
+   */
+  async save(document, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await document.save({ session });
+    }
+    return await document.save();
+  }
 }
 
 export default PurchasingRepository;

@@ -135,6 +135,20 @@ export class OrderRepository {
   async aggregate(pipeline) {
     return await Order.aggregate(pipeline);
   }
+
+  /**
+   * Save a modified document instance
+   * @param {Object} document - Modified document instance
+   * @param {Object} options - Options including session for transactions
+   * @returns {Promise<Object>} Saved document
+   */
+  async save(document, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await document.save({ session });
+    }
+    return await document.save();
+  }
 }
 
 export default OrderRepository;

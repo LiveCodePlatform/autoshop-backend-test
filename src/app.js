@@ -8,7 +8,7 @@ import helmet from "helmet";
 // Middleware & Config - New Architecture
 // ============================================
 import apiRateLimiter from "./middlewares/rateLimiter.middleware.js";
-import configureCors from "./config/cors.config.js";
+import { configureCors } from "./config/index.js";
 import { mmTimeZoneMiddleware } from "./middlewares/timezone.middleware.js";
 
 // ============================================
@@ -20,24 +20,26 @@ import AppError from "./errors/AppError.js";
 // ============================================
 // Routes - New Architecture
 // ============================================
-import inventoryRouter from "./routes/inventory.route.js";
-import stockAuditLogRouter from "./routes/stockAuditLog.route.js";
-import warehouseProfileRouter from "./routes/warehouseProfile.route.js";
-import storefrontProfileRouter from "./routes/storefrontProfile.route.js";
-import warehouseInventoryRouter from "./routes/warehouseInventory.route.js";
-import adminRouter from "./routes/admin.route.js";
-import supplierProfileRouter from "./routes/supplierProfile.route.js";
-import creditPersonaRouter from "./routes/creditPersona.route.js";
-import expenseRouter from "./routes/expense.route.js";
-import purchasingRouter from "./routes/purchasing.route.js";
-import goodsRecievedNoteRouter from "./routes/goodsRecievedNote.route.js";
-import transferRouter from "./routes/transfer.route.js";
-import storefrontInventoryRouter from "./routes/storefrontInventory.route.js";
-import creditRecordRouter from "./routes/creditRecord.route.js";
-import orderRouter from "./routes/order.route.js";
-import saleReportRouter from "./routes/saleReport.route.js";
-import locationProfileRouter from "./routes/locationProfile.route.js";
-import socialMediaSaleInventoryRouter from "./routes/socialMediaSaleInventory.route.js";
+import {
+  inventoryRouter,
+  stockAuditLogRouter,
+  warehouseProfileRouter,
+  storefrontProfileRouter,
+  warehouseInventoryRouter,
+  adminRouter,
+  supplierProfileRouter,
+  creditPersonaRouter,
+  expenseRouter,
+  purchasingRouter,
+  goodsRecievedNoteRouter,
+  transferRouter,
+  storefrontInventoryRouter,
+  creditRecordRouter,
+  orderRouter,
+  saleReportRouter,
+  locationProfileRouter,
+  socialMediaSaleInventoryRouter,
+} from "./routes/index.js";
 // ============================================
 // Express App Setup
 // ============================================

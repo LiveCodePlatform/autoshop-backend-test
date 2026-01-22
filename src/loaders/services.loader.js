@@ -356,7 +356,8 @@ export const getCreditRecordService = () => {
     // Inject repository dependencies
     const repository = getCreditRecordRepository();
     const orderRepository = getOrderRepository();
-    creditRecordService = new CreditRecordService(repository, orderRepository);
+    const creditPersonaRepository = getCreditPersonaRepository();
+    creditRecordService = new CreditRecordService(repository, orderRepository, creditPersonaRepository);
   }
   return creditRecordService;
 };

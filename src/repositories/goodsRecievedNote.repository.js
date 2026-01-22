@@ -97,6 +97,20 @@ export class GoodsRecievedNoteRepository {
     // Save the document (this will run all validators with the complete merged document)
     return await document.save();
   }
+
+  /**
+   * Save a modified document instance
+   * @param {Object} document - Modified document instance
+   * @param {Object} options - Options including session for transactions
+   * @returns {Promise<Object>} Saved document
+   */
+  async save(document, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await document.save({ session });
+    }
+    return await document.save();
+  }
 }
 
 export default GoodsRecievedNoteRepository;

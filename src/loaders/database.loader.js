@@ -1,11 +1,11 @@
 /**
  * Database Loader
  * Handles database connection initialization and setup
- * Uses configuration from config/db.config.js
+ * Uses configuration from config/index.js
  */
 
 import mongoose from "mongoose";
-import { dbConfig, validateDbConfig } from "../config/db.config.js";
+import { dbConfig, validateDbConfig } from "../config/index.js";
 
 /**
  * Load and connect to database

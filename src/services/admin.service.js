@@ -178,11 +178,11 @@ export class AdminService {
       throw new UnauthorizedError("User is deleted.");
     }
 
-    // Update password and updatedAt (matches legacy exactly)
+    // Update password and updatedAt (uses repository)
     admin.password = newPassword;
     admin.updatedAt = Date.now();
 
-    await admin.save({ validateBeforeSave: true });
+    await this.repository.save(admin, { validateBeforeSave: true });
 
     // Return response (matches legacy structure)
     return {
@@ -212,11 +212,11 @@ export class AdminService {
       throw new NotFoundError("User not found.", accountId);
     }
 
-    // Set softDeleted and deletedAt (matches legacy exactly)
+    // Set softDeleted and deletedAt (uses repository)
     admin.softDeleted = true;
     admin.deletedAt = Date.now();
 
-    await admin.save({ validateBeforeSave: true });
+    await this.repository.save(admin, { validateBeforeSave: true });
 
     // Return response (matches legacy structure)
     return {

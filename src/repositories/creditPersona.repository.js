@@ -11,8 +11,31 @@ export class CreditPersonaRepository {
     return await CreditPerson.create(data);
   }
 
-  async findById(id) {
-    return await CreditPerson.findById(id);
+  /**
+   * Find credit person by ID
+   * @param {string} id - Credit person ID
+   * @param {Object} options - Options including session for transactions
+   * @returns {Promise<Object|null>} Credit person document or null
+   */
+  async findById(id, options = {}) {
+    const { session, populate } = options;
+    let query = CreditPerson.findById(id);
+
+    if (session) {
+      query = query.session(session);
+    }
+
+    if (populate) {
+      if (Array.isArray(populate)) {
+        populate.forEach((pop) => {
+          query = query.populate(pop.path, pop.select);
+        });
+      } else {
+        query = query.populate(populate.path, populate.select);
+      }
+    }
+
+    return await query.exec();
   }
 
   async findOne(query) {

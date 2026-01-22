@@ -139,6 +139,24 @@ export class AdminRepository {
   async findByIdAndDelete(id) {
     return await Admin.findByIdAndDelete(id);
   }
+
+  /**
+   * Save a modified document instance
+   * @param {Object} document - Modified document instance
+   * @param {Object} options - Options including session and validateBeforeSave
+   * @returns {Promise<Object>} Saved document
+   */
+  async save(document, options = {}) {
+    const { session, validateBeforeSave } = options;
+    const saveOptions = {};
+    if (session) {
+      saveOptions.session = session;
+    }
+    if (validateBeforeSave !== undefined) {
+      saveOptions.validateBeforeSave = validateBeforeSave;
+    }
+    return await document.save(saveOptions);
+  }
 }
 
 export default AdminRepository;

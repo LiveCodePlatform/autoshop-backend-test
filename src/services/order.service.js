@@ -192,8 +192,8 @@ export class OrderService {
             // 1a. Validate credit person exists if creditPersonId is provided
             let creditPerson = null;
             if (creditPersonId) {
-              // Use model directly for transaction support
-              creditPerson = await CreditPerson.findById(creditPersonId).session(session);
+              // Validate credit person exists (uses repository with session support)
+              creditPerson = await this.creditPersonaRepository.findById(creditPersonId, { session });
 
               if (!creditPerson) {
                 throw new NotFoundError("Credit person");
@@ -334,11 +334,10 @@ export class OrderService {
                 );
               }
 
-              // Deduct stock - modify document directly and save with session
-              // This follows the pattern in StorefrontInventory model's removeStock method
+              // Deduct stock - modify document directly and save with session (uses repository)
               stockRecord.quantity -= product.quantity;
               stockRecord.lastUpdated = new Date();
-              await stockRecord.save({ session });
+              await this.storefrontInventoryRepository.save(stockRecord, { session });
             }
 
             // 5. Create order with calculated values
@@ -622,10 +621,8 @@ export class OrderService {
           );
         }
 
-        // 3. Validate credit person exists
-        const creditPerson = await CreditPerson.findById(creditPersonId).session(
-          session
-        );
+        // 3. Validate credit person exists (uses repository with session support)
+        const creditPerson = await this.creditPersonaRepository.findById(creditPersonId, { session });
 
         if (!creditPerson) {
           throw new NotFoundError("Credit person");
@@ -640,9 +637,9 @@ export class OrderService {
           );
         }
 
-        // 5. Update order with credit person ID
+        // 5. Update order with credit person ID (uses repository)
         order.creditPersonId = new mongoose.Types.ObjectId(creditPersonId);
-        await order.save({ session });
+        await this.repository.save(order, { session });
 
         // 6. Populate references for response
         await order.populate("storefrontId", "locationName locationCode");
@@ -929,10 +926,10 @@ export class OrderService {
             });
           }
 
-          // Deduct stock
+          // Deduct stock (uses repository)
           stockRecord.quantity -= item.quantity;
           stockRecord.lastUpdated = new Date();
-          await stockRecord.save({ session });
+          await this.storefrontInventoryRepository.save(stockRecord, { session });
         }
 
         // 6. Update order fields if provided
@@ -960,8 +957,8 @@ export class OrderService {
           order.extraChange = extraChange;
         }
 
-        // 7. Save order
-        await order.save({ session });
+        // 7. Save order (uses repository)
+        await this.repository.save(order, { session });
 
         // 8. Populate references for response
         await order.populate("storefrontId", "locationName locationCode");
@@ -1205,10 +1202,10 @@ export class OrderService {
               { session }
             );
           } else {
-            // Restore stock to existing record
+            // Restore stock to existing record (uses repository)
             stockRecord.quantity += quantity;
             stockRecord.lastUpdated = new Date();
-            await stockRecord.save({ session });
+            await this.storefrontInventoryRepository.save(stockRecord, { session });
           }
         }
 
@@ -1237,8 +1234,8 @@ export class OrderService {
           order.extraChange = extraChange;
         }
 
-        // 9. Save order
-        await order.save({ session });
+        // 9. Save order (uses repository)
+        await this.repository.save(order, { session });
 
         // 10. Populate references for response
         await order.populate("storefrontId", "locationName locationCode");

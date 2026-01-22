@@ -163,6 +163,20 @@ export class StorefrontInventoryRepository {
   }
 
   /**
+   * Save a modified document instance
+   * @param {Object} document - Modified document instance
+   * @param {Object} options - Options including session for transactions
+   * @returns {Promise<Object>} Saved document
+   */
+  async save(document, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await document.save({ session });
+    }
+    return await document.save();
+  }
+
+  /**
    * Find one storefront inventory and update (with upsert support)
    * @param {Object} query - MongoDB query object
    * @param {Object} updateData - Update data

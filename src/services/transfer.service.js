@@ -10,7 +10,7 @@ import { InventoryRepository } from "../repositories/inventory.repository.js";
 import { WarehouseInventoryRepository } from "../repositories/warehouseStock.repository.js";
 import { StorefrontInventoryRepository } from "../repositories/storefrontInventory.repository.js";
 import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.repository.js";
-import Transfer from "../models/transfer.model.js";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
 import {
   ValidationError,
   NotFoundError,
@@ -430,8 +430,8 @@ export class TransferService {
       transferData.destinationStorefrontId = destinationId;
     }
 
-    // Auto-generate transfer number (matches legacy exactly - uses model static method)
-    transferData.transferNumber = await Transfer.generateTransferNumber();
+    // Auto-generate transfer number using service method (uses repository)
+    transferData.transferNumber = await this.generateTransferNumber();
 
     // Use MongoDB transaction to ensure ACID properties
     const transactionSession = session || await mongoose.startSession();
@@ -444,12 +444,12 @@ export class TransferService {
       const newTransferArray = await this.repository.create([transferData], { session: transactionSession });
       const transfer = newTransferArray[0];
 
-      // Immediately transfer stock atomically (matches legacy exactly - uses model instance method)
-      await transfer.updateStock(transactionSession);
+      // Immediately transfer stock atomically (uses service method)
+      await this.updateStock(transfer._id.toString(), transactionSession);
 
-      // Set receivedDate since transfer is completed (matches legacy exactly)
+      // Set receivedDate since transfer is completed (uses repository)
       transfer.receivedDate = new Date();
-      await transfer.save({ session: transactionSession });
+      await this.repository.save(transfer, { session: transactionSession });
 
       // Commit transaction if we started it
       if (!session) {
@@ -631,10 +631,10 @@ export class TransferService {
         throw new NotFoundError("Transfer not found", id);
       }
 
-      // When status is "completed", update stock atomically (matches legacy exactly - uses model instance method)
+      // When status is "completed", update stock atomically (uses service method)
       // (handles both GRN → Warehouse and Warehouse → Storefront)
       if (status === "completed") {
-        await updatedTransfer.updateStock(transactionSession);
+        await this.updateStock(id, transactionSession);
       }
 
       // Commit transaction if we started it

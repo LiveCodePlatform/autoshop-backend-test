@@ -713,8 +713,8 @@ export class GoodsRecievedNoteService {
     );
     grn.totalAmount = newTotalAmount;
 
-    // Save the updated GRN
-    await grn.save();
+    // Save the updated GRN (uses repository)
+    await this.repository.save(grn);
 
     // Populate references for response
     await grn.populate({

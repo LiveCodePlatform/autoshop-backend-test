@@ -344,10 +344,10 @@ export class PurchasingService {
       throw new NotFoundError("Purchase order not found", id);
     }
 
-    // Soft delete: set isDeleted to true and deletedAt to current date (matches legacy exactly)
+    // Soft delete: set isDeleted to true and deletedAt to current date (uses repository)
     purchase.isDeleted = true;
     purchase.deletedAt = new Date();
-    await purchase.save();
+    await this.repository.save(purchase);
 
     // Return DTO
     return new PurchasingResponseDTO(purchase);
@@ -377,10 +377,10 @@ export class PurchasingService {
       throw new NotFoundError("Purchase order not found", id);
     }
 
-    // Restore: set isDeleted to false and deletedAt to null (matches legacy exactly)
+    // Restore: set isDeleted to false and deletedAt to null (uses repository)
     purchase.isDeleted = false;
     purchase.deletedAt = null;
-    await purchase.save();
+    await this.repository.save(purchase);
 
     // Return DTO
     return new PurchasingResponseDTO(purchase);

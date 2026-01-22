@@ -41,49 +41,51 @@ export class InventoryService {
    * @throws {ValidationError} If uniqueness check fails
    */
   async createInventory(data) {
-    const inventoryData = data;
+    // Transform input data using DTO
+    const dto = new CreateInventoryDTO(data);
+    const inventoryData = dto.toModel();
 
     // Check if productCode already exists (matches legacy exactly)
-    if (inventoryData.productCode) {
+    if (inventoryData[INVENTORY_FIELDS.PRODUCT_CODE]) {
       const existingProduct = await this.repository.findOne({
-        productCode: inventoryData.productCode.toUpperCase(),
+        [INVENTORY_FIELDS.PRODUCT_CODE]: inventoryData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
       });
       if (existingProduct) {
-        throw new ValidationError("Product code already exists", "productCode");
+        throw new ValidationError("Product code already exists", INVENTORY_FIELDS.PRODUCT_CODE);
       }
     }
 
     // Check if SKU already exists (matches legacy exactly)
-    if (inventoryData.SKU) {
+    if (inventoryData[INVENTORY_FIELDS.SKU]) {
       const existingSKU = await this.repository.findOne({
-        SKU: inventoryData.SKU.toUpperCase(),
+        [INVENTORY_FIELDS.SKU]: inventoryData[INVENTORY_FIELDS.SKU].toUpperCase(),
       });
       if (existingSKU) {
-        throw new ValidationError("SKU already exists", "SKU");
+        throw new ValidationError("SKU already exists", INVENTORY_FIELDS.SKU);
       }
     }
 
     // Check if barcode already exists (if provided) (matches legacy exactly)
-    if (inventoryData.barcode) {
+    if (inventoryData[INVENTORY_FIELDS.BARCODE]) {
       const existingBarcode = await this.repository.findOne({
-        barcode: inventoryData.barcode,
+        [INVENTORY_FIELDS.BARCODE]: inventoryData[INVENTORY_FIELDS.BARCODE],
       });
       if (existingBarcode) {
-        throw new ValidationError("Barcode already exists", "barcode");
+        throw new ValidationError("Barcode already exists", INVENTORY_FIELDS.BARCODE);
       }
     }
 
     // Check if saleCode already exists (if provided) (matches legacy exactly)
-    if (inventoryData.saleCode) {
+    if (inventoryData[INVENTORY_FIELDS.SALE_CODE]) {
       const existingSaleCode = await this.repository.findOne({
-        saleCode: inventoryData.saleCode.toUpperCase(),
+        [INVENTORY_FIELDS.SALE_CODE]: inventoryData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
       });
       if (existingSaleCode) {
-        throw new ValidationError("Sale code already exists", "saleCode");
+        throw new ValidationError("Sale code already exists", INVENTORY_FIELDS.SALE_CODE);
       }
     }
 
-    // Create inventory (matches legacy exactly - direct creation, no DTO transformation)
+    // Create inventory
     const newInventory = await this.repository.create(inventoryData);
 
     // Return DTO
@@ -295,56 +297,56 @@ export class InventoryService {
     }
 
     // Check for uniqueness conflicts if unique fields are being updated (matches legacy exactly)
-    if (updateData.productCode) {
+    if (updateData[INVENTORY_FIELDS.PRODUCT_CODE]) {
       const existingProduct = await this.repository.findOne({
-        productCode: updateData.productCode.toUpperCase(),
+        [INVENTORY_FIELDS.PRODUCT_CODE]: updateData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
         _id: { $ne: id },
       });
       if (existingProduct) {
-        throw new ValidationError("Product code already exists", "productCode");
+        throw new ValidationError("Product code already exists", INVENTORY_FIELDS.PRODUCT_CODE);
       }
     }
 
-    if (updateData.SKU) {
+    if (updateData[INVENTORY_FIELDS.SKU]) {
       const existingSKU = await this.repository.findOne({
-        SKU: updateData.SKU.toUpperCase(),
+        [INVENTORY_FIELDS.SKU]: updateData[INVENTORY_FIELDS.SKU].toUpperCase(),
         _id: { $ne: id },
       });
       if (existingSKU) {
-        throw new ValidationError("SKU already exists", "SKU");
+        throw new ValidationError("SKU already exists", INVENTORY_FIELDS.SKU);
       }
     }
 
-    if (updateData.barcode) {
+    if (updateData[INVENTORY_FIELDS.BARCODE]) {
       const existingBarcode = await this.repository.findOne({
-        barcode: updateData.barcode,
+        [INVENTORY_FIELDS.BARCODE]: updateData[INVENTORY_FIELDS.BARCODE],
         _id: { $ne: id },
       });
       if (existingBarcode) {
-        throw new ValidationError("Barcode already exists", "barcode");
+        throw new ValidationError("Barcode already exists", INVENTORY_FIELDS.BARCODE);
       }
     }
 
-    if (updateData.saleCode) {
+    if (updateData[INVENTORY_FIELDS.SALE_CODE]) {
       const existingSaleCode = await this.repository.findOne({
-        saleCode: updateData.saleCode.toUpperCase(),
+        [INVENTORY_FIELDS.SALE_CODE]: updateData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
         _id: { $ne: id },
       });
       if (existingSaleCode) {
-        throw new ValidationError("Sale code already exists", "saleCode");
+        throw new ValidationError("Sale code already exists", INVENTORY_FIELDS.SALE_CODE);
       }
     }
 
     // Validate sellingPrice >= buyingPrice (matches legacy exactly)
     // Merge updateData with existing data to get the final values
     const finalBuyingPrice =
-      updateData.buyingPrice !== undefined
-        ? updateData.buyingPrice
-        : existingInventory.buyingPrice;
+      updateData[INVENTORY_FIELDS.BUYING_PRICE] !== undefined
+        ? updateData[INVENTORY_FIELDS.BUYING_PRICE]
+        : existingInventory[INVENTORY_FIELDS.BUYING_PRICE];
     const finalSellingPrice =
-      updateData.sellingPrice !== undefined
-        ? updateData.sellingPrice
-        : existingInventory.sellingPrice;
+      updateData[INVENTORY_FIELDS.SELLING_PRICE] !== undefined
+        ? updateData[INVENTORY_FIELDS.SELLING_PRICE]
+        : existingInventory[INVENTORY_FIELDS.SELLING_PRICE];
 
     if (finalSellingPrice < finalBuyingPrice) {
       throw new ValidationError(
@@ -361,8 +363,8 @@ export class InventoryService {
       }
     });
 
-    // Save the updated inventory (this will run all validators with the complete document) (matches legacy exactly)
-    const updatedInventory = await existingInventory.save();
+    // Save the updated inventory using repository (this will run all validators with the complete document)
+    const updatedInventory = await this.repository.save(existingInventory);
 
     // Return DTO
     return new InventoryResponseDTO(updatedInventory);
