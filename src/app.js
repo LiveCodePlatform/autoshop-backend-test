@@ -34,6 +34,7 @@ import goodsRecievedNoteRouter from "./routes/goodsRecievedNote.route.js";
 import transferRouter from "./routes/transfer.route.js";
 import storefrontInventoryRouter from "./routes/storefrontInventory.route.js";
 import creditRecordRouter from "./routes/creditRecord.route.js";
+import orderRouter from "./routes/order.route.js";
 // ============================================
 // Express App Setup
 // ============================================
@@ -80,6 +81,7 @@ app.use("/api/v2", goodsRecievedNoteRouter);
 app.use("/api/v2", transferRouter);
 app.use("/api/v2", storefrontInventoryRouter);
 app.use("/api/v2", creditRecordRouter);
+app.use("/api/v2", orderRouter);
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================

@@ -37,6 +37,8 @@ import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.r
 import { GoodsRecievedNoteService } from "../services/goodsRecievedNote.service.js";
 import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
 import { CreditRecordService } from "../services/creditRecord.service.js";
+import { OrderRepository } from "../repositories/order.repository.js";
+import { OrderService } from "../services/order.service.js";
 
 // ============================================
 // Repository Instances (Singleton)
@@ -54,6 +56,7 @@ let purchasingRepository = null;
 let transferRepository = null;
 let goodsRecievedNoteRepository = null;
 let creditRecordRepository = null;
+let orderRepository = null;
 
 export const getInventoryRepository = () => {
   if (!inventoryRepository) {
@@ -146,6 +149,13 @@ export const getCreditRecordRepository = () => {
   return creditRecordRepository;
 };
 
+export const getOrderRepository = () => {
+  if (!orderRepository) {
+    orderRepository = new OrderRepository();
+  }
+  return orderRepository;
+};
+
 // ============================================
 // Service Instances (Singleton with DI)
 // ============================================
@@ -163,6 +173,7 @@ let purchasingService = null;
 let transferService = null;
 let goodsRecievedNoteService = null;
 let creditRecordService = null;
+let orderService = null;
 
 export const getInventoryService = () => {
   if (!inventoryService) {
@@ -306,6 +317,25 @@ export const getCreditRecordService = () => {
   return creditRecordService;
 };
 
+export const getOrderService = () => {
+  if (!orderService) {
+    // Inject repository dependencies
+    const repository = getOrderRepository();
+    const storefrontInventoryRepository = getStorefrontInventoryRepository();
+    const locationProfileRepository = getLocationProfileRepository();
+    const inventoryRepository = getInventoryRepository();
+    const creditPersonaRepository = getCreditPersonaRepository();
+    orderService = new OrderService(
+      repository,
+      storefrontInventoryRepository,
+      locationProfileRepository,
+      inventoryRepository,
+      creditPersonaRepository
+    );
+  }
+  return orderService;
+};
+
 // ============================================
 // Loader Function
 // ============================================
@@ -326,6 +356,7 @@ export const loadServices = () => {
   getTransferService();
   getGoodsRecievedNoteService();
   getCreditRecordService();
+  getOrderService();
 
   console.log("✅ Services and repositories loaded successfully!");
 };
@@ -361,6 +392,8 @@ export const shutdownServices = () => {
   goodsRecievedNoteService = null;
   creditRecordRepository = null;
   creditRecordService = null;
+  orderRepository = null;
+  orderService = null;
   console.log("✅ Services shutdown complete");
 };
 
@@ -392,4 +425,6 @@ export default {
   getGoodsRecievedNoteService,
   getCreditRecordRepository,
   getCreditRecordService,
+  getOrderRepository,
+  getOrderService,
 };
