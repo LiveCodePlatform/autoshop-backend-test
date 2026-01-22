@@ -19,6 +19,7 @@ import {
 } from "../errors/errorTypes.js";
 import { TRANSFER_FIELDS, TRANSFER_STATUS, TRANSFER_SOURCE_TYPE } from "../types/transfer.types.js";
 import mongoose from "mongoose";
+import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
 // Import legacy models for validation
 import GoodsRecievedNote from "../legacy/models/goodsRecievedNote.model.js";
 import LocationProfile from "../models/locationProfile.model.js";
@@ -40,41 +41,19 @@ export class TransferService {
    * @returns {Promise<string>} Generated transfer number
    */
   async generateTransferNumber() {
-    const year = new Date().getFullYear();
-    const prefix = `TRF-${year}-`;
-
-    // Find the latest transfer for this year (excluding deleted)
-    // Sort by createdAt descending to get the latest
-    const sortedTransfers = await this.repository.find(
-      {
-        transferNumber: new RegExp(
-          `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`
-        ),
-        isDeleted: false,
+    return generateSequentialNumber({
+      queryFn: async (query, options) => {
+        return await this.repository.find(query, {
+          ...options,
+          limit: 1,
+        });
       },
-      {
-        sort: { createdAt: -1 },
-        limit: 1,
-      }
-    );
-
-    let sequence = 1;
-    if (sortedTransfers.length > 0) {
-      const latest = sortedTransfers[0];
-      if (latest.transferNumber) {
-        // Extract sequence number from format: TRF-YYYY-NNNN
-        const parts = latest.transferNumber.split("-");
-        if (parts.length === 3) {
-          const latestSequence = parseInt(parts[2], 10);
-          if (!isNaN(latestSequence)) {
-            sequence = latestSequence + 1;
-          }
-        }
-      }
-    }
-
-    // Format: TRF-YYYY-NNNN (e.g., TRF-2024-0001)
-    return `${prefix}${sequence.toString().padStart(4, "0")}`;
+      prefix: "TRF",
+      fieldName: "transferNumber",
+      sequencePadding: 4,
+      dateFormat: "yearly",
+      additionalFilters: { isDeleted: false },
+    });
   }
 
   /**

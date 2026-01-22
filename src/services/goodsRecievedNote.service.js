@@ -27,6 +27,7 @@ import {
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
+import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
 
 export class GoodsRecievedNoteService {
   /**
@@ -42,44 +43,19 @@ export class GoodsRecievedNoteService {
    * @returns {Promise<string>} Generated GRN number
    */
   async generateGRNNumber() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const prefix = `GRN-${year}-${month}-${day}-`;
-
-    // Find the latest GRN for today (excluding deleted)
-    const latestGRNs = await this.repository.find(
-      {
-        grnNumber: new RegExp(
-          `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`
-        ),
-        isDeleted: false,
+    return generateSequentialNumber({
+      queryFn: async (query, options) => {
+        return await this.repository.find(query, {
+          ...options,
+          limit: 1,
+        });
       },
-      {
-        sort: { createdAt: -1 },
-        limit: 1,
-      }
-    );
-
-    let sequence = 1;
-    if (latestGRNs.length > 0) {
-      const latest = latestGRNs[0];
-      if (latest.grnNumber) {
-        // Extract sequence number from format: GRN-YYYY-MM-DD-NNNNNN
-        const parts = latest.grnNumber.split("-");
-        if (parts.length === 5) {
-          // Format: ["GRN", "YYYY", "MM", "DD", "NNNNNN"]
-          const latestSequence = parseInt(parts[4], 10);
-          if (!isNaN(latestSequence)) {
-            sequence = latestSequence + 1;
-          }
-        }
-      }
-    }
-
-    // Format: GRN-YYYY-MM-DD-NNNNNN (e.g., GRN-2024-01-14-000001)
-    return `${prefix}${sequence.toString().padStart(6, "0")}`;
+      prefix: "GRN",
+      fieldName: "grnNumber",
+      sequencePadding: 6,
+      dateFormat: "daily",
+      additionalFilters: { isDeleted: false },
+    });
   }
 
   /**

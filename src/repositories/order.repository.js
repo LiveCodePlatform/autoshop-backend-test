@@ -5,6 +5,7 @@
  */
 
 import Order from "../models/orders.model.js";
+import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
 
 export class OrderRepository {
   async create(data, options = {}) {
@@ -109,44 +110,20 @@ export class OrderRepository {
    * @returns {Promise<string>} Generated order number
    */
   async generateOrderNumber() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const prefix = `ORD-${year}-${month}-${day}-`;
-
-    // Find the latest order for this date (excluding deleted)
-    const latestOrder = await Order.findOne({
-      orderNumber: new RegExp(
-        `^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`
-      ),
-      isDeleted: false,
-    })
-      .sort({ createdAt: -1 })
-      .select("orderNumber");
-
-    let sequence = 1;
-    if (latestOrder && latestOrder.orderNumber) {
-      // Extract sequence number from format: ORD-YYYY-MM-DD-NNNNNN
-      const parts = latestOrder.orderNumber.split("-");
-      if (parts.length === 5) {
-        // Format: ["ORD", "YYYY", "MM", "DD", "NNNNNN"]
-        const latestSequence = parseInt(parts[4], 10);
-        if (!isNaN(latestSequence)) {
-          sequence = latestSequence + 1;
-        }
-      }
-    }
-
-    // Validate sequence doesn't exceed daily limit
-    if (sequence > 999999) {
-      throw new Error(
-        `Daily order limit reached. Maximum 999,999 orders per day allowed.`
-      );
-    }
-
-    // Format: ORD-YYYY-MM-DD-NNNNNN (e.g., ORD-2024-01-15-000001)
-    return `${prefix}${sequence.toString().padStart(6, "0")}`;
+    return generateSequentialNumber({
+      queryFn: async (query, options) => {
+        return await Order.findOne(query)
+          .sort(options.sort)
+          .select("orderNumber");
+      },
+      prefix: "ORD",
+      fieldName: "orderNumber",
+      sequencePadding: 6,
+      dateFormat: "daily",
+      additionalFilters: { isDeleted: false },
+      maxSequence: 999999,
+      maxSequenceError: "Daily order limit reached. Maximum 999,999 orders per day allowed.",
+    });
   }
 
   /**

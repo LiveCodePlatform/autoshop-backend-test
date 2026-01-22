@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
 
 // GRN Line Item Schema
 // Note: inventoryId is automatically filled from PO products by productCode in the controller
@@ -205,36 +206,18 @@ goodsRecievedNoteSchema.virtual("totalBadQuantity").get(function () {
 // Static method to generate GRN number
 // Format: GRN-YYYY-MM-DD-NNNNNN (e.g., GRN-2024-01-14-000001)
 goodsRecievedNoteSchema.statics.generateGRNNumber = async function () {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const prefix = `GRN-${year}-${month}-${day}-`;
-
-  // Find the latest GRN for today (excluding deleted)
-  // Use regex to match GRN numbers starting with today's date prefix
-  const latestGRN = await this.findOne({
-    grnNumber: new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`), // Escape special regex chars
-    isDeleted: false, // Exclude deleted GRNs
-  })
-    .sort({ createdAt: -1 }) // Sort by creation date instead of grnNumber string
-    .select("grnNumber");
-
-  let sequence = 1;
-  if (latestGRN && latestGRN.grnNumber) {
-    // Extract sequence number from format: GRN-YYYY-MM-DD-NNNNNN
-    const parts = latestGRN.grnNumber.split("-");
-    if (parts.length === 5) {
-      // Format: ["GRN", "YYYY", "MM", "DD", "NNNNNN"]
-      const latestSequence = parseInt(parts[4], 10);
-      if (!isNaN(latestSequence)) {
-        sequence = latestSequence + 1;
-      }
-    }
-  }
-
-  // Format: GRN-YYYY-MM-DD-NNNNNN (e.g., GRN-2024-01-14-000001)
-  return `${prefix}${sequence.toString().padStart(6, "0")}`;
+  return generateSequentialNumber({
+    queryFn: async (query, options) => {
+      return await this.findOne(query)
+        .sort(options.sort)
+        .select("grnNumber");
+    },
+    prefix: "GRN",
+    fieldName: "grnNumber",
+    sequencePadding: 6,
+    dateFormat: "daily",
+    additionalFilters: { isDeleted: false },
+  });
 };
 
 // Static method to drop the unique index on purchasingId (one-time migration)
