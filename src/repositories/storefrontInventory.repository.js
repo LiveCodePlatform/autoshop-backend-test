@@ -46,10 +46,18 @@ export class StorefrontInventoryRepository {
   /**
    * Find one storefront inventory record
    * @param {Object} query - MongoDB query object
+   * @param {Object} options - Options including session
    * @returns {Promise<Object|null>} Storefront inventory document or null
    */
-  async findOne(query) {
-    return await StorefrontInventory.findOne(query);
+  async findOne(query, options = {}) {
+    const { session } = options;
+    let queryBuilder = StorefrontInventory.findOne(query);
+
+    if (session) {
+      queryBuilder = queryBuilder.session(session);
+    }
+
+    return await queryBuilder.exec();
   }
 
   /**
@@ -152,6 +160,54 @@ export class StorefrontInventoryRepository {
     }
 
     return updated;
+  }
+
+  /**
+   * Find one storefront inventory and update (with upsert support)
+   * @param {Object} query - MongoDB query object
+   * @param {Object} updateData - Update data
+   * @param {Object} options - Options including session, upsert, etc.
+   * @returns {Promise<Object|null>} Updated storefront inventory document or null
+   */
+  async findOneAndUpdate(query, updateData, options = {}) {
+    return await StorefrontInventory.findOneAndUpdate(
+      query,
+      updateData,
+      options
+    );
+  }
+
+  /**
+   * Find one storefront inventory with session support
+   * @param {Object} query - MongoDB query object
+   * @param {Object} options - Options including session
+   * @returns {Promise<Object|null>} Storefront inventory document or null
+   */
+  async findOne(query, options = {}) {
+    const { session } = options;
+    let queryBuilder = StorefrontInventory.findOne(query);
+
+    if (session) {
+      queryBuilder = queryBuilder.session(session);
+    }
+
+    return await queryBuilder.exec();
+  }
+
+  /**
+   * Create storefront inventory with session support
+   * @param {Object} data - Storefront inventory data
+   * @param {Object} options - Options including session
+   * @returns {Promise<Object>} Created storefront inventory document
+   */
+  async create(data, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await StorefrontInventory.create([data], { session }).then(
+        (records) => records[0]
+      );
+    }
+    return await StorefrontInventory.create(data);
   }
 }
 

@@ -12,7 +12,12 @@ export class GoodsRecievedNoteRepository {
   }
 
   async findById(id, populateOptions = {}) {
+    const { lean, session } = populateOptions;
     let query = GoodsRecievedNote.findById(id);
+    
+    if (session) {
+      query = query.session(session);
+    }
 
     if (populateOptions.purchasingId) {
       query = query.populate("purchasingId", populateOptions.purchasingId);
@@ -21,11 +26,22 @@ export class GoodsRecievedNoteRepository {
       query = query.populate("lineItems.inventoryId", populateOptions.lineItems);
     }
 
+    if (lean) {
+      query = query.lean();
+    }
+
     return await query.exec();
   }
 
-  async findOne(query) {
-    return await GoodsRecievedNote.findOne(query);
+  async findOne(query, options = {}) {
+    const { session } = options;
+    let queryBuilder = GoodsRecievedNote.findOne(query);
+    
+    if (session) {
+      queryBuilder = queryBuilder.session(session);
+    }
+    
+    return await queryBuilder.exec();
   }
 
   async find(query, options = {}) {

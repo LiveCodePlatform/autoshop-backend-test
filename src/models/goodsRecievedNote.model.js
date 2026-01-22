@@ -1,5 +1,13 @@
 import mongoose from "mongoose";
-import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
+import {
+  GRN_STATUS,
+  GRN_DEFAULTS,
+  GRN_LINE_ITEM_DEFAULTS,
+  getValidStatuses,
+} from "../types/goodsRecievedNote.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/goodsRecievedNote.validator.js";
 
 // GRN Line Item Schema
 // Note: inventoryId is automatically filled from PO products by productCode in the controller
@@ -14,42 +22,57 @@ const grnLineItemSchema = new mongoose.Schema(
     receivedQuantity: {
       type: Number,
       required: [true, "Received quantity is required"],
-      min: [0, "Received quantity cannot be negative"],
+      min: [
+        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+        "Received quantity cannot be negative",
+      ],
     },
     goodQuantity: {
       type: Number,
       required: [true, "Good quantity is required"],
-      min: [0, "Good quantity cannot be negative"],
+      min: [
+        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+        "Good quantity cannot be negative",
+      ],
     },
     badQuantity: {
       type: Number,
       required: [true, "Bad quantity is required"],
-      min: [0, "Bad quantity cannot be negative"],
-      default: 0,
+      min: [
+        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+        "Bad quantity cannot be negative",
+      ],
+      default: GRN_LINE_ITEM_DEFAULTS.BAD_QUANTITY, // ✅ Uses types for default
     },
     transferredQuantity: {
       type: Number,
       required: [true, "Transferred quantity is required"],
-      min: [0, "Transferred quantity cannot be negative"],
-      default: 0,
+      min: [
+        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+        "Transferred quantity cannot be negative",
+      ],
+      default: GRN_LINE_ITEM_DEFAULTS.TRANSFERRED_QUANTITY, // ✅ Uses types for default
       // Tracks how much good quantity has been transferred to warehouses
       // availableQuantity = goodQuantity - transferredQuantity
     },
     unitPrice: {
       type: Number,
       required: [true, "Unit price is required"],
-      min: [0, "Unit price cannot be negative"],
+      min: [VALIDATION_CONSTRAINTS.PRICE.MIN, "Unit price cannot be negative"],
     },
     totalPrice: {
       type: Number,
       required: [true, "Total price is required"],
-      min: [0, "Total price cannot be negative"],
+      min: [VALIDATION_CONSTRAINTS.PRICE.MIN, "Total price cannot be negative"],
     },
     notes: {
       type: String,
       trim: true,
-      maxlength: [500, "Notes cannot exceed 500 characters"],
-      default: null,
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH,
+        `Notes cannot exceed ${VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH} characters`,
+      ],
+      default: GRN_LINE_ITEM_DEFAULTS.NOTES, // ✅ Uses types for default
     },
   },
   {
@@ -125,10 +148,10 @@ const goodsRecievedNoteSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "partial", "verified", "rejected"],
+        values: getValidStatuses(), // ✅ Uses types for enum values
         message: "Status must be pending, partial, verified, or rejected",
       },
-      default: "pending",
+      default: GRN_DEFAULTS.STATUS, // ✅ Uses types for default
     },
     lineItems: {
       type: [grnLineItemSchema],
@@ -153,21 +176,27 @@ const goodsRecievedNoteSchema = new mongoose.Schema(
     notes: {
       type: String,
       trim: true,
-      maxlength: [1000, "Notes cannot exceed 1000 characters"],
-      default: "No notes available.",
+      maxlength: [
+        VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH,
+        `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
+      ],
+      default: GRN_DEFAULTS.NOTES, // ✅ Uses types for default
     },
     totalAmount: {
       type: Number,
       required: [true, "Total amount is required"],
-      min: [0, "Total amount cannot be negative"],
+      min: [
+        VALIDATION_CONSTRAINTS.PRICE.MIN,
+        "Total amount cannot be negative",
+      ],
     },
     isDeleted: {
       type: Boolean,
-      default: false,
+      default: GRN_DEFAULTS.IS_DELETED, // ✅ Uses types for default
     },
     deletedAt: {
       type: Date,
-      default: null,
+      default: GRN_DEFAULTS.DELETED_AT, // ✅ Uses types for default
     },
   },
   {
@@ -208,9 +237,7 @@ goodsRecievedNoteSchema.virtual("totalBadQuantity").get(function () {
 goodsRecievedNoteSchema.statics.generateGRNNumber = async function () {
   return generateSequentialNumber({
     queryFn: async (query, options) => {
-      return await this.findOne(query)
-        .sort(options.sort)
-        .select("grnNumber");
+      return await this.findOne(query).sort(options.sort).select("grnNumber");
     },
     prefix: "GRN",
     fieldName: "grnNumber",

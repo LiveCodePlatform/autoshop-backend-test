@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
-import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
+import {
+  ORDER_STATUS,
+  ORDER_DEFAULTS,
+  PAYMENT_TYPE,
+  PAYMENT_METHOD,
+  getValidOrderStatuses,
+  getValidPaymentTypes,
+  getValidPaymentMethods,
+} from "../types/order.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/order.validator.js";
 
 const orderProductsSchema = new mongoose.Schema({
   inventoryId: {
@@ -10,12 +21,18 @@ const orderProductsSchema = new mongoose.Schema({
   quantity: {
     type: Number,
     required: [true, "Quantity is required"],
-    min: [1, "Quantity must be at least 1"],
+    min: [
+      VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+      `Quantity must be at least ${VALIDATION_CONSTRAINTS.QUANTITY.MIN}`,
+    ],
   },
   unitPrice: {
     type: Number,
     required: [true, "Unit price is required"],
-    min: [0, "Unit price cannot be negative"],
+    min: [
+      VALIDATION_CONSTRAINTS.UNIT_PRICE.MIN,
+      "Unit price cannot be negative",
+    ],
   },
 });
 
@@ -45,45 +62,57 @@ const orderSchema = new mongoose.Schema(
     creditPersonId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CreditPerson",
-      default: null,
+      default: ORDER_DEFAULTS.CREDIT_PERSON_ID, // ✅ Uses types for default
     },
     subTotal: {
       type: Number,
-      default: null,
-      min: [0, "Subtotal cannot be negative"],
+      default: ORDER_DEFAULTS.SUB_TOTAL,
+      min: [
+        VALIDATION_CONSTRAINTS.SUB_TOTAL.MIN,
+        "Subtotal cannot be negative",
+      ],
     },
     tax: {
       type: Number,
-      default: 0,
-      min: [0, "Tax cannot be negative"],
+      default: ORDER_DEFAULTS.TAX,
+      min: [VALIDATION_CONSTRAINTS.TAX.MIN, "Tax cannot be negative"],
     },
     discount: {
       type: Number,
-      default: 0,
-      min: [0, "Discount cannot be negative"],
+      default: ORDER_DEFAULTS.DISCOUNT,
+      min: [VALIDATION_CONSTRAINTS.DISCOUNT.MIN, "Discount cannot be negative"],
     },
     finalAmount: {
       type: Number,
       required: [true, "Final amount is required"],
-      min: [0, "Final amount cannot be negative"],
+      min: [
+        VALIDATION_CONSTRAINTS.FINAL_AMOUNT.MIN,
+        "Final amount cannot be negative",
+      ],
     },
     paidAmount: {
       type: Number,
       required: [true, "Paid amount is required"],
-      min: [0, "Paid amount cannot be negative"],
+      min: [
+        VALIDATION_CONSTRAINTS.PAID_AMOUNT.MIN,
+        "Paid amount cannot be negative",
+      ],
     },
     extraChange: {
       type: Number,
-      default: 0,
-      min: [0, "Extra change cannot be negative"],
+      default: ORDER_DEFAULTS.EXTRA_CHANGE,
+      min: [
+        VALIDATION_CONSTRAINTS.EXTRA_CHANGE.MIN,
+        "Extra change cannot be negative",
+      ],
     },
     orderStatus: {
       type: String,
       enum: {
-        values: ["pending", "completed", "cancelled"],
+        values: getValidOrderStatuses(), // ✅ Uses types for enum values
         message: "Order status must be pending, completed, or cancelled",
       },
-      default: "pending",
+      default: ORDER_DEFAULTS.ORDER_STATUS, // ✅ Uses types for default
     },
     soldBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -92,20 +121,27 @@ const orderSchema = new mongoose.Schema(
     },
     isDeleted: {
       type: Boolean,
-      default: false,
+      default: ORDER_DEFAULTS.IS_DELETED, // ✅ Uses types for default
     },
     deletedAt: {
       type: Date,
-      default: null,
+      default: ORDER_DEFAULTS.DELETED_AT, // ✅ Uses types for default
     },
     paymentType: {
       type: String,
-      enum: ["credit", "paid"],
-      default: "paid",
+      enum: {
+        values: getValidPaymentTypes(), // ✅ Uses types for enum values
+        message: `Payment type must be ${PAYMENT_TYPE.CREDIT} or ${PAYMENT_TYPE.PAID}`,
+      },
+      default: ORDER_DEFAULTS.PAYMENT_TYPE, // ✅ Uses types for default
     },
     paymentMethod: {
       type: String,
-      default: "cash",
+      enum: {
+        values: getValidPaymentMethods(), // ✅ Uses types for enum values
+        message: "Invalid payment method",
+      },
+      default: ORDER_DEFAULTS.PAYMENT_METHOD, // ✅ Uses types for default
     },
   },
   {

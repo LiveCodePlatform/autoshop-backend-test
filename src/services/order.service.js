@@ -18,11 +18,7 @@ import { ORDER_FIELDS } from "../types/order.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-import LocationProfile from "../models/locationProfile.model.js";
-import Inventory from "../models/inventory.model.js";
-import CreditPerson from "../models/creditPersona.model.js";
-import StorefrontInventory from "../models/storeFrontInventory.model.js";
-import Order from "../models/orders.model.js";
+// Models removed - using repositories instead
 
 export class OrderService {
   /**
@@ -219,7 +215,7 @@ export class OrderService {
             );
 
             // Use model directly for transaction support
-            const inventoryItems = await Inventory.find({
+            const inventoryItems = await this.inventoryRepository.find({
               _id: { $in: inventoryIds },
             }).session(session);
 
@@ -301,7 +297,7 @@ export class OrderService {
             // 4. Validate stock availability and deduct stock
             for (const product of validatedProducts) {
               // Use model directly for transaction support
-              const stockRecord = await StorefrontInventory.findOne(
+              const stockRecord = await this.storefrontInventoryRepository.findOne(
                 {
                   inventoryId: product.inventoryId,
                   storefrontId: storefrontId,
@@ -609,7 +605,7 @@ export class OrderService {
       let result;
       await session.withTransaction(async () => {
         // 1. Validate order exists and is not deleted
-        const order = await Order.findById(orderId).session(session);
+        const order = await this.repository.findById(orderId, { session });
 
         if (!order) {
           throw new NotFoundError("Order");
@@ -811,7 +807,7 @@ export class OrderService {
       let result;
       await session.withTransaction(async () => {
         // 1. Validate order exists and is not deleted
-        const order = await Order.findById(orderId).session(session);
+        const order = await this.repository.findById(orderId, { session });
 
         if (!order) {
           throw new NotFoundError("Order");
@@ -833,10 +829,10 @@ export class OrderService {
           (item) => new mongoose.Types.ObjectId(item.inventoryId)
         );
 
-        // 3. Validate all inventory items exist and get their selling prices
-        const inventoryItems = await Inventory.find({
+        // 3. Validate all inventory items exist and get their selling prices (uses repository)
+        const inventoryItems = await this.inventoryRepository.find({
           _id: { $in: inventoryIds },
-        }).session(session);
+        }, { session });
 
         if (inventoryItems.length !== inventoryIds.length) {
           const foundIds = inventoryItems.map((item) => item._id.toString());
@@ -881,13 +877,12 @@ export class OrderService {
             );
           }
 
-          // Check stock availability
-          const stockRecord = await StorefrontInventory.findOne(
+          // Check stock availability (uses repository)
+          const stockRecord = await this.storefrontInventoryRepository.findOne(
             {
               inventoryId: inventoryId,
               storefrontId: order.storefrontId,
             },
-            null,
             { session }
           );
 
@@ -1095,7 +1090,7 @@ export class OrderService {
       let result;
       await session.withTransaction(async () => {
         // 1. Validate order exists and is not deleted
-        const order = await Order.findById(orderId).session(session);
+        const order = await this.repository.findById(orderId, { session });
 
         if (!order) {
           throw new NotFoundError("Order");
@@ -1185,7 +1180,7 @@ export class OrderService {
           }
 
           // Restore stock
-          const stockRecord = await StorefrontInventory.findOne(
+          const stockRecord = await this.storefrontInventoryRepository.findOne(
             {
               inventoryId: inventoryId,
               storefrontId: order.storefrontId,
@@ -1198,7 +1193,7 @@ export class OrderService {
             // If stock record doesn't exist, create it
             // This should rarely happen as stock records are created when orders are made
             // But we handle it for safety
-            await StorefrontInventory.create(
+            await this.storefrontInventoryRepository.create(
               [
                 {
                   inventoryId: inventoryId,

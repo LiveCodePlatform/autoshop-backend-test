@@ -1,14 +1,32 @@
 import mongoose from "mongoose";
+import {
+  EXPENSE_DEFAULTS,
+} from "../types/expense.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/expense.validator.js";
 
 const expenseSchema = new mongoose.Schema(
   {
     category: {
       type: String,
       required: [true, "Category is required"],
+      trim: true,
+      minlength: [
+        VALIDATION_CONSTRAINTS.CATEGORY.MIN_LENGTH,
+        `Category must be at least ${VALIDATION_CONSTRAINTS.CATEGORY.MIN_LENGTH} character`,
+      ],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.CATEGORY.MAX_LENGTH,
+        `Category cannot exceed ${VALIDATION_CONSTRAINTS.CATEGORY.MAX_LENGTH} characters`,
+      ],
     },
     amount: {
       type: Number,
       required: [true, "Amount is required"],
+      min: [
+        VALIDATION_CONSTRAINTS.AMOUNT.MIN,
+        "Amount cannot be negative",
+      ],
     },
     date: {
       type: Date,
@@ -16,8 +34,12 @@ const expenseSchema = new mongoose.Schema(
     },
     notes: {
       type: String,
-      maxlength: [1000, "Notes cannot exceed 1000 characters"],
-      default: "No notes available",
+      trim: true,
+      maxlength: [
+        VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH,
+        `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
+      ],
+      default: EXPENSE_DEFAULTS.NOTES, // ✅ Uses types for default
     },
     locationId: {
       type: mongoose.Schema.Types.ObjectId,

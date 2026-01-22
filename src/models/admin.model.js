@@ -1,16 +1,39 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import {
+  ADMIN_ROLE,
+  ADMIN_DEFAULTS,
+  getValidRoles,
+} from "../types/admin.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/admin.validator.js";
 
 const adminSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, "Name is required"],
     unique: true,
+    trim: true,
+    minlength: [
+      VALIDATION_CONSTRAINTS.NAME.MIN_LENGTH,
+      `Name must be at least ${VALIDATION_CONSTRAINTS.NAME.MIN_LENGTH} character`,
+    ],
+    maxlength: [
+      VALIDATION_CONSTRAINTS.NAME.MAX_LENGTH,
+      `Name cannot exceed ${VALIDATION_CONSTRAINTS.NAME.MAX_LENGTH} characters`,
+    ],
   },
   password: {
     type: String,
     required: [true, "Password is required"],
-    minlength: [6, "Password must be at least 6 characters long"],
+    minlength: [
+      VALIDATION_CONSTRAINTS.PASSWORD.MIN_LENGTH,
+      `Password must be at least ${VALIDATION_CONSTRAINTS.PASSWORD.MIN_LENGTH} characters long`,
+    ],
+    maxlength: [
+      VALIDATION_CONSTRAINTS.PASSWORD.MAX_LENGTH,
+      `Password cannot exceed ${VALIDATION_CONSTRAINTS.PASSWORD.MAX_LENGTH} characters`,
+    ],
     select: false,
   },
   confirmPassword: {
@@ -24,26 +47,29 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["owner", "cashier"],
-    default: "owner",
+    enum: {
+      values: getValidRoles(), // ✅ Uses types for enum values
+      message: `Role must be ${ADMIN_ROLE.OWNER} or ${ADMIN_ROLE.CASHIER}`,
+    },
+    default: ADMIN_DEFAULTS.ROLE, // ✅ Uses types for default
   },
   locationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "LocationProfile",
-    default: null,
+    default: ADMIN_DEFAULTS.LOCATION_ID, // ✅ Uses types for default
   },
   lastActiveAt: {
     type: Date,
-    default: null,
+    default: ADMIN_DEFAULTS.LAST_ACTIVE_AT, // ✅ Uses types for default
   },
 
   softDeleted: {
     type: Boolean,
-    default: false,
+    default: ADMIN_DEFAULTS.SOFT_DELETED, // ✅ Uses types for default
   },
   deletedAt: {
     type: Date,
-    default: null,
+    default: ADMIN_DEFAULTS.DELETED_AT, // ✅ Uses types for default
   },
   createdAt: {
     type: Date,

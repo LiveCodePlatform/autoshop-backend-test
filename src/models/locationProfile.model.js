@@ -7,6 +7,8 @@ import {
   getValidLocationTypes,
   getValidStatuses,
 } from "../types/locationProfile.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/locationProfile.common.js";
 
 const locationProfileSchema = new mongoose.Schema(
   {
@@ -23,25 +25,37 @@ const locationProfileSchema = new mongoose.Schema(
       required: [true, "Location code is required"],
       trim: true,
       uppercase: true,
-      maxlength: [50, "Location code cannot exceed 50 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LOCATION_CODE.MAX_LENGTH,
+        `Location code cannot exceed ${VALIDATION_CONSTRAINTS.LOCATION_CODE.MAX_LENGTH} characters`,
+      ],
     },
     locationName: {
       type: String,
       required: [true, "Location name is required"],
       trim: true,
-      maxlength: [200, "Location name cannot exceed 200 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LOCATION_NAME.MAX_LENGTH,
+        `Location name cannot exceed ${VALIDATION_CONSTRAINTS.LOCATION_NAME.MAX_LENGTH} characters`,
+      ],
     },
     locationAddress: {
       type: String,
       required: [true, "Location address is required"],
       trim: true,
-      maxlength: [500, "Location address cannot exceed 500 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LOCATION_ADDRESS.MAX_LENGTH,
+        `Location address cannot exceed ${VALIDATION_CONSTRAINTS.LOCATION_ADDRESS.MAX_LENGTH} characters`,
+      ],
     },
     locationPhone: {
       type: String,
       required: [true, "Location phone is required"],
       trim: true,
-      maxlength: [20, "Location phone cannot exceed 20 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LOCATION_PHONE.MAX_LENGTH,
+        `Location phone cannot exceed ${VALIDATION_CONSTRAINTS.LOCATION_PHONE.MAX_LENGTH} characters`,
+      ],
       // Phone validation is handled at controller level using phoneValidation.utils.js
     },
     locationEmail: {
@@ -50,7 +64,10 @@ const locationProfileSchema = new mongoose.Schema(
       sparse: true,
       trim: true,
       lowercase: true,
-      maxlength: [200, "Location email cannot exceed 200 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.LOCATION_EMAIL.MAX_LENGTH,
+        `Location email cannot exceed ${VALIDATION_CONSTRAINTS.LOCATION_EMAIL.MAX_LENGTH} characters`,
+      ],
       validate: {
         validator: function (value) {
           if (!value) return true; // Allow null/empty
@@ -63,7 +80,10 @@ const locationProfileSchema = new mongoose.Schema(
       type: String,
       default: LOCATION_PROFILE_DEFAULTS.MANAGER_NAME, // ✅ Uses types for default
       trim: true,
-      maxlength: [200, "Manager name cannot exceed 200 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.MANAGER_NAME.MAX_LENGTH,
+        `Manager name cannot exceed ${VALIDATION_CONSTRAINTS.MANAGER_NAME.MAX_LENGTH} characters`,
+      ],
     },
     status: {
       type: String,
@@ -76,13 +96,19 @@ const locationProfileSchema = new mongoose.Schema(
     description: {
       type: String,
       trim: true,
-      maxlength: [1000, "Description cannot exceed 1000 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.DESCRIPTION.MAX_LENGTH,
+        `Description cannot exceed ${VALIDATION_CONSTRAINTS.DESCRIPTION.MAX_LENGTH} characters`,
+      ],
       default: LOCATION_PROFILE_DEFAULTS.DESCRIPTION, // ✅ Uses types for default
     },
     notes: {
       type: String,
       trim: true,
-      maxlength: [500, "Notes cannot exceed 500 characters"],
+      maxlength: [
+        VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH,
+        `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
+      ],
       default: LOCATION_PROFILE_DEFAULTS.NOTES, // ✅ Uses types for default
     },
     isDeleted: {

@@ -5,7 +5,7 @@
  */
 
 import Order from "../models/orders.model.js";
-import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
 
 export class OrderRepository {
   async create(data, options = {}) {
@@ -122,7 +122,8 @@ export class OrderRepository {
       dateFormat: "daily",
       additionalFilters: { isDeleted: false },
       maxSequence: 999999,
-      maxSequenceError: "Daily order limit reached. Maximum 999,999 orders per day allowed.",
+      maxSequenceError:
+        "Daily order limit reached. Maximum 999,999 orders per day allowed.",
     });
   }
 

@@ -11,7 +11,7 @@ import {
   CreditPersonaResponseDTO,
   CreditPersonaListResponseDTO,
 } from "../dtos/creditPersona.dto.js";
-import { NotFoundError, CastError } from "../errors/errorTypes.js";
+import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
 import { CREDIT_PERSONA_FIELDS } from "../types/creditPersona.types.js";
 import mongoose from "mongoose";
 
@@ -25,134 +25,91 @@ export class CreditPersonaService {
 
   /**
    * Create new credit persona
-   * @param {Object} data - Request data
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (name, phone)
    * @returns {Promise<CreditPersonaResponseDTO>} Created credit persona DTO
+   * @throws {ValidationError} If validation fails
    */
   async createCreditPerson(data) {
-    // Transform data using DTO
-    const dto = new CreateCreditPersonaDTO(data);
-    const creditPersonData = dto.toModel();
+    const { name, phone } = data;
 
-    // Create credit persona
-    const newCreditPerson = await this.repository.create(creditPersonData);
-
-    // Return DTO
-    return new CreditPersonaResponseDTO(newCreditPerson);
-  }
-
-  /**
-   * Get all credit personas with pagination and filters
-   * @param {Object} queryParams - Query parameters (page, limit, search, sortBy, sortOrder)
-   * @returns {Promise<CreditPersonaListResponseDTO>} List of credit persona DTOs with pagination
-   */
-  async getAllCreditPersons(queryParams = {}) {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      sortBy = "createdAt",
-      sortOrder = "desc",
-    } = queryParams;
-
-    // Build query
-    const query = {};
-
-    // Search filter (search by name or phone)
-    if (search) {
-      query.$or = [
-        { [CREDIT_PERSONA_FIELDS.NAME]: { $regex: search, $options: "i" } },
-        { [CREDIT_PERSONA_FIELDS.PHONE]: { $regex: search, $options: "i" } },
-      ];
+    // Validate required fields (matches legacy exactly)
+    if (!name || !phone) {
+      throw new ValidationError("Name and phone are required", "name, phone");
     }
 
-    // Pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
-
-    // Sort
-    const sort = {};
-    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
-
-    // Execute query
-    const creditPersons = await this.repository.find(query, {
-      sort,
-      skip,
-      limit: limitNum,
-    });
-
-    // Get total count for pagination
-    const total = await this.repository.countDocuments(query);
-
-    // Return list DTO with pagination (DTO expects raw models, transforms internally)
-    return new CreditPersonaListResponseDTO(creditPersons, {
-      page: pageNum,
-      limit: limitNum,
-      total,
-    });
-  }
-
-  /**
-   * Get credit persona by ID
-   * @param {string} id - Credit persona ID
-   * @returns {Promise<CreditPersonaResponseDTO>} Credit persona DTO
-   * @throws {CastError} If invalid ID format
-   * @throws {NotFoundError} If credit persona not found
-   */
-  async getCreditPersonById(id) {
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid credit person ID format", "id");
-    }
-
-    // Find credit persona
-    const creditPerson = await this.repository.findById(id);
-
-    if (!creditPerson) {
-      throw new NotFoundError("Credit person", id);
-    }
+    // Create credit persona (matches legacy exactly)
+    const creditPerson = await this.repository.create({ name, phone });
 
     // Return DTO
     return new CreditPersonaResponseDTO(creditPerson);
   }
 
   /**
-   * Update credit persona
+   * Get all credit personas
+   * Matches legacy logic exactly - no pagination or filters
+   * @returns {Promise<Array>} Array of credit persona DTOs
+   */
+  async getAllCreditPersons() {
+    // Find all credit persons (matches legacy exactly - no filters, no pagination)
+    const creditPersons = await this.repository.find({});
+
+    // Return array of DTOs (matches legacy structure)
+    return creditPersons.map(
+      (creditPerson) => new CreditPersonaResponseDTO(creditPerson)
+    );
+  }
+
+  /**
+   * Get credit persona by ID
+   * Matches legacy logic exactly - no ID validation, no not found check
    * @param {string} id - Credit persona ID
-   * @param {Object} data - Update data
+   * @returns {Promise<CreditPersonaResponseDTO|null>} Credit persona DTO or null if not found
+   */
+  async getCreditPersonById(id) {
+    // Find credit persona (matches legacy exactly - no validation, no not found check)
+    const creditPerson = await this.repository.findById(id);
+
+    // Return null if not found (matches legacy behavior - returns null in data field)
+    if (!creditPerson) {
+      return null;
+    }
+
+    // Return DTO (matches legacy structure)
+    return new CreditPersonaResponseDTO(creditPerson);
+  }
+
+  /**
+   * Update credit persona
+   * Matches legacy logic exactly
+   * @param {string} id - Credit persona ID
+   * @param {Object} data - Update data (name, phone)
    * @returns {Promise<CreditPersonaResponseDTO>} Updated credit persona DTO
    * @throws {CastError} If invalid ID format
    * @throws {NotFoundError} If credit persona not found
    */
   async updateCreditPerson(id, data) {
-    // Validate MongoDB ObjectId format
+    const { name, phone } = data;
+
+    // Validate ID format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError("Invalid credit person ID format", "id");
     }
 
-    // Check if credit persona exists
-    const existingCreditPerson = await this.repository.findById(id);
-    if (!existingCreditPerson) {
-      throw new NotFoundError("Credit person", id);
-    }
-
-    // Transform data using DTO
-    const dto = new UpdateCreditPersonaDTO(data);
-    const updateData = dto.toUpdateModel();
-
-    // Update credit persona
-    const updatedCreditPerson = await this.repository.findByIdAndUpdate(
+    // Update credit persona (matches legacy exactly - direct update, no existence check before)
+    const creditPerson = await this.repository.findByIdAndUpdate(
       id,
-      { $set: updateData },
-      { new: true, runValidators: true }
+      { name, phone },
+      { new: true }
     );
 
-    if (!updatedCreditPerson) {
-      throw new NotFoundError("Credit person", id);
+    // Check if not found (matches legacy exactly)
+    if (!creditPerson) {
+      throw new NotFoundError("Credit person not found", id);
     }
 
     // Return DTO
-    return new CreditPersonaResponseDTO(updatedCreditPerson);
+    return new CreditPersonaResponseDTO(creditPerson);
   }
 }
 

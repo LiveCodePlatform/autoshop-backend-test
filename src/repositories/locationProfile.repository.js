@@ -37,6 +37,10 @@ export class LocationProfileRepository {
   async findByIdAndUpdate(id, updateData, options) {
     return await LocationProfile.findByIdAndUpdate(id, updateData, options);
   }
+
+  async findByIdAndDelete(id) {
+    return await LocationProfile.findByIdAndDelete(id);
+  }
 }
 
 export default LocationProfileRepository;

@@ -9,20 +9,25 @@ import {
   CreateCreditRecordDTO,
   CreditRecordResponseDTO,
 } from "../dtos/creditRecord.dto.js";
-import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
+import {
+  NotFoundError,
+  CastError,
+  ValidationError,
+} from "../errors/errorTypes.js";
 import { CREDIT_RECORD_FIELDS } from "../types/creditRecord.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-import Order from "../legacy/models/orders.model.js";
-import CreditPerson from "../models/creditPersona.model.js";
+import { OrderRepository } from "../repositories/order.repository.js";
 
 export class CreditRecordService {
   /**
    * @param {CreditRecordRepository} repository - Injected repository instance (optional, fallback creates new instance)
+   * @param {OrderRepository} orderRepository - Injected order repository instance
    */
-  constructor(repository) {
+  constructor(repository, orderRepository) {
     this.repository = repository || new CreditRecordRepository();
+    this.orderRepository = orderRepository || new OrderRepository();
   }
 
   /**
@@ -61,7 +66,7 @@ export class CreditRecordService {
       let result;
       await session.withTransaction(async () => {
         // 1. Validate order exists and is not deleted
-        const order = await Order.findById(orderId).session(session);
+        const order = await this.orderRepository.findById(orderId, { session });
 
         if (!order) {
           throw new NotFoundError("Order");
@@ -118,6 +123,7 @@ export class CreditRecordService {
           [CREDIT_RECORD_FIELDS.ADDED_BY]: addedBy,
         };
 
+        // Create credit record (repository handles array creation and returns first element)
         const creditRecord = await this.repository.create(creditRecordData, {
           session,
         });
@@ -170,7 +176,12 @@ export class CreditRecordService {
       return result;
     } catch (error) {
       // Handle transaction errors
-      if (error instanceof CustomError || error instanceof ValidationError || error instanceof NotFoundError || error instanceof CastError) {
+      if (
+        error instanceof CustomError ||
+        error instanceof ValidationError ||
+        error instanceof NotFoundError ||
+        error instanceof CastError
+      ) {
         throw error;
       }
 
@@ -180,9 +191,13 @@ export class CreditRecordService {
         throw new ValidationError(`Validation error: ${errors.join(". ")}`);
       }
 
-      // For other errors, wrap and throw
-      throw new ValidationError(
-        `Credit payment creation failed: ${error?.message || String(error) || "Unknown error occurred"}`
+      // For other errors, log and throw (matches legacy exactly)
+      console.error("Credit payment creation error:", error);
+      const errorMessage =
+        error?.message || String(error) || "Unknown error occurred";
+      throw new CustomError(
+        500,
+        `Credit payment creation failed: ${errorMessage}`
       );
     } finally {
       // Always end the session
@@ -203,7 +218,7 @@ export class CreditRecordService {
     }
 
     // Validate order exists
-    const order = await Order.findById(orderId);
+    const order = await this.orderRepository.findById(orderId);
     if (!order) {
       throw new NotFoundError("Order");
     }
@@ -223,13 +238,13 @@ export class CreditRecordService {
       }
     );
 
-    // Calculate total paid from credit records
+    // Calculate total paid from credit records (matches legacy exactly)
     const totalCreditPayments = creditRecords.reduce(
-      (sum, record) => sum + (record[CREDIT_RECORD_FIELDS.PAID_AMOUNT] || 0),
+      (sum, record) => sum + (record.paidAmount || 0),
       0
     );
 
-    // Calculate remaining balance
+    // Calculate remaining balance (matches legacy exactly - note: this adds order.paidAmount which already includes credit payments)
     const totalPaid = (order.paidAmount || 0) + totalCreditPayments;
     const remainingBalance = Math.max(0, order.finalAmount - totalPaid);
 
@@ -396,10 +411,7 @@ export class CreditRecordService {
       limit: limitNum,
     });
 
-    // Get total count
-    const total = await this.repository.countDocuments(query);
-
-    // If no orders found, return empty result
+    // If no orders found, return empty result early (matches legacy exactly)
     if (orders.length === 0) {
       return {
         creditPerson: {
@@ -418,19 +430,22 @@ export class CreditRecordService {
           totalOutstandingAmount: 0,
         },
         pagination: {
-          currentPage: pageNum,
+          currentPage: parseInt(page),
           totalPages: 0,
           totalItems: 0,
-          itemsPerPage: limitNum,
+          itemsPerPage: parseInt(limit),
         },
       };
     }
 
+    // Get total count
+    const total = await this.repository.countDocuments(query);
+
     // Calculate summary statistics
-    // Get all credit records (without pagination) for summary
+    // Get all credit records (without pagination) for summary (matches legacy exactly)
     const allCreditRecords = await this.repository.find(query);
     const totalCreditPayments = allCreditRecords.reduce(
-      (sum, record) => sum + (record[CREDIT_RECORD_FIELDS.PAID_AMOUNT] || 0),
+      (sum, record) => sum + (record.paidAmount || 0),
       0
     );
 

@@ -285,36 +285,56 @@ export const getExpenseService = () => {
 
 export const getPurchasingService = () => {
   if (!purchasingService) {
-    // Inject repository dependency
+    // Inject repository dependencies
     const repository = getPurchasingRepository();
-    purchasingService = new PurchasingService(repository);
+    const inventoryRepository = getInventoryRepository();
+    purchasingService = new PurchasingService(repository, inventoryRepository);
   }
   return purchasingService;
 };
 
 export const getTransferService = () => {
   if (!transferService) {
-    // Inject repository dependency
+    // Inject repository dependencies
     const repository = getTransferRepository();
-    transferService = new TransferService(repository);
+    const locationRepository = getLocationProfileRepository();
+    const inventoryRepository = getInventoryRepository();
+    const warehouseInventoryRepository = getWarehouseInventoryRepository();
+    const storefrontInventoryRepository = getStorefrontInventoryRepository();
+    const goodsRecievedNoteRepository = getGoodsRecievedNoteRepository();
+    transferService = new TransferService(
+      repository,
+      locationRepository,
+      inventoryRepository,
+      warehouseInventoryRepository,
+      storefrontInventoryRepository,
+      goodsRecievedNoteRepository
+    );
   }
   return transferService;
 };
 
 export const getGoodsRecievedNoteService = () => {
   if (!goodsRecievedNoteService) {
-    // Inject repository dependency
+    // Inject repository dependencies
     const repository = getGoodsRecievedNoteRepository();
-    goodsRecievedNoteService = new GoodsRecievedNoteService(repository);
+    const purchasingRepository = getPurchasingRepository();
+    const inventoryRepository = getInventoryRepository();
+    goodsRecievedNoteService = new GoodsRecievedNoteService(
+      repository,
+      purchasingRepository,
+      inventoryRepository
+    );
   }
   return goodsRecievedNoteService;
 };
 
 export const getCreditRecordService = () => {
   if (!creditRecordService) {
-    // Inject repository dependency
+    // Inject repository dependencies
     const repository = getCreditRecordRepository();
-    creditRecordService = new CreditRecordService(repository);
+    const orderRepository = getOrderRepository();
+    creditRecordService = new CreditRecordService(repository, orderRepository);
   }
   return creditRecordService;
 };

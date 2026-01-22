@@ -4,6 +4,9 @@
  * Uses repositories for data access and DTOs for data transformation
  */
 
+import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+import { validatePhoneNumber } from "../shared/utils/phoneValidation.utils.js";
+import mongoose from "mongoose";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
 import {
   CreateStorefrontProfileDTO,
@@ -11,18 +14,10 @@ import {
   LocationProfileResponseDTO,
   LocationProfileListResponseDTO,
 } from "../dtos/locationProfile.dto.js";
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
-import {
-  LOCATION_PROFILE_FIELDS,
-  LOCATION_TYPE,
-  LOCATION_STATUS,
-} from "../types/locationProfile.types.js";
-import { validatePhoneNumber } from "../shared/utils/phoneValidation.utils.js";
-import mongoose from "mongoose";
 
 export class StorefrontProfileService {
   /**
-   * @param {LocationProfileRepository} repository - Injected repository instance
+   * @param {LocationProfileRepository} repository - Injected repository instance (optional, fallback creates new instance)
    */
   constructor(repository) {
     this.repository = repository || new LocationProfileRepository();
@@ -30,59 +25,65 @@ export class StorefrontProfileService {
 
   /**
    * Create new storefront profile
-   * @param {Object} data - Request data (legacy field names)
-   * @returns {Promise<LocationProfileResponseDTO>} Created storefront profile DTO
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (storefrontCode, storefrontName, storefrontAddress, storefrontPhone, storefrontEmail, managerName, status, description, notes)
+   * @returns {Promise<Object>} Created storefront profile
    * @throws {ValidationError} If uniqueness check fails or phone validation fails
    */
   async createStorefrontProfile(data) {
-    // Transform data using DTO (handles legacy field names)
-    const dto = new CreateStorefrontProfileDTO(data);
-    const storefrontData = dto.toModel();
+    const {
+      storefrontCode,
+      storefrontName,
+      storefrontAddress,
+      storefrontPhone,
+      storefrontEmail,
+      managerName,
+      status,
+      description,
+      notes,
+    } = data;
 
-    // Business logic: Validate phone number
-    const phoneValidation = validatePhoneNumber(
-      storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE],
-      "MM"
-    );
-    if (!phoneValidation.isValid) {
-      throw new ValidationError(phoneValidation.error, "storefrontPhone");
-    }
-    // Use formatted phone number
-    storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] =
-      phoneValidation.formattedNumber;
-
-    // Business logic: Check uniqueness of storefrontCode
-    if (storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_CODE]) {
+    // Check if storefrontCode already exists (matches legacy exactly - uses repository)
+    if (storefrontCode) {
       const existingCode = await this.repository.findOne({
-        type: LOCATION_TYPE.STOREFRONT,
-        locationCode: storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_CODE],
+        type: "storefront",
+        locationCode: storefrontCode.toUpperCase(),
         isDeleted: false,
       });
       if (existingCode) {
-        throw new ValidationError(
-          "Storefront code already exists",
-          "storefrontCode"
-        );
+        throw new ValidationError("Storefront code already exists");
       }
     }
 
-    // Business logic: Check uniqueness of storefrontName
-    if (storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_NAME]) {
+    // Check if storefrontName already exists (matches legacy exactly - uses repository)
+    if (storefrontName) {
       const existingName = await this.repository.findOne({
-        type: LOCATION_TYPE.STOREFRONT,
-        locationName: storefrontData[LOCATION_PROFILE_FIELDS.LOCATION_NAME],
+        type: "storefront",
+        locationName: storefrontName.trim(),
         isDeleted: false,
       });
       if (existingName) {
-        throw new ValidationError(
-          "Storefront name already exists",
-          "storefrontName"
-        );
+        throw new ValidationError("Storefront name already exists");
       }
     }
 
-    // Create storefront profile
-    const newStorefrontProfile = await this.repository.create(storefrontData);
+    // Validate phone number (matches legacy exactly)
+    const phoneValidation = validatePhoneNumber(storefrontPhone, "MM");
+    if (!phoneValidation.isValid) {
+      throw new ValidationError(phoneValidation.error);
+    }
+
+    // Use formatted phone number in data for DTO
+    const dataWithFormattedPhone = {
+      ...data,
+      storefrontPhone: phoneValidation.formattedNumber,
+    };
+
+    // Transform data using DTO
+    const dto = new CreateStorefrontProfileDTO(dataWithFormattedPhone);
+
+    // Create storefront profile (matches legacy exactly - uses repository)
+    const newStorefrontProfile = await this.repository.create(dto.toModel());
 
     // Return DTO
     return new LocationProfileResponseDTO(newStorefrontProfile);
@@ -90,8 +91,9 @@ export class StorefrontProfileService {
 
   /**
    * Get all storefront profiles with pagination and filters
+   * Matches legacy logic exactly
    * @param {Object} queryParams - Query parameters
-   * @returns {Promise<LocationProfileListResponseDTO>} List of storefront profile DTOs with pagination
+   * @returns {Promise<Object>} List of storefront profiles with pagination
    */
   async getAllStorefrontProfiles(queryParams = {}) {
     const {
@@ -104,43 +106,23 @@ export class StorefrontProfileService {
       includeDeleted = false,
     } = queryParams;
 
-    // Build query - exclude soft deleted by default, filter by storefront type
-    const query = { type: LOCATION_TYPE.STOREFRONT };
+    // Build query - exclude soft deleted by default, filter by storefront type (matches legacy exactly)
+    const query = { type: "storefront" };
 
     if (!includeDeleted || includeDeleted === "false") {
-      query[LOCATION_PROFILE_FIELDS.IS_DELETED] = false;
+      query.isDeleted = false;
     }
 
     if (status) {
-      query[LOCATION_PROFILE_FIELDS.STATUS] = status;
+      query.status = status;
     }
 
     if (search) {
       query.$or = [
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_NAME]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_CODE]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.MANAGER_NAME]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
+        { locationName: { $regex: search, $options: "i" } },
+        { locationCode: { $regex: search, $options: "i" } },
+        { locationAddress: { $regex: search, $options: "i" } },
+        { managerName: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -153,7 +135,7 @@ export class StorefrontProfileService {
     const sort = {};
     sort[sortBy] = sortOrder === "asc" ? 1 : -1;
 
-    // Execute query
+    // Execute query (matches legacy exactly - uses repository)
     const storefronts = await this.repository.find(query, {
       sort,
       skip,
@@ -163,130 +145,184 @@ export class StorefrontProfileService {
     // Get total count for pagination
     const total = await this.repository.countDocuments(query);
 
-    // Return list DTO with pagination
     return new LocationProfileListResponseDTO(storefronts, {
-      page: pageNum,
-      limit: limitNum,
-      total,
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      totalItems: total,
+      itemsPerPage: limitNum,
     });
   }
 
   /**
    * Get storefront profile by ID
+   * Matches legacy logic exactly
    * @param {string} id - Storefront profile ID
-   * @returns {Promise<LocationProfileResponseDTO>} Storefront profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Storefront profile
+   * @throws {ValidationError} If invalid ID format
    * @throws {NotFoundError} If storefront profile not found
    */
   async getStorefrontProfileById(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid storefront profile ID format", "id");
+      throw new ValidationError("Invalid storefront profile ID format");
     }
 
-    // Find storefront profile
+    // Find storefront profile (matches legacy exactly - uses repository)
     const storefront = await this.repository.findOne({
       _id: id,
-      type: LOCATION_TYPE.STOREFRONT,
+      type: "storefront",
       isDeleted: false,
     });
 
     if (!storefront) {
-      throw new NotFoundError("Storefront profile", id);
+      throw new NotFoundError("Storefront profile not found", id);
     }
 
-    // Return DTO
     return new LocationProfileResponseDTO(storefront);
   }
 
   /**
    * Update storefront profile
+   * Matches legacy logic exactly
    * @param {string} id - Storefront profile ID
-   * @param {Object} data - Update data (legacy field names)
-   * @returns {Promise<LocationProfileResponseDTO>} Updated storefront profile DTO
-   * @throws {CastError} If invalid ID format
+   * @param {Object} data - Update data (storefrontCode, storefrontName, storefrontAddress, storefrontPhone, storefrontEmail, managerName, status, description, notes)
+   * @returns {Promise<Object>} Updated storefront profile
+   * @throws {ValidationError} If invalid ID format, uniqueness check fails, phone validation fails, or no fields to update
    * @throws {NotFoundError} If storefront profile not found
-   * @throws {ValidationError} If uniqueness check fails, phone validation fails, or no fields to update
    */
   async updateStorefrontProfile(id, data) {
-    // Validate MongoDB ObjectId format
+    const {
+      storefrontCode,
+      storefrontName,
+      storefrontAddress,
+      storefrontPhone,
+      storefrontEmail,
+      managerName,
+      status,
+      description,
+      notes,
+    } = data;
+
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid storefront profile ID format", "id");
+      throw new ValidationError("Invalid storefront profile ID format");
     }
 
-    // Check if storefront exists and is not deleted
+    // Check if storefront exists and is not deleted (matches legacy exactly - uses repository)
     const existingStorefront = await this.repository.findOne({
       _id: id,
-      type: LOCATION_TYPE.STOREFRONT,
+      type: "storefront",
       isDeleted: false,
     });
 
     if (!existingStorefront) {
-      throw new NotFoundError("Storefront profile", id);
+      throw new NotFoundError("Storefront profile not found", id);
     }
 
-    // Transform data using DTO (handles legacy field names)
-    const dto = new UpdateStorefrontProfileDTO(data);
-    const updateData = dto.toUpdateModel();
+    // Build update fields object (matches legacy exactly - field by field)
+    const updateFields = {};
 
-    // Business logic: Check if storefrontCode is being updated and validate uniqueness
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_CODE] !== undefined) {
-      const codeToCheck = updateData[LOCATION_PROFILE_FIELDS.LOCATION_CODE];
+    // Check if storefrontCode is being updated and validate uniqueness (matches legacy exactly)
+    if (storefrontCode !== undefined) {
+      const codeToCheck = storefrontCode.toUpperCase().trim();
       if (codeToCheck !== existingStorefront.locationCode) {
         const existingCode = await this.repository.findOne({
-          type: LOCATION_TYPE.STOREFRONT,
+          type: "storefront",
           locationCode: codeToCheck,
           isDeleted: false,
           _id: { $ne: id },
         });
         if (existingCode) {
-          throw new ValidationError(
-            "Storefront code already exists",
-            "storefrontCode"
-          );
+          throw new ValidationError("Storefront code already exists");
         }
       }
+      updateFields.locationCode = codeToCheck;
     }
 
-    // Business logic: Check if storefrontName is being updated and validate uniqueness
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME] !== undefined) {
-      const nameToCheck = updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME];
+    // Check if storefrontName is being updated and validate uniqueness (matches legacy exactly)
+    if (storefrontName !== undefined) {
+      const nameToCheck = storefrontName.trim();
       if (nameToCheck !== existingStorefront.locationName) {
         const existingName = await this.repository.findOne({
-          type: LOCATION_TYPE.STOREFRONT,
+          type: "storefront",
           locationName: nameToCheck,
           isDeleted: false,
           _id: { $ne: id },
         });
         if (existingName) {
-          throw new ValidationError(
-            "Storefront name already exists",
-            "storefrontName"
-          );
+          throw new ValidationError("Storefront name already exists");
         }
       }
+      updateFields.locationName = nameToCheck;
     }
 
-    // Business logic: Validate and format phone number if provided
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] !== undefined) {
-      const phoneValidation = validatePhoneNumber(
-        updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE],
-        "MM"
-      );
+    // Update address if provided (matches legacy exactly)
+    if (storefrontAddress !== undefined) {
+      updateFields.locationAddress = storefrontAddress.trim();
+    }
+
+    // Validate and update phone number if provided (matches legacy exactly)
+    if (storefrontPhone !== undefined) {
+      const phoneValidation = validatePhoneNumber(storefrontPhone, "MM");
       if (!phoneValidation.isValid) {
-        throw new ValidationError(phoneValidation.error, "storefrontPhone");
+        throw new ValidationError(phoneValidation.error);
       }
-      // Use formatted phone number
-      updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] =
-        phoneValidation.formattedNumber;
+      updateFields.locationPhone = phoneValidation.formattedNumber;
     }
 
-    // Business logic: Check if there are any fields to update
-    if (Object.keys(updateData).length === 0) {
-      throw new ValidationError("No valid fields to update", "body");
+    // Update email if provided (matches legacy exactly)
+    if (storefrontEmail !== undefined) {
+      updateFields.locationEmail = storefrontEmail
+        ? storefrontEmail.toLowerCase().trim()
+        : null;
     }
 
-    // Update the storefront profile
+    // Update manager name if provided (matches legacy exactly)
+    if (managerName !== undefined) {
+      updateFields.managerName = managerName ? managerName.trim() : null;
+    }
+
+    // Update status if provided (matches legacy exactly)
+    if (status !== undefined) {
+      if (!["active", "inactive"].includes(status)) {
+        throw new ValidationError("Status must be either 'active' or 'inactive'");
+      }
+      updateFields.status = status;
+    }
+
+    // Update description if provided (matches legacy exactly)
+    if (description !== undefined) {
+      updateFields.description = description.trim();
+    }
+
+    // Update notes if provided (matches legacy exactly)
+    if (notes !== undefined) {
+      updateFields.notes = notes.trim();
+    }
+
+    // Check if there are any fields to update (matches legacy exactly)
+    if (Object.keys(updateFields).length === 0) {
+      throw new ValidationError("No valid fields to update");
+    }
+
+    // Use DTO for phone formatting if phone is being updated
+    let updateData = updateFields;
+    if (storefrontPhone !== undefined) {
+      const dataWithFormattedPhone = {
+        ...data,
+        storefrontPhone: updateFields.locationPhone,
+      };
+      const dto = new UpdateStorefrontProfileDTO(dataWithFormattedPhone);
+      updateData = dto.toUpdateModel();
+      // Merge with other fields that DTO might not handle
+      Object.keys(updateFields).forEach((key) => {
+        if (updateData[key] === undefined && updateFields[key] !== undefined) {
+          updateData[key] = updateFields[key];
+        }
+      });
+    }
+
+    // Update the storefront profile (matches legacy exactly - uses repository)
     const updatedStorefront = await this.repository.findByIdAndUpdate(
       id,
       { $set: updateData },

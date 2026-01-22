@@ -4,6 +4,9 @@
  * Uses repositories for data access and DTOs for data transformation
  */
 
+import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+import { validatePhoneNumber } from "../shared/utils/phoneValidation.utils.js";
+import mongoose from "mongoose";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
 import {
   CreateWarehouseProfileDTO,
@@ -11,18 +14,10 @@ import {
   LocationProfileResponseDTO,
   LocationProfileListResponseDTO,
 } from "../dtos/locationProfile.dto.js";
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
-import {
-  LOCATION_PROFILE_FIELDS,
-  LOCATION_TYPE,
-  LOCATION_STATUS,
-} from "../types/locationProfile.types.js";
-import { validatePhoneNumber } from "../shared/utils/phoneValidation.utils.js";
-import mongoose from "mongoose";
 
 export class WarehouseProfileService {
   /**
-   * @param {LocationProfileRepository} repository - Injected repository instance
+   * @param {LocationProfileRepository} repository - Injected repository instance (optional, fallback creates new instance)
    */
   constructor(repository) {
     this.repository = repository || new LocationProfileRepository();
@@ -30,59 +25,65 @@ export class WarehouseProfileService {
 
   /**
    * Create new warehouse profile
-   * @param {Object} data - Request data (legacy field names)
-   * @returns {Promise<LocationProfileResponseDTO>} Created warehouse profile DTO
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (warehouseCode, warehouseName, warehouseAddress, warehousePhone, warehouseEmail, managerName, status, description, notes)
+   * @returns {Promise<Object>} Created warehouse profile
    * @throws {ValidationError} If uniqueness check fails or phone validation fails
    */
   async createWarehouseProfile(data) {
-    // Transform data using DTO (handles legacy field names)
-    const dto = new CreateWarehouseProfileDTO(data);
-    const warehouseData = dto.toModel();
+    const {
+      warehouseCode,
+      warehouseName,
+      warehouseAddress,
+      warehousePhone,
+      warehouseEmail,
+      managerName,
+      status,
+      description,
+      notes,
+    } = data;
 
-    // Business logic: Validate phone number
-    const phoneValidation = validatePhoneNumber(
-      warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE],
-      "MM"
-    );
-    if (!phoneValidation.isValid) {
-      throw new ValidationError(phoneValidation.error, "warehousePhone");
-    }
-    // Use formatted phone number
-    warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] =
-      phoneValidation.formattedNumber;
-
-    // Business logic: Check uniqueness of warehouseCode
-    if (warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_CODE]) {
+    // Check if warehouseCode already exists (matches legacy exactly - uses repository)
+    if (warehouseCode) {
       const existingCode = await this.repository.findOne({
-        type: LOCATION_TYPE.WAREHOUSE,
-        locationCode: warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_CODE],
+        type: "warehouse",
+        locationCode: warehouseCode.toUpperCase(),
         isDeleted: false,
       });
       if (existingCode) {
-        throw new ValidationError(
-          "Warehouse code already exists",
-          "warehouseCode"
-        );
+        throw new ValidationError("Warehouse code already exists");
       }
     }
 
-    // Business logic: Check uniqueness of warehouseName
-    if (warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_NAME]) {
+    // Check if warehouseName already exists (matches legacy exactly - uses repository)
+    if (warehouseName) {
       const existingName = await this.repository.findOne({
-        type: LOCATION_TYPE.WAREHOUSE,
-        locationName: warehouseData[LOCATION_PROFILE_FIELDS.LOCATION_NAME],
+        type: "warehouse",
+        locationName: warehouseName.trim(),
         isDeleted: false,
       });
       if (existingName) {
-        throw new ValidationError(
-          "Warehouse name already exists",
-          "warehouseName"
-        );
+        throw new ValidationError("Warehouse name already exists");
       }
     }
 
-    // Create warehouse profile
-    const newWarehouseProfile = await this.repository.create(warehouseData);
+    // Validate phone number (matches legacy exactly)
+    const phoneValidation = validatePhoneNumber(warehousePhone, "MM");
+    if (!phoneValidation.isValid) {
+      throw new ValidationError(phoneValidation.error);
+    }
+
+    // Use formatted phone number in data for DTO
+    const dataWithFormattedPhone = {
+      ...data,
+      warehousePhone: phoneValidation.formattedNumber,
+    };
+
+    // Transform data using DTO
+    const dto = new CreateWarehouseProfileDTO(dataWithFormattedPhone);
+
+    // Create warehouse profile (matches legacy exactly - uses repository)
+    const newWarehouseProfile = await this.repository.create(dto.toModel());
 
     // Return DTO
     return new LocationProfileResponseDTO(newWarehouseProfile);
@@ -90,8 +91,9 @@ export class WarehouseProfileService {
 
   /**
    * Get all warehouse profiles with pagination and filters
+   * Matches legacy logic exactly
    * @param {Object} queryParams - Query parameters
-   * @returns {Promise<LocationProfileListResponseDTO>} List of warehouse profile DTOs with pagination
+   * @returns {Promise<Object>} List of warehouse profiles with pagination
    */
   async getAllWarehouseProfiles(queryParams = {}) {
     const {
@@ -104,43 +106,23 @@ export class WarehouseProfileService {
       includeDeleted = false,
     } = queryParams;
 
-    // Build query - exclude soft deleted by default, filter by warehouse type
-    const query = { type: LOCATION_TYPE.WAREHOUSE };
+    // Build query - exclude soft deleted by default, filter by warehouse type (matches legacy exactly)
+    const query = { type: "warehouse" };
 
     if (!includeDeleted || includeDeleted === "false") {
-      query[LOCATION_PROFILE_FIELDS.IS_DELETED] = false;
+      query.isDeleted = false;
     }
 
     if (status) {
-      query[LOCATION_PROFILE_FIELDS.STATUS] = status;
+      query.status = status;
     }
 
     if (search) {
       query.$or = [
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_NAME]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_CODE]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          [LOCATION_PROFILE_FIELDS.MANAGER_NAME]: {
-            $regex: search,
-            $options: "i",
-          },
-        },
+        { locationName: { $regex: search, $options: "i" } },
+        { locationCode: { $regex: search, $options: "i" } },
+        { locationAddress: { $regex: search, $options: "i" } },
+        { managerName: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -153,7 +135,7 @@ export class WarehouseProfileService {
     const sort = {};
     sort[sortBy] = sortOrder === "asc" ? 1 : -1;
 
-    // Execute query
+    // Execute query (matches legacy exactly - uses repository)
     const warehouses = await this.repository.find(query, {
       sort,
       skip,
@@ -163,130 +145,184 @@ export class WarehouseProfileService {
     // Get total count for pagination
     const total = await this.repository.countDocuments(query);
 
-    // Return list DTO with pagination
     return new LocationProfileListResponseDTO(warehouses, {
-      page: pageNum,
-      limit: limitNum,
-      total,
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      totalItems: total,
+      itemsPerPage: limitNum,
     });
   }
 
   /**
    * Get warehouse profile by ID
+   * Matches legacy logic exactly
    * @param {string} id - Warehouse profile ID
-   * @returns {Promise<LocationProfileResponseDTO>} Warehouse profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Warehouse profile
+   * @throws {ValidationError} If invalid ID format
    * @throws {NotFoundError} If warehouse profile not found
    */
   async getWarehouseProfileById(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid warehouse profile ID format", "id");
+      throw new ValidationError("Invalid warehouse profile ID format");
     }
 
-    // Find warehouse profile
+    // Find warehouse profile (matches legacy exactly - uses repository)
     const warehouse = await this.repository.findOne({
       _id: id,
-      type: LOCATION_TYPE.WAREHOUSE,
+      type: "warehouse",
       isDeleted: false,
     });
 
     if (!warehouse) {
-      throw new NotFoundError("Warehouse profile", id);
+      throw new NotFoundError("Warehouse profile not found", id);
     }
 
-    // Return DTO
     return new LocationProfileResponseDTO(warehouse);
   }
 
   /**
    * Update warehouse profile
+   * Matches legacy logic exactly
    * @param {string} id - Warehouse profile ID
-   * @param {Object} data - Update data (legacy field names)
-   * @returns {Promise<LocationProfileResponseDTO>} Updated warehouse profile DTO
-   * @throws {CastError} If invalid ID format
+   * @param {Object} data - Update data (warehouseCode, warehouseName, warehouseAddress, warehousePhone, warehouseEmail, managerName, status, description, notes)
+   * @returns {Promise<Object>} Updated warehouse profile
+   * @throws {ValidationError} If invalid ID format, uniqueness check fails, phone validation fails, or no fields to update
    * @throws {NotFoundError} If warehouse profile not found
-   * @throws {ValidationError} If uniqueness check fails, phone validation fails, or no fields to update
    */
   async updateWarehouseProfile(id, data) {
-    // Validate MongoDB ObjectId format
+    const {
+      warehouseCode,
+      warehouseName,
+      warehouseAddress,
+      warehousePhone,
+      warehouseEmail,
+      managerName,
+      status,
+      description,
+      notes,
+    } = data;
+
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid warehouse profile ID format", "id");
+      throw new ValidationError("Invalid warehouse profile ID format");
     }
 
-    // Check if warehouse exists and is not deleted
+    // Check if warehouse exists and is not deleted (matches legacy exactly - uses repository)
     const existingWarehouse = await this.repository.findOne({
       _id: id,
-      type: LOCATION_TYPE.WAREHOUSE,
+      type: "warehouse",
       isDeleted: false,
     });
 
     if (!existingWarehouse) {
-      throw new NotFoundError("Warehouse profile", id);
+      throw new NotFoundError("Warehouse profile not found", id);
     }
 
-    // Transform data using DTO (handles legacy field names)
-    const dto = new UpdateWarehouseProfileDTO(data);
-    const updateData = dto.toUpdateModel();
+    // Build update fields object (matches legacy exactly - field by field)
+    const updateFields = {};
 
-    // Business logic: Check if warehouseCode is being updated and validate uniqueness
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_CODE] !== undefined) {
-      const codeToCheck = updateData[LOCATION_PROFILE_FIELDS.LOCATION_CODE];
+    // Check if warehouseCode is being updated and validate uniqueness (matches legacy exactly)
+    if (warehouseCode !== undefined) {
+      const codeToCheck = warehouseCode.toUpperCase().trim();
       if (codeToCheck !== existingWarehouse.locationCode) {
         const existingCode = await this.repository.findOne({
-          type: LOCATION_TYPE.WAREHOUSE,
+          type: "warehouse",
           locationCode: codeToCheck,
           isDeleted: false,
           _id: { $ne: id },
         });
         if (existingCode) {
-          throw new ValidationError(
-            "Warehouse code already exists",
-            "warehouseCode"
-          );
+          throw new ValidationError("Warehouse code already exists");
         }
       }
+      updateFields.locationCode = codeToCheck;
     }
 
-    // Business logic: Check if warehouseName is being updated and validate uniqueness
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME] !== undefined) {
-      const nameToCheck = updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME];
+    // Check if warehouseName is being updated and validate uniqueness (matches legacy exactly)
+    if (warehouseName !== undefined) {
+      const nameToCheck = warehouseName.trim();
       if (nameToCheck !== existingWarehouse.locationName) {
         const existingName = await this.repository.findOne({
-          type: LOCATION_TYPE.WAREHOUSE,
+          type: "warehouse",
           locationName: nameToCheck,
           isDeleted: false,
           _id: { $ne: id },
         });
         if (existingName) {
-          throw new ValidationError(
-            "Warehouse name already exists",
-            "warehouseName"
-          );
+          throw new ValidationError("Warehouse name already exists");
         }
       }
+      updateFields.locationName = nameToCheck;
     }
 
-    // Business logic: Validate and format phone number if provided
-    if (updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] !== undefined) {
-      const phoneValidation = validatePhoneNumber(
-        updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE],
-        "MM"
-      );
+    // Update address if provided (matches legacy exactly)
+    if (warehouseAddress !== undefined) {
+      updateFields.locationAddress = warehouseAddress.trim();
+    }
+
+    // Validate and update phone number if provided (matches legacy exactly)
+    if (warehousePhone !== undefined) {
+      const phoneValidation = validatePhoneNumber(warehousePhone, "MM");
       if (!phoneValidation.isValid) {
-        throw new ValidationError(phoneValidation.error, "warehousePhone");
+        throw new ValidationError(phoneValidation.error);
       }
-      // Use formatted phone number
-      updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] =
-        phoneValidation.formattedNumber;
+      updateFields.locationPhone = phoneValidation.formattedNumber;
     }
 
-    // Business logic: Check if there are any fields to update
-    if (Object.keys(updateData).length === 0) {
-      throw new ValidationError("No valid fields to update", "body");
+    // Update email if provided (matches legacy exactly)
+    if (warehouseEmail !== undefined) {
+      updateFields.locationEmail = warehouseEmail
+        ? warehouseEmail.toLowerCase().trim()
+        : null;
     }
 
-    // Update the warehouse profile
+    // Update manager name if provided (matches legacy exactly)
+    if (managerName !== undefined) {
+      updateFields.managerName = managerName ? managerName.trim() : null;
+    }
+
+    // Update status if provided (matches legacy exactly)
+    if (status !== undefined) {
+      if (!["active", "inactive"].includes(status)) {
+        throw new ValidationError("Status must be either 'active' or 'inactive'");
+      }
+      updateFields.status = status;
+    }
+
+    // Update description if provided (matches legacy exactly)
+    if (description !== undefined) {
+      updateFields.description = description.trim();
+    }
+
+    // Update notes if provided (matches legacy exactly)
+    if (notes !== undefined) {
+      updateFields.notes = notes.trim();
+    }
+
+    // Check if there are any fields to update (matches legacy exactly)
+    if (Object.keys(updateFields).length === 0) {
+      throw new ValidationError("No valid fields to update");
+    }
+
+    // Use DTO for phone formatting if phone is being updated
+    let updateData = updateFields;
+    if (warehousePhone !== undefined) {
+      const dataWithFormattedPhone = {
+        ...data,
+        warehousePhone: updateFields.locationPhone,
+      };
+      const dto = new UpdateWarehouseProfileDTO(dataWithFormattedPhone);
+      updateData = dto.toUpdateModel();
+      // Merge with other fields that DTO might not handle
+      Object.keys(updateFields).forEach((key) => {
+        if (updateData[key] === undefined && updateFields[key] !== undefined) {
+          updateData[key] = updateFields[key];
+        }
+      });
+    }
+
+    // Update the warehouse profile (matches legacy exactly - uses repository)
     const updatedWarehouse = await this.repository.findByIdAndUpdate(
       id,
       { $set: updateData },

@@ -5,9 +5,8 @@
  */
 
 import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.repository.js";
-import GoodsRecievedNote from "../models/goodsRecievedNote.model.js";
-import Purchasing from "../models/purchasing.model.js";
-import Inventory from "../models/inventory.model.js";
+import { PurchasingRepository } from "../repositories/purchasing.repository.js";
+import { InventoryRepository } from "../repositories/inventory.repository.js";
 import {
   CreateGRNDTO,
   UpdateGRNDTO,
@@ -27,14 +26,19 @@ import {
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
 
 export class GoodsRecievedNoteService {
   /**
    * @param {GoodsRecievedNoteRepository} repository - Injected repository instance (optional, fallback creates new instance)
+   * @param {PurchasingRepository} purchasingRepository - Injected purchasing repository instance
+   * @param {InventoryRepository} inventoryRepository - Injected inventory repository instance
    */
-  constructor(repository) {
+  constructor(repository, purchasingRepository, inventoryRepository) {
     this.repository = repository || new GoodsRecievedNoteRepository();
+    this.purchasingRepository =
+      purchasingRepository || new PurchasingRepository();
+    this.inventoryRepository = inventoryRepository || new InventoryRepository();
   }
 
   /**
@@ -70,15 +74,24 @@ export class GoodsRecievedNoteService {
 
     // Validate purchasingId
     if (!purchasingId) {
-      throw new ValidationError("Purchase order ID is required", GRN_FIELDS.PURCHASING_ID);
+      throw new ValidationError(
+        "Purchase order ID is required",
+        GRN_FIELDS.PURCHASING_ID
+      );
     }
 
     if (!mongoose.Types.ObjectId.isValid(purchasingId)) {
-      throw new CastError("Invalid purchase order ID format", GRN_FIELDS.PURCHASING_ID);
+      throw new CastError(
+        "Invalid purchase order ID format",
+        GRN_FIELDS.PURCHASING_ID
+      );
     }
 
     // Fetch PO with products
-    const purchaseOrder = await Purchasing.findById(purchasingId).lean();
+    const purchaseOrder = await this.purchasingRepository.findById(
+      purchasingId,
+      { lean: true }
+    );
     if (!purchaseOrder) {
       throw new NotFoundError("Purchase order", purchasingId);
     }
@@ -93,7 +106,10 @@ export class GoodsRecievedNoteService {
 
     // Check if PO has products
     if (!purchaseOrder.products || purchaseOrder.products.length === 0) {
-      throw new ValidationError("Purchase order has no products", GRN_FIELDS.PURCHASING_ID);
+      throw new ValidationError(
+        "Purchase order has no products",
+        GRN_FIELDS.PURCHASING_ID
+      );
     }
 
     // Validate line items (user provides only goodQuantity and badQuantity)
@@ -166,7 +182,7 @@ export class GoodsRecievedNoteService {
         !inventoryIdValue ||
         !mongoose.Types.ObjectId.isValid(inventoryIdValue)
       ) {
-        const inventoryItem = await Inventory.findOne({
+        const inventoryItem = await this.inventoryRepository.findOne({
           productCode: poProduct.productCode.toUpperCase(),
         });
 
@@ -203,7 +219,10 @@ export class GoodsRecievedNoteService {
       }
 
       if (userItem.goodQuantity < 0 || userItem.badQuantity < 0) {
-        throw new ValidationError("Quantities cannot be negative", GRN_FIELDS.LINE_ITEMS);
+        throw new ValidationError(
+          "Quantities cannot be negative",
+          GRN_FIELDS.LINE_ITEMS
+        );
       }
 
       // Calculate receivedQuantity from goodQuantity + badQuantity
@@ -276,7 +295,10 @@ export class GoodsRecievedNoteService {
           ? userItem.unitPrice
           : poProduct.buyingPrice;
       if (unitPrice < 0) {
-        throw new ValidationError("Unit price cannot be negative", GRN_FIELDS.LINE_ITEMS);
+        throw new ValidationError(
+          "Unit price cannot be negative",
+          GRN_FIELDS.LINE_ITEMS
+        );
       }
 
       // Calculate totalPrice = receivedQuantity * unitPrice
@@ -323,18 +345,22 @@ export class GoodsRecievedNoteService {
       await Purchasing.updateOne(
         {
           _id: purchasingId,
-          "products.inventoryId": grnLineItem[GRN_LINE_ITEM_FIELDS.INVENTORY_ID],
+          "products.inventoryId":
+            grnLineItem[GRN_LINE_ITEM_FIELDS.INVENTORY_ID],
         },
         {
           $inc: {
-            "products.$.receivedQuantity": grnLineItem[GRN_LINE_ITEM_FIELDS.RECEIVED_QUANTITY],
+            "products.$.receivedQuantity":
+              grnLineItem[GRN_LINE_ITEM_FIELDS.RECEIVED_QUANTITY],
           },
         }
       );
     }
 
     // After updating all receivedQuantities, fetch the updated PO to check status updates
-    const updatedPO = await Purchasing.findById(purchasingId).lean();
+    const updatedPO = await this.purchasingRepository.findById(purchasingId, {
+      lean: true,
+    });
 
     // Check ALL products in the PO to ensure their status is correct
     // This handles cases where multiple GRNs might affect different products
@@ -429,7 +455,11 @@ export class GoodsRecievedNoteService {
     // Add date range filter using dateFilter utility
     // Filter by the 'grnDate' field (when the GRN was created/received)
     try {
-      const dateFilter = createDateFilter(queryParams, GRN_FIELDS.GRN_DATE, false);
+      const dateFilter = createDateFilter(
+        queryParams,
+        GRN_FIELDS.GRN_DATE,
+        false
+      );
       Object.assign(query, dateFilter);
     } catch (error) {
       // If it's a CustomError, wrap it as ValidationError

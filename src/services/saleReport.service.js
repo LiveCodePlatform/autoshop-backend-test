@@ -4,24 +4,30 @@
  * Uses repositories for data access
  */
 
-import { OrderRepository } from "../repositories/order.repository.js";
-import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
-import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
-import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
+import {
+  NotFoundError,
+  CastError,
+  ValidationError,
+} from "../errors/errorTypes.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
+import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
+import { OrderRepository } from "../repositories/order.repository.js";
+import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
 
 export class SaleReportService {
   /**
+   * @param {LocationProfileRepository} locationRepository - Injected location repository instance
    * @param {OrderRepository} orderRepository - Injected order repository instance
-   * @param {LocationProfileRepository} locationProfileRepository - Injected location profile repository instance
    * @param {CreditRecordRepository} creditRecordRepository - Injected credit record repository instance
    */
-  constructor(orderRepository, locationProfileRepository, creditRecordRepository) {
-    this.orderRepository = orderRepository;
-    this.locationProfileRepository = locationProfileRepository;
-    this.creditRecordRepository = creditRecordRepository;
+  constructor(locationRepository, orderRepository, creditRecordRepository) {
+    this.locationRepository =
+      locationRepository || new LocationProfileRepository();
+    this.orderRepository = orderRepository || new OrderRepository();
+    this.creditRecordRepository =
+      creditRecordRepository || new CreditRecordRepository();
   }
 
   /**
@@ -43,8 +49,8 @@ export class SaleReportService {
         throw new ValidationError("Invalid storefront ID format");
       }
 
-      // Validate storefront exists
-      storefront = await this.locationProfileRepository.findOne({
+      // Validate storefront exists (matches legacy exactly - uses repository)
+      storefront = await this.locationRepository.findOne({
         _id: storefrontId,
         type: "storefront",
         isDeleted: false,
@@ -91,7 +97,7 @@ export class SaleReportService {
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
-    // Aggregate sale data
+    // Aggregate sale data (matches legacy exactly - uses direct model access)
     const saleReport = await this.orderRepository.aggregate([
       { $match: filter },
       {
@@ -175,8 +181,8 @@ export class SaleReportService {
         throw new ValidationError("Invalid storefront ID format");
       }
 
-      // Validate storefront exists
-      storefront = await this.locationProfileRepository.findOne({
+      // Validate storefront exists (matches legacy exactly - uses repository)
+      storefront = await this.locationRepository.findOne({
         _id: storefrontId,
         type: "storefront",
         isDeleted: false,
@@ -224,7 +230,7 @@ export class SaleReportService {
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
-    // Aggregate payment method breakdown
+    // Aggregate payment method breakdown (matches legacy exactly - uses direct model access)
     const paymentMethodReport = await this.orderRepository.aggregate([
       { $match: filter },
       {
@@ -303,8 +309,8 @@ export class SaleReportService {
         throw new ValidationError("Invalid storefront ID format");
       }
 
-      // Validate storefront exists
-      storefront = await this.locationProfileRepository.findOne({
+      // Validate storefront exists (matches legacy exactly - uses repository)
+      storefront = await this.locationRepository.findOne({
         _id: storefrontId,
         type: "storefront",
         isDeleted: false,
@@ -352,14 +358,14 @@ export class SaleReportService {
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
-    // Get all credit orders
+    // Get all credit orders (matches legacy exactly - uses direct model access)
     const creditOrders = await this.orderRepository.find(filter, {
       select: "_id orderNumber finalAmount paidAmount paymentMethod createdAt",
     });
 
     const orderIds = creditOrders.map((order) => order._id);
 
-    // Get all credit records for these orders
+    // Get all credit records for these orders (matches legacy exactly - uses direct model access)
     const creditRecords = await this.creditRecordRepository.find(
       {
         orderId: { $in: orderIds },
@@ -508,8 +514,8 @@ export class SaleReportService {
         throw new ValidationError("Invalid storefront ID format");
       }
 
-      // Validate storefront exists
-      storefront = await this.locationProfileRepository.findOne({
+      // Validate storefront exists (matches legacy exactly - uses repository)
+      storefront = await this.locationRepository.findOne({
         _id: storefrontId,
         type: "storefront",
         isDeleted: false,
@@ -556,7 +562,7 @@ export class SaleReportService {
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
-    // Aggregate product sales statistics
+    // Aggregate product sales statistics (matches legacy exactly - uses direct model access)
     const productSalesReport = await this.orderRepository.aggregate([
       { $match: filter },
       // Unwind the ordersProducts array to get individual products

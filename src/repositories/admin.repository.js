@@ -130,6 +130,15 @@ export class AdminRepository {
     // Save the document (this will run all validators with the complete merged document)
     return await document.save();
   }
+
+  /**
+   * Find admin by ID and delete
+   * @param {string} id - Admin ID
+   * @returns {Promise<Object|null>} Deleted admin document or null
+   */
+  async findByIdAndDelete(id) {
+    return await Admin.findByIdAndDelete(id);
+  }
 }
 
 export default AdminRepository;

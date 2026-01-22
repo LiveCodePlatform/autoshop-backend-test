@@ -150,6 +150,50 @@ export class WarehouseInventoryRepository {
     
     return updated;
   }
+
+  /**
+   * Find one warehouse inventory and update (with upsert support)
+   * @param {Object} query - MongoDB query object
+   * @param {Object} updateData - Update data
+   * @param {Object} options - Options including session, upsert, etc.
+   * @returns {Promise<Object|null>} Updated warehouse inventory document or null
+   */
+  async findOneAndUpdate(query, updateData, options = {}) {
+    return await WarehouseInventory.findOneAndUpdate(query, updateData, options);
+  }
+
+  /**
+   * Find one warehouse inventory with session support
+   * @param {Object} query - MongoDB query object
+   * @param {Object} options - Options including session
+   * @returns {Promise<Object|null>} Warehouse inventory document or null
+   */
+  async findOne(query, options = {}) {
+    const { session } = options;
+    let queryBuilder = WarehouseInventory.findOne(query);
+    
+    if (session) {
+      queryBuilder = queryBuilder.session(session);
+    }
+    
+    return await queryBuilder.exec();
+  }
+
+  /**
+   * Create warehouse inventory with session support
+   * @param {Object} data - Warehouse inventory data
+   * @param {Object} options - Options including session
+   * @returns {Promise<Object>} Created warehouse inventory document
+   */
+  async create(data, options = {}) {
+    const { session } = options;
+    if (session) {
+      return await WarehouseInventory.create([data], { session }).then(
+        (records) => records[0]
+      );
+    }
+    return await WarehouseInventory.create(data);
+  }
 }
 
 export default WarehouseInventoryRepository;

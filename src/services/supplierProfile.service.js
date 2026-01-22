@@ -4,6 +4,8 @@
  * Uses repositories for data access and DTOs for data transformation
  */
 
+import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
+import mongoose from "mongoose";
 import { SupplierProfileRepository } from "../repositories/supplierProfile.repository.js";
 import {
   CreateSupplierProfileDTO,
@@ -11,9 +13,6 @@ import {
   SupplierProfileResponseDTO,
   SupplierProfileListResponseDTO,
 } from "../dtos/supplierProfile.dto.js";
-import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
-import { SUPPLIER_PROFILE_FIELDS } from "../types/supplierProfile.types.js";
-import mongoose from "mongoose";
 
 export class SupplierProfileService {
   /**
@@ -25,25 +24,33 @@ export class SupplierProfileService {
 
   /**
    * Create new supplier profile
-   * @param {Object} data - Request data
-   * @returns {Promise<SupplierProfileResponseDTO>} Created supplier profile DTO
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (supplierName, contactNumber)
+   * @returns {Promise<Object>} Created supplier profile
    */
   async createSupplierProfile(data) {
+    const { supplierName, contactNumber } = data;
+
+    // Validate required fields (matches legacy exactly)
+    if (!supplierName || !contactNumber) {
+      throw new ValidationError("All fields are required");
+    }
+
     // Transform data using DTO
     const dto = new CreateSupplierProfileDTO(data);
-    const supplierProfileData = dto.toModel();
-
-    // Create supplier profile
-    const newSupplierProfile = await this.repository.create(supplierProfileData);
+    
+    // Create supplier profile (matches legacy exactly - uses repository)
+    const supplier = await this.repository.create(dto.toModel());
 
     // Return DTO
-    return new SupplierProfileResponseDTO(newSupplierProfile);
+    return new SupplierProfileResponseDTO(supplier);
   }
 
   /**
    * Get all supplier profiles with pagination and filters
+   * Matches legacy logic exactly
    * @param {Object} queryParams - Query parameters (page, limit, search, sortBy, sortOrder, includeDeleted, isDeleted)
-   * @returns {Promise<SupplierProfileListResponseDTO>} List of supplier profile DTOs with pagination
+   * @returns {Promise<Object>} List of supplier profiles with pagination
    */
   async getAllSupplierProfiles(queryParams = {}) {
     const {
@@ -56,236 +63,197 @@ export class SupplierProfileService {
       isDeleted,
     } = queryParams;
 
-    // Build query
-    const query = {};
-
-    // Handle isDeleted filter
-    if (isDeleted !== undefined) {
-      // If isDeleted is explicitly provided, use its boolean value
-      query[SUPPLIER_PROFILE_FIELDS.IS_DELETED] =
-        isDeleted === "true" || isDeleted === true;
-    } else if (!includeDeleted || includeDeleted === "false") {
-      // If includeDeleted is false or not provided, default to non-deleted only
-      query[SUPPLIER_PROFILE_FIELDS.IS_DELETED] = false;
-    }
-    // If includeDeleted is true and isDeleted is not provided, don't filter by isDeleted (show all)
-
-    // Search filter
-    if (search) {
-      query[SUPPLIER_PROFILE_FIELDS.SUPPLIER_NAME] = {
-        $regex: search,
-        $options: "i",
-      };
-    }
-
-    // Pagination
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
-
-    // Sort
     const sort = {};
     sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+    let query = {};
 
-    // Execute query
-    const supplierProfiles = await this.repository.find(query, {
+    // Handle isDeleted filter (matches legacy exactly)
+    if (isDeleted !== undefined) {
+      // If isDeleted is explicitly provided, use its boolean value
+      query.isDeleted = isDeleted === "true" || isDeleted === true;
+    } else if (!includeDeleted || includeDeleted === "false") {
+      // If includeDeleted is false or not provided, default to non-deleted only
+      query.isDeleted = false;
+    }
+    // If includeDeleted is true and isDeleted is not provided, don't filter by isDeleted (show all)
+
+    if (search) {
+      query.supplierName = { $regex: search, $options: "i" };
+    }
+
+    // Execute query (matches legacy exactly - uses repository)
+    let suppliers = await this.repository.find(query, {
       sort,
       skip,
       limit: limitNum,
     });
+    let total = await this.repository.countDocuments(query);
 
-    // Get total count for pagination
-    const total = await this.repository.countDocuments(query);
-
-    // Return list DTO with pagination (DTO expects raw models, transforms internally)
-    return new SupplierProfileListResponseDTO(supplierProfiles, {
-      page: pageNum,
-      limit: limitNum,
-      total,
+    return new SupplierProfileListResponseDTO(suppliers, {
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      totalItems: total,
+      itemsPerPage: limitNum,
     });
   }
 
   /**
    * Get supplier profile by ID
+   * Matches legacy logic exactly
    * @param {string} id - Supplier profile ID
-   * @returns {Promise<SupplierProfileResponseDTO>} Supplier profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Supplier profile
    * @throws {NotFoundError} If supplier profile not found
    */
   async getSupplierProfileById(id) {
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid supplier profile ID format", "id");
+    // Find supplier profile (matches legacy exactly - uses repository)
+    const supplier = await this.repository.findById(id);
+    if (!supplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
-
-    // Find supplier profile
-    const supplierProfile = await this.repository.findById(id);
-
-    if (!supplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
-    }
-
-    // Return DTO
-    return new SupplierProfileResponseDTO(supplierProfile);
+    return new SupplierProfileResponseDTO(supplier);
   }
 
   /**
    * Update supplier profile
+   * Matches legacy logic exactly
    * @param {string} id - Supplier profile ID
-   * @param {Object} data - Update data
-   * @returns {Promise<SupplierProfileResponseDTO>} Updated supplier profile DTO
-   * @throws {CastError} If invalid ID format
+   * @param {Object} data - Update data (supplierName, contactNumber)
+   * @returns {Promise<Object>} Updated supplier profile
+   * @throws {ValidationError} If invalid ID format
    * @throws {NotFoundError} If supplier profile not found
    */
   async updateSupplierProfile(id, data) {
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid supplier profile ID format", "id");
-    }
+    const { supplierName, contactNumber } = data;
 
-    // Check if supplier profile exists
-    const existingSupplierProfile = await this.repository.findById(id);
-    if (!existingSupplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    // Validate MongoDB ObjectId format (matches legacy exactly)
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ValidationError("Invalid supplier profile ID format");
     }
 
     // Transform data using DTO
     const dto = new UpdateSupplierProfileDTO(data);
     const updateData = dto.toUpdateModel();
 
-    // Update supplier profile
-    const updatedSupplierProfile = await this.repository.findByIdAndUpdate(
+    // Update supplier profile (matches legacy exactly - uses repository with $set)
+    const supplier = await this.repository.findByIdAndUpdate(
       id,
       { $set: updateData },
       { new: true, runValidators: true }
     );
 
-    if (!updatedSupplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    if (!supplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
     // Return DTO
-    return new SupplierProfileResponseDTO(updatedSupplierProfile);
+    return new SupplierProfileResponseDTO(supplier);
   }
 
   /**
    * Soft delete supplier profile
+   * Matches legacy logic exactly
    * @param {string} id - Supplier profile ID
-   * @returns {Promise<SupplierProfileResponseDTO>} Soft deleted supplier profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Soft deleted supplier profile
+   * @throws {ValidationError} If invalid ID format or already soft deleted
    * @throws {NotFoundError} If supplier profile not found
-   * @throws {ValidationError} If supplier profile is already soft deleted
    */
   async softDeleteSupplierProfile(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid supplier profile ID format", "id");
+      throw new ValidationError("Invalid supplier profile ID format");
     }
 
-    // Find supplier profile
-    const supplierProfile = await this.repository.findById(id);
-    if (!supplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    // Find supplier profile (matches legacy exactly - uses repository)
+    const supplier = await this.repository.findById(id);
+    if (!supplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
-    // Business logic: Check if already soft deleted
-    if (supplierProfile[SUPPLIER_PROFILE_FIELDS.IS_DELETED]) {
-      throw new ValidationError(
-        "Supplier profile is already soft deleted",
-        SUPPLIER_PROFILE_FIELDS.IS_DELETED
-      );
+    // Check if already soft deleted (matches legacy exactly)
+    if (supplier.isDeleted) {
+      throw new ValidationError("Supplier profile is already soft deleted");
     }
 
-    // Soft delete supplier profile
-    const softDeletedSupplierProfile = await this.repository.findByIdAndUpdate(
+    // Soft delete supplier profile (matches legacy exactly - uses Date.now() instead of new Date())
+    const softDeletedSupplier = await this.repository.findByIdAndUpdate(
       id,
-      {
-        $set: {
-          [SUPPLIER_PROFILE_FIELDS.IS_DELETED]: true,
-          [SUPPLIER_PROFILE_FIELDS.DELETED_AT]: new Date(),
-        },
-      },
+      { $set: { isDeleted: true, deletedAt: Date.now() } },
       { new: true, runValidators: true }
     );
 
-    if (!softDeletedSupplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    if (!softDeletedSupplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
     // Return DTO
-    return new SupplierProfileResponseDTO(softDeletedSupplierProfile);
+    return new SupplierProfileResponseDTO(softDeletedSupplier);
   }
 
   /**
    * Restore soft deleted supplier profile
+   * Matches legacy logic exactly
    * @param {string} id - Supplier profile ID
-   * @returns {Promise<SupplierProfileResponseDTO>} Restored supplier profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Restored supplier profile
+   * @throws {ValidationError} If invalid ID format or not soft deleted
    * @throws {NotFoundError} If supplier profile not found
-   * @throws {ValidationError} If supplier profile is not soft deleted
    */
   async restoreSupplierProfile(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid supplier profile ID format", "id");
+      throw new ValidationError("Invalid supplier profile ID format");
     }
 
-    // Find supplier profile
-    const supplierProfile = await this.repository.findById(id);
-    if (!supplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    // Find supplier profile (matches legacy exactly - uses repository)
+    const supplier = await this.repository.findById(id);
+    if (!supplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
-    // Business logic: Check if not soft deleted
-    if (!supplierProfile[SUPPLIER_PROFILE_FIELDS.IS_DELETED]) {
-      throw new ValidationError(
-        "Supplier profile is not soft deleted",
-        SUPPLIER_PROFILE_FIELDS.IS_DELETED
-      );
+    // Check if not soft deleted (matches legacy exactly)
+    if (!supplier.isDeleted) {
+      throw new ValidationError("Supplier profile is not soft deleted");
     }
 
-    // Restore supplier profile
-    const restoredSupplierProfile = await this.repository.findByIdAndUpdate(
+    // Restore supplier profile (matches legacy exactly - uses repository)
+    const restoredSupplier = await this.repository.findByIdAndUpdate(
       id,
-      {
-        $set: {
-          [SUPPLIER_PROFILE_FIELDS.IS_DELETED]: false,
-          [SUPPLIER_PROFILE_FIELDS.DELETED_AT]: null,
-        },
-      },
+      { $set: { isDeleted: false, deletedAt: null } },
       { new: true, runValidators: true }
     );
 
-    if (!restoredSupplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    if (!restoredSupplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
     // Return DTO
-    return new SupplierProfileResponseDTO(restoredSupplierProfile);
+    return new SupplierProfileResponseDTO(restoredSupplier);
   }
 
   /**
    * Hard delete supplier profile
+   * Matches legacy logic exactly
    * @param {string} id - Supplier profile ID
-   * @returns {Promise<SupplierProfileResponseDTO>} Deleted supplier profile DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Deleted supplier profile
+   * @throws {ValidationError} If invalid ID format
    * @throws {NotFoundError} If supplier profile not found
    */
   async deleteSupplierProfile(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid supplier profile ID format", "id");
+      throw new ValidationError("Invalid supplier profile ID format");
     }
 
-    // Delete supplier profile
-    const deletedSupplierProfile = await this.repository.findByIdAndDelete(id);
-
-    if (!deletedSupplierProfile) {
-      throw new NotFoundError("Supplier profile", id);
+    // Delete supplier profile (matches legacy exactly - uses repository)
+    const deletedSupplier = await this.repository.findByIdAndDelete(id);
+    if (!deletedSupplier) {
+      throw new NotFoundError("Supplier profile not found", id);
     }
 
     // Return DTO
-    return new SupplierProfileResponseDTO(deletedSupplierProfile);
+    return new SupplierProfileResponseDTO(deletedSupplier);
   }
 }
 

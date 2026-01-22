@@ -6,7 +6,7 @@
 /**
  * Generic number generator utility
  * Generates sequential numbers with date-based prefixes
- * 
+ *
  * @param {Object} options - Configuration options
  * @param {Function} options.queryFn - Function to query the latest record
  *   Should accept: (query, options) => Promise<Array|Object>
@@ -33,10 +33,10 @@ export const generateSequentialNumber = async ({
 }) => {
   const now = new Date();
   const year = now.getFullYear();
-  
+
   let datePart = "";
   let expectedParts = 0;
-  
+
   if (dateFormat === "daily") {
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
@@ -46,11 +46,13 @@ export const generateSequentialNumber = async ({
     datePart = String(year);
     expectedParts = 3; // ["PREFIX", "YYYY", "NNNN"]
   } else {
-    throw new Error(`Invalid dateFormat: ${dateFormat}. Must be "daily" or "yearly"`);
+    throw new Error(
+      `Invalid dateFormat: ${dateFormat}. Must be "daily" or "yearly"`
+    );
   }
-  
+
   const prefixStr = `${prefix}-${datePart}-`;
-  
+
   // Build query
   const query = {
     [fieldName]: new RegExp(
@@ -58,15 +60,15 @@ export const generateSequentialNumber = async ({
     ),
     ...additionalFilters,
   };
-  
+
   // Query options
   const queryOptions = {
     sort: { createdAt: -1 },
   };
-  
+
   // Execute query
   const result = await queryFn(query, queryOptions);
-  
+
   // Handle different return types (array from repository.find vs object from model.findOne)
   let latestRecord = null;
   if (Array.isArray(result)) {
@@ -74,7 +76,7 @@ export const generateSequentialNumber = async ({
   } else {
     latestRecord = result;
   }
-  
+
   let sequence = 1;
   if (latestRecord && latestRecord[fieldName]) {
     // Extract sequence number from format
@@ -87,41 +89,19 @@ export const generateSequentialNumber = async ({
       }
     }
   }
-  
+
   // Validate sequence doesn't exceed limit
   if (maxSequence !== null && sequence > maxSequence) {
-    const errorMsg = maxSequenceError || 
+    const errorMsg =
+      maxSequenceError ||
       `Maximum sequence limit reached. Maximum ${maxSequence} allowed.`;
     throw new Error(errorMsg);
   }
-  
+
   // Format: PREFIX-DATEPART-NNNN (e.g., PO-2024-01-14-000001 or TRF-2024-0001)
   return `${prefixStr}${sequence.toString().padStart(sequencePadding, "0")}`;
 };
 
-/**
- * Generate PO number
- * Format: PO-YYYY-MM-DD-NNNNNN (e.g., PO-2024-01-14-000001)
- * 
- * @param {Object} PurchasingModel - The Purchasing mongoose model
- * @returns {Promise<string>} Generated PO number
- */
-export const generatePONumber = async (PurchasingModel) => {
-  return generateSequentialNumber({
-    queryFn: async (query, options) => {
-      return await PurchasingModel.findOne(query)
-        .sort(options.sort)
-        .select("poNumber");
-    },
-    prefix: "PO",
-    fieldName: "poNumber",
-    sequencePadding: 6,
-    dateFormat: "daily",
-    additionalFilters: {},
-  });
-};
-
 export default {
-  generatePONumber,
   generateSequentialNumber,
 };

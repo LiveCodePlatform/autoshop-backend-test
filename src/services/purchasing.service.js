@@ -19,99 +19,79 @@ import {
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-import Inventory from "../models/inventory.model.js";
-import { generatePONumber } from "../shared/utils/purchasing.utils.js";
-import Purchasing from "../models/purchasing.model.js";
+import { InventoryRepository } from "../repositories/inventory.repository.js";
 
 export class PurchasingService {
   /**
    * @param {PurchasingRepository} repository - Injected repository instance (optional, fallback creates new instance)
+   * @param {InventoryRepository} inventoryRepository - Injected inventory repository instance
    */
-  constructor(repository) {
+  constructor(repository, inventoryRepository) {
     this.repository = repository || new PurchasingRepository();
+    this.inventoryRepository = inventoryRepository || new InventoryRepository();
   }
 
   /**
    * Create new purchasing order
-   * @param {Object} data - Request data
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (supplierId, products, note, totalAmount)
    * @param {Object} user - Authenticated user object (contains _id)
    * @returns {Promise<PurchasingResponseDTO>} Created purchasing DTO
-   * @throws {CastError} If invalid supplierId or purchasedBy format
    * @throws {ValidationError} If products are invalid or inventory items not found
    */
   async createPurchase(data, user) {
-    const { products, supplierId } = data;
+    const { supplierId, products, note, totalAmount } = data;
     const purchasedBy = user._id;
 
-    // Validate required fields
+    // Validate required fields (matches legacy exactly)
     if (!supplierId || !products || products.length === 0) {
       throw new ValidationError("Supplier ID and products are required");
     }
 
-    // Validate ObjectId formats
-    if (!mongoose.Types.ObjectId.isValid(supplierId)) {
-      throw new CastError("Invalid supplier ID format", "supplierId");
-    }
-    if (!mongoose.Types.ObjectId.isValid(purchasedBy)) {
-      throw new CastError("Invalid purchased by ID format", "purchasedBy");
-    }
-
-    // Fetch product details for each product in the purchase
+    // Fetch product details for each product in the purchase (matches legacy exactly)
     const productsWithDetails = await Promise.all(
       products.map(async (item) => {
-        if (!item[PRODUCT_FIELDS.INVENTORY_ID] || !item[PRODUCT_FIELDS.PURCHASE_QUANTITY]) {
+        if (!item.inventoryId || !item.purchaseQuantity) {
           throw new ValidationError(
             `Product must have inventoryId and purchaseQuantity`
           );
         }
 
-        const inventoryId = item[PRODUCT_FIELDS.INVENTORY_ID];
-        if (!mongoose.Types.ObjectId.isValid(inventoryId)) {
-          throw new CastError("Invalid inventory ID format", "inventoryId");
-        }
-
-        const inventoryItem = await Inventory.findById(inventoryId);
+        const inventoryItem = await this.inventoryRepository.findById(item.inventoryId);
 
         if (!inventoryItem) {
-          throw new NotFoundError("Product", inventoryId);
+          throw new NotFoundError(
+            `Product with ID ${item.inventoryId} not found`,
+            item.inventoryId
+          );
         }
 
         return {
-          [PRODUCT_FIELDS.INVENTORY_ID]: inventoryItem._id,
-          [PRODUCT_FIELDS.PRODUCT_NAME]: inventoryItem.productName,
-          [PRODUCT_FIELDS.PRODUCT_CODE]: inventoryItem.productCode,
-          [PRODUCT_FIELDS.BUYING_PRICE]: inventoryItem.buyingPrice,
-          [PRODUCT_FIELDS.PURCHASE_QUANTITY]: item[PRODUCT_FIELDS.PURCHASE_QUANTITY],
+          inventoryId: inventoryItem._id,
+          productName: inventoryItem.productName,
+          productCode: inventoryItem.productCode,
+          buyingPrice: inventoryItem.buyingPrice,
+          purchaseQuantity: item.purchaseQuantity,
         };
       })
     );
 
-    // Generate PO number
-    const poNumber = await generatePONumber(Purchasing);
+    // Generate PO number (matches legacy exactly - uses model static method)
+    const poNumber = await Purchasing.generatePONumber();
 
-    // Prepare data with generated PO number and user ID
-    const purchaseData = {
-      ...data,
-      [PURCHASING_FIELDS.PO_NUMBER]: poNumber,
-      [PURCHASING_FIELDS.PURCHASED_BY]: purchasedBy,
-      [PURCHASING_FIELDS.PRODUCTS]: productsWithDetails,
-    };
-
-    // Transform data using DTO
-    const dto = new CreatePurchasingDTO(purchaseData);
-    const modelData = dto.toModel();
-
-    // Create purchasing order
-    const newPurchase = await this.repository.create(modelData);
-
-    // Fetch with populated fields for response
-    const populatedPurchase = await this.repository.findById(newPurchase._id, {
-      purchasedBy: "name role",
-      supplierId: "supplierName supplierCode",
+    // Create purchase (matches legacy exactly - direct creation, no DTO transformation)
+    const purchase = await this.repository.create({
+      poNumber,
+      supplierId,
+      products: productsWithDetails,
+      note: note || "No note available",
+      totalAmount,
+      status: "pending",
+      purchasedBy,
     });
 
     // Return DTO
-    return new PurchasingResponseDTO(populatedPurchase);
+    return new PurchasingResponseDTO(purchase);
   }
 
   /**
@@ -170,20 +150,16 @@ export class PurchasingService {
     }
 
     // Add date range filter using dateFilter utility
-    // Filter by the 'createdAt' field (when the purchase was created)
+    // Filter by the 'createdAt' field (when the purchase was created) (matches legacy exactly)
     try {
-      const dateFilter = createDateFilter(
-        { startDate, endDate },
-        "createdAt",
-        false
-      );
+      const dateFilter = createDateFilter(queryParams, "createdAt", false);
       Object.assign(query, dateFilter);
     } catch (error) {
-      // If it's a CustomError, convert to ValidationError
+      // If it's a CustomError, pass it through (matches legacy exactly)
       if (error instanceof CustomError) {
-        throw new ValidationError(error.message);
+        throw error;
       }
-      // For other errors, wrap and throw
+      // For other errors, wrap and throw (matches legacy exactly)
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
@@ -239,65 +215,46 @@ export class PurchasingService {
     // Get total count for pagination
     const total = await this.repository.countDocuments(query);
 
-    // Return list DTO with pagination
-    // Note: We need to create DTOs from the purchases with totalRemainingQuantity
-    // Since PurchasingListResponseDTO expects raw models, we'll create it manually
-    // but we need to preserve the totalRemainingQuantity field
-    const purchaseDTOs = purchasesWithTotalRemaining.map(
-      (purchase) => {
-        const dto = new PurchasingResponseDTO(purchase);
-        const json = dto.toJSON();
-        // Add totalRemainingQuantity to the response
-        json.totalRemainingQuantity = purchase.totalRemainingQuantity;
-        return json;
-      }
-    );
-
+    // Return response (matches legacy structure exactly)
     return {
-      purchases: purchaseDTOs,
+      data: purchasesWithTotalRemaining,
       pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
+        currentPage: pageNum,
         totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        itemsPerPage: limitNum,
       },
     };
   }
 
   /**
    * Get purchasing order by ID
+   * Matches legacy logic exactly
    * @param {string} id - Purchasing order ID
    * @param {Object} options - Options (includeDeleted)
    * @returns {Promise<PurchasingResponseDTO>} Purchasing DTO
-   * @throws {CastError} If invalid ID format
    * @throws {NotFoundError} If purchasing order not found
    */
   async getPurchaseById(id, options = {}) {
     const { includeDeleted = false } = options;
 
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid purchase order ID format", "id");
-    }
+    // Build query (matches legacy exactly - exclude deleted by default)
+    const query = includeDeleted ? { _id: id } : { _id: id, isDeleted: false };
 
-    // Build query
-    const query = includeDeleted ? { _id: id } : { _id: id, [PURCHASING_FIELDS.IS_DELETED]: false };
-
-    // Find purchase with populated fields
-    const purchase = await this.repository.findOne(query);
-
-    if (!purchase) {
-      throw new NotFoundError("Purchase", id);
-    }
-
-    // Populate fields
-    const populatedPurchase = await this.repository.findById(purchase._id, {
-      purchasedBy: "name role",
-      supplierId: "supplierName supplierCode",
+    // Find purchase with populate (matches legacy exactly - uses repository)
+    const purchase = await this.repository.findOne(query, {
+      populate: {
+        purchasedBy: "name role",
+        supplierId: "supplierName contactNumber",
+      },
     });
 
+    if (!purchase) {
+      throw new NotFoundError("Purchase not found", id);
+    }
+
     // Return DTO
-    return new PurchasingResponseDTO(populatedPurchase);
+    return new PurchasingResponseDTO(purchase);
   }
 
   /**
@@ -348,125 +305,85 @@ export class PurchasingService {
       );
     }
 
-    // Update the status
-    const updatedPurchase = await this.repository.findOneAndUpdate(
-      { _id: id, [PURCHASING_FIELDS.IS_DELETED]: false },
-      { $set: { [PURCHASING_FIELDS.STATUS]: status } },
+    // Update the status (matches legacy exactly - uses findOneAndUpdate)
+    const purchase = await this.repository.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { status },
       { new: true, runValidators: true }
     );
 
-    if (!updatedPurchase) {
-      throw new NotFoundError("Purchase", id);
+    if (!purchase) {
+      throw new NotFoundError("Purchase order not found", id);
     }
 
-    // Fetch with populated fields for response
-    const populatedPurchase = await this.repository.findById(updatedPurchase._id, {
-      purchasedBy: "name role",
-      supplierId: "supplierName supplierCode",
-    });
-
     // Return DTO
-    return new PurchasingResponseDTO(populatedPurchase);
+    return new PurchasingResponseDTO(purchase);
   }
 
   /**
    * Soft delete purchasing order
+   * Matches legacy logic exactly
    * @param {string} id - Purchasing order ID
    * @returns {Promise<PurchasingResponseDTO>} Soft deleted purchasing DTO
    * @throws {CastError} If invalid ID format
    * @throws {NotFoundError} If purchasing order not found
-   * @throws {ValidationError} If purchasing order is already soft deleted
    */
   async softDeletePurchase(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError("Invalid purchase order ID format", "id");
     }
 
-    // Find the purchase order
+    // Find the purchase order (matches legacy exactly)
     const purchase = await this.repository.findOne({
       _id: id,
-      [PURCHASING_FIELDS.IS_DELETED]: false,
+      isDeleted: false,
     });
 
     if (!purchase) {
-      throw new NotFoundError("Purchase", id);
+      throw new NotFoundError("Purchase order not found", id);
     }
 
-    // Soft delete: set isDeleted to true and deletedAt to current date
-    const softDeletedPurchase = await this.repository.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          [PURCHASING_FIELDS.IS_DELETED]: true,
-          [PURCHASING_FIELDS.DELETED_AT]: new Date(),
-        },
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!softDeletedPurchase) {
-      throw new NotFoundError("Purchase", id);
-    }
-
-    // Fetch with populated fields for response
-    const populatedPurchase = await this.repository.findById(softDeletedPurchase._id, {
-      purchasedBy: "name role",
-      supplierId: "supplierName supplierCode",
-    });
+    // Soft delete: set isDeleted to true and deletedAt to current date (matches legacy exactly)
+    purchase.isDeleted = true;
+    purchase.deletedAt = new Date();
+    await purchase.save();
 
     // Return DTO
-    return new PurchasingResponseDTO(populatedPurchase);
+    return new PurchasingResponseDTO(purchase);
   }
 
   /**
    * Restore soft deleted purchasing order
+   * Matches legacy logic exactly
    * @param {string} id - Purchasing order ID
    * @returns {Promise<PurchasingResponseDTO>} Restored purchasing DTO
    * @throws {CastError} If invalid ID format
    * @throws {NotFoundError} If purchasing order not found
-   * @throws {ValidationError} If purchasing order is not soft deleted
    */
   async restorePurchase(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError("Invalid purchase order ID format", "id");
     }
 
-    // Find the purchase order
+    // Find the purchase order (matches legacy exactly)
     const purchase = await this.repository.findOne({
       _id: id,
-      [PURCHASING_FIELDS.IS_DELETED]: true,
+      isDeleted: true,
     });
 
     if (!purchase) {
-      throw new NotFoundError("Purchase", id);
+      throw new NotFoundError("Purchase order not found", id);
     }
 
-    // Restore: set isDeleted to false and deletedAt to null
-    const restoredPurchase = await this.repository.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          [PURCHASING_FIELDS.IS_DELETED]: false,
-          [PURCHASING_FIELDS.DELETED_AT]: null,
-        },
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!restoredPurchase) {
-      throw new NotFoundError("Purchase", id);
-    }
-
-    // Fetch with populated fields for response
-    const populatedPurchase = await this.repository.findById(restoredPurchase._id, {
-      purchasedBy: "name role",
-      supplierId: "supplierName supplierCode",
-    });
+    // Restore: set isDeleted to false and deletedAt to null (matches legacy exactly)
+    purchase.isDeleted = false;
+    purchase.deletedAt = null;
+    await purchase.save();
 
     // Return DTO
-    return new PurchasingResponseDTO(populatedPurchase);
+    return new PurchasingResponseDTO(purchase);
   }
 }
 

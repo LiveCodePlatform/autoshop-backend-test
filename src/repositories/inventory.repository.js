@@ -11,17 +11,35 @@ export class InventoryRepository {
     return await Inventory.create(data);
   }
 
-  async findById(id) {
-    return await Inventory.findById(id);
+  async findById(id, options = {}) {
+    const { lean } = options;
+    let query = Inventory.findById(id);
+
+    if (lean) {
+      query = query.lean();
+    }
+
+    return await query.exec();
   }
 
-  async findOne(query) {
-    return await Inventory.findOne(query);
+  async findOne(query, options = {}) {
+    const { lean } = options;
+    let queryBuilder = Inventory.findOne(query);
+
+    if (lean) {
+      queryBuilder = queryBuilder.lean();
+    }
+
+    return await queryBuilder.exec();
   }
 
   async find(query, options = {}) {
-    const { sort, skip, limit } = options;
+    const { sort, skip, limit, session } = options;
     let queryBuilder = Inventory.find(query);
+
+    if (session) {
+      queryBuilder = queryBuilder.session(session);
+    }
 
     if (sort) queryBuilder = queryBuilder.sort(sort);
     if (skip !== undefined) queryBuilder = queryBuilder.skip(skip);

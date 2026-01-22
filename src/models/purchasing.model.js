@@ -1,4 +1,13 @@
 import mongoose from "mongoose";
+import { generateSequentialNumber } from "../shared/utils/generateSequentialNumber.utils.js";
+import {
+  PURCHASING_STATUS,
+  PRODUCT_STATUS,
+  PURCHASING_DEFAULTS,
+  PRODUCT_DEFAULTS,
+} from "../types/purchasing.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/purchasing.validator.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -9,8 +18,11 @@ const productSchema = new mongoose.Schema(
     },
     productStatus: {
       type: String,
-      enum: ["pending", "seperated"],
-      default: "pending",
+      enum: {
+        values: Object.values(PRODUCT_STATUS), // ✅ Uses types for enum values
+        message: `Product status must be ${PRODUCT_STATUS.PENDING} or ${PRODUCT_STATUS.SEPERATED}`,
+      },
+      default: PRODUCT_DEFAULTS.PRODUCT_STATUS, // ✅ Uses types for default
     },
     productName: {
       type: String,
@@ -27,8 +39,11 @@ const productSchema = new mongoose.Schema(
     },
     receivedQuantity: {
       type: Number,
-      default: 0,
-      min: [0, "Received quantity cannot be negative"],
+      default: PRODUCT_DEFAULTS.RECEIVED_QUANTITY, // ✅ Uses types for default
+      min: [
+        VALIDATION_CONSTRAINTS.RECEIVED_QUANTITY.MIN,
+        "Received quantity cannot be negative",
+      ],
       // Tracks total received quantity from all GRNs
       // remainingQuantity = purchaseQuantity - receivedQuantity
     },
@@ -38,11 +53,11 @@ const productSchema = new mongoose.Schema(
     },
     isDeleted: {
       type: Boolean,
-      default: false,
+      default: PRODUCT_DEFAULTS.IS_DELETED, // ✅ Uses types for default
     },
     deletedAt: {
       type: Date,
-      default: null,
+      default: PRODUCT_DEFAULTS.DELETED_AT, // ✅ Uses types for default
     },
   },
   {
@@ -77,17 +92,28 @@ const PurchasingSchema = new mongoose.Schema(
     products: [productSchema],
     status: {
       type: String,
-      enum: ["pending", "confirmed", "arrived", "cancelled", "completed"],
-      default: "pending",
+      enum: {
+        values: Object.values(PURCHASING_STATUS), // ✅ Uses types for enum values
+        message: "Invalid purchasing status",
+      },
+      default: PURCHASING_DEFAULTS.STATUS, // ✅ Uses types for default
     },
     note: {
       type: String,
       trim: true,
-      default: "No note available",
+      maxlength: [
+        VALIDATION_CONSTRAINTS.NOTE.MAX_LENGTH,
+        `Note cannot exceed ${VALIDATION_CONSTRAINTS.NOTE.MAX_LENGTH} characters`,
+      ],
+      default: PURCHASING_DEFAULTS.NOTE, // ✅ Uses types for default
     },
     totalAmount: {
       type: Number,
       required: true,
+      min: [
+        VALIDATION_CONSTRAINTS.TOTAL_AMOUNT.MIN,
+        "Total amount cannot be negative",
+      ],
     },
     purchasedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -96,11 +122,11 @@ const PurchasingSchema = new mongoose.Schema(
     },
     isDeleted: {
       type: Boolean,
-      default: false,
+      default: PURCHASING_DEFAULTS.IS_DELETED, // ✅ Uses types for default
     },
     deletedAt: {
       type: Date,
-      default: null,
+      default: PURCHASING_DEFAULTS.DELETED_AT, // ✅ Uses types for default
     },
   },
   {
@@ -110,6 +136,21 @@ const PurchasingSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Static method to generate PO number
+// Format: PO-YYYY-MM-DD-NNNNNN (e.g., PO-2024-01-14-000001)
+PurchasingSchema.statics.generatePONumber = async function () {
+  return generateSequentialNumber({
+    queryFn: async (query, options) => {
+      return await this.findOne(query).sort(options.sort).select("poNumber");
+    },
+    prefix: "PO",
+    fieldName: "poNumber",
+    sequencePadding: 6,
+    dateFormat: "daily",
+    additionalFilters: {},
+  });
+};
 
 // Indexes for better query performance
 // Note: poNumber already has an index from unique: true, so we don't need to index it again

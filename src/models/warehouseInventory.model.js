@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { WAREHOUSE_INVENTORY_DEFAULTS } from "../types/warehouseInventory.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/warehouseInventory.validator.js";
 // Import Inventory model to ensure it's registered before this model uses it
 import "../models/inventory.model.js";
 
@@ -18,8 +20,11 @@ const warehouseStockSchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "Quantity is required"],
-      min: [0, "Quantity cannot be negative"],
-      default: WAREHOUSE_INVENTORY_DEFAULTS.QUANTITY,
+      min: [
+        VALIDATION_CONSTRAINTS.QUANTITY.MIN,
+        "Quantity cannot be negative",
+      ],
+      default: WAREHOUSE_INVENTORY_DEFAULTS.QUANTITY, // ✅ Uses types for default
     },
     // Low stock alert flag (calculated based on Inventory reorderPoint)
     isLowStock: {

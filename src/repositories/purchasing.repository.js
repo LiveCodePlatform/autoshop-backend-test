@@ -12,6 +12,7 @@ export class PurchasingRepository {
   }
 
   async findById(id, populateOptions = {}) {
+    const { lean } = populateOptions;
     let query = Purchasing.findById(id);
 
     if (populateOptions.purchasedBy) {
@@ -19,6 +20,10 @@ export class PurchasingRepository {
     }
     if (populateOptions.supplierId) {
       query = query.populate("supplierId", populateOptions.supplierId);
+    }
+
+    if (lean) {
+      query = query.lean();
     }
 
     return await query.exec();

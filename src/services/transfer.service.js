@@ -5,34 +5,47 @@
  */
 
 import { TransferRepository } from "../repositories/transfer.repository.js";
+import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
+import { InventoryRepository } from "../repositories/inventory.repository.js";
+import { WarehouseInventoryRepository } from "../repositories/warehouseStock.repository.js";
+import { StorefrontInventoryRepository } from "../repositories/storefrontInventory.repository.js";
+import { GoodsRecievedNoteRepository } from "../repositories/goodsRecievedNote.repository.js";
 import Transfer from "../models/transfer.model.js";
-import {
-  CreateTransferDTO,
-  UpdateTransferDTO,
-  TransferResponseDTO,
-  TransferListResponseDTO,
-} from "../dtos/transfer.dto.js";
 import {
   ValidationError,
   NotFoundError,
   CastError,
 } from "../errors/errorTypes.js";
 import { TRANSFER_FIELDS, TRANSFER_STATUS, TRANSFER_SOURCE_TYPE } from "../types/transfer.types.js";
+import {
+  TransferResponseDTO,
+  UpdateTransferDTO,
+} from "../dtos/transfer.dto.js";
 import mongoose from "mongoose";
-import { generateSequentialNumber } from "../shared/utils/purchasing.utils.js";
-// Import legacy models for validation
-import GoodsRecievedNote from "../legacy/models/goodsRecievedNote.model.js";
-import LocationProfile from "../models/locationProfile.model.js";
-import WarehouseStock from "../legacy/models/warehouse.model.js";
-import StorefrontInventory from "../legacy/models/storefrontInventory.model.js";
-import Inventory from "../models/inventory.model.js";
 
 export class TransferService {
   /**
    * @param {TransferRepository} repository - Injected repository instance (optional, fallback creates new instance)
+   * @param {LocationProfileRepository} locationRepository - Injected location repository instance
+   * @param {InventoryRepository} inventoryRepository - Injected inventory repository instance
+   * @param {WarehouseInventoryRepository} warehouseInventoryRepository - Injected warehouse inventory repository instance
+   * @param {StorefrontInventoryRepository} storefrontInventoryRepository - Injected storefront inventory repository instance
+   * @param {GoodsRecievedNoteRepository} goodsRecievedNoteRepository - Injected GRN repository instance
    */
-  constructor(repository) {
+  constructor(
+    repository,
+    locationRepository,
+    inventoryRepository,
+    warehouseInventoryRepository,
+    storefrontInventoryRepository,
+    goodsRecievedNoteRepository
+  ) {
     this.repository = repository || new TransferRepository();
+    this.locationRepository = locationRepository || new LocationProfileRepository();
+    this.inventoryRepository = inventoryRepository || new InventoryRepository();
+    this.warehouseInventoryRepository = warehouseInventoryRepository || new WarehouseInventoryRepository();
+    this.storefrontInventoryRepository = storefrontInventoryRepository || new StorefrontInventoryRepository();
+    this.goodsRecievedNoteRepository = goodsRecievedNoteRepository || new GoodsRecievedNoteRepository();
   }
 
   /**
@@ -122,8 +135,8 @@ export class TransferService {
       sourceId = grnId;
       destinationId = destinationWarehouseId;
 
-      // Validate GRN exists and is valid
-      const grn = await GoodsRecievedNote.findById(sourceId).lean();
+      // Validate GRN exists and is valid (uses repository)
+      const grn = await this.goodsRecievedNoteRepository.findById(sourceId, { lean: true });
       if (!grn) {
         throw new NotFoundError("GRN", sourceId);
       }
@@ -140,8 +153,8 @@ export class TransferService {
         throw new ValidationError("GRN has no line items", TRANSFER_FIELDS.SOURCE_ID);
       }
 
-      // Validate destination warehouse exists
-      const warehouse = await LocationProfile.findOne({
+      // Validate destination warehouse exists (uses repository)
+      const warehouse = await this.locationRepository.findOne({
         _id: destinationId,
         type: "warehouse",
       });
@@ -175,8 +188,8 @@ export class TransferService {
       sourceId = sourceWarehouseId;
       destinationId = destinationStorefrontId;
 
-      // Validate source warehouse exists
-      const sourceWarehouse = await LocationProfile.findOne({
+      // Validate source warehouse exists (uses repository)
+      const sourceWarehouse = await this.locationRepository.findOne({
         _id: sourceId,
         type: "warehouse",
       });
@@ -187,8 +200,8 @@ export class TransferService {
         throw new ValidationError("Cannot create transfer from deleted warehouse", TRANSFER_FIELDS.SOURCE_ID);
       }
 
-      // Validate destination storefront exists
-      const storefront = await LocationProfile.findOne({
+      // Validate destination storefront exists (uses repository)
+      const storefront = await this.locationRepository.findOne({
         _id: destinationId,
         type: "storefront",
       });
@@ -238,17 +251,17 @@ export class TransferService {
         );
       }
 
-      // Lookup inventory by productCode or use inventoryId
+      // Lookup inventory by productCode or use inventoryId (uses repository)
       let inventory;
       if (userItem.inventoryId) {
         if (!mongoose.Types.ObjectId.isValid(userItem.inventoryId)) {
           throw new CastError("Invalid inventory ID format", TRANSFER_FIELDS.LINE_ITEMS);
         }
-        inventory = await Inventory.findById(userItem.inventoryId).lean();
+        inventory = await this.inventoryRepository.findById(userItem.inventoryId, { lean: true });
       } else {
-        inventory = await Inventory.findOne({
+        inventory = await this.inventoryRepository.findOne({
           productCode: userItem.productCode.toUpperCase(),
-        }).lean();
+        }, { lean: true });
       }
 
       if (!inventory) {
@@ -262,8 +275,8 @@ export class TransferService {
 
       // Validate based on transfer type
       if (transferSourceType === TRANSFER_SOURCE_TYPE.GRN) {
-        // Fetch GRN again for line item validation
-        const grn = await GoodsRecievedNote.findById(sourceId).lean();
+        // Fetch GRN again for line item validation (uses repository)
+        const grn = await this.goodsRecievedNoteRepository.findById(sourceId, { lean: true });
 
         // Find corresponding GRN line item by inventoryId
         const grnLineItem = grn.lineItems.find(
@@ -298,11 +311,11 @@ export class TransferService {
           notes: userItem.notes || null,
         });
       } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
-        // Validate warehouse has sufficient stock
-        const warehouseStock = await WarehouseStock.findOne({
+        // Validate warehouse has sufficient stock (uses repository)
+        const warehouseStock = await this.warehouseInventoryRepository.findOne({
           inventoryId: inventoryIdValue,
           warehouseId: sourceId,
-        }).lean();
+        }, { lean: true });
 
         if (!warehouseStock) {
           throw new NotFoundError(
@@ -335,22 +348,22 @@ export class TransferService {
       if (transferSourceType === TRANSFER_SOURCE_TYPE.GRN) {
         // For GRN → Warehouse: Ensure inventory items exist in destination warehouse
         for (const lineItem of validatedLineItems) {
-          const existingWarehouseStock = await WarehouseStock.findOne({
+          const existingWarehouseStock = await this.warehouseInventoryRepository.findOne({
             inventoryId: lineItem.inventoryId,
             warehouseId: destinationId,
           });
 
           if (!existingWarehouseStock) {
-            // Create warehouse stock record with quantity 0 if it doesn't exist
+            // Create warehouse stock record with quantity 0 if it doesn't exist (uses repository)
             try {
-              await WarehouseStock.create({
+              await this.warehouseInventoryRepository.create({
                 inventoryId: lineItem.inventoryId,
                 warehouseId: destinationId,
                 quantity: 0,
               });
             } catch (error) {
               // If creation fails, return detailed error
-              const inventory = await Inventory.findById(lineItem.inventoryId);
+              const inventory = await this.inventoryRepository.findById(lineItem.inventoryId);
               const productCode = inventory?.productCode || lineItem.inventoryId;
               throw new ValidationError(
                 `Failed to create inventory record for product '${productCode}' in destination warehouse. ${error.message}`,
@@ -362,22 +375,22 @@ export class TransferService {
       } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
         // For Warehouse → Storefront: Ensure inventory items exist in destination storefront
         for (const lineItem of validatedLineItems) {
-          const existingStorefrontInventory = await StorefrontInventory.findOne({
+          const existingStorefrontInventory = await this.storefrontInventoryRepository.findOne({
             inventoryId: lineItem.inventoryId,
             storefrontId: destinationId,
           });
 
           if (!existingStorefrontInventory) {
-            // Create storefront inventory record with quantity 0 if it doesn't exist
+            // Create storefront inventory record with quantity 0 if it doesn't exist (uses repository)
             try {
-              await StorefrontInventory.create({
+              await this.storefrontInventoryRepository.create({
                 inventoryId: lineItem.inventoryId,
                 storefrontId: destinationId,
                 quantity: 0,
               });
             } catch (error) {
               // If creation fails, return detailed error
-              const inventory = await Inventory.findById(lineItem.inventoryId);
+              const inventory = await this.inventoryRepository.findById(lineItem.inventoryId);
               const productCode = inventory?.productCode || lineItem.inventoryId;
               throw new ValidationError(
                 `Failed to create inventory record for product '${productCode}' in destination storefront. ${error.message}`,
@@ -417,8 +430,8 @@ export class TransferService {
       transferData.destinationStorefrontId = destinationId;
     }
 
-    // Generate transfer number
-    transferData.transferNumber = await this.generateTransferNumber();
+    // Auto-generate transfer number (matches legacy exactly - uses model static method)
+    transferData.transferNumber = await Transfer.generateTransferNumber();
 
     // Use MongoDB transaction to ensure ACID properties
     const transactionSession = session || await mongoose.startSession();
@@ -427,16 +440,16 @@ export class TransferService {
     }
 
     try {
-      // Create transfer document within transaction
-      const newTransferArray = await Transfer.create([transferData], { session: transactionSession });
-      const newTransfer = newTransferArray[0];
+      // Create transfer document within transaction (matches legacy exactly - uses repository)
+      const newTransferArray = await this.repository.create([transferData], { session: transactionSession });
+      const transfer = newTransferArray[0];
 
-      // Immediately transfer stock atomically
-      await this.updateStock(newTransfer._id.toString(), transactionSession);
+      // Immediately transfer stock atomically (matches legacy exactly - uses model instance method)
+      await transfer.updateStock(transactionSession);
 
-      // Set receivedDate since transfer is completed
-      newTransfer.receivedDate = new Date();
-      await newTransfer.save({ session: transactionSession });
+      // Set receivedDate since transfer is completed (matches legacy exactly)
+      transfer.receivedDate = new Date();
+      await transfer.save({ session: transactionSession });
 
       // Commit transaction if we started it
       if (!session) {
@@ -444,8 +457,28 @@ export class TransferService {
         await transactionSession.endSession();
       }
 
+      // Populate references for response (matches legacy exactly)
+      if (transferSourceType === TRANSFER_SOURCE_TYPE.GRN) {
+        await transfer.populate("sourceId", "grnNumber status");
+        await transfer.populate(
+          "destinationWarehouseId",
+          "locationName locationCode"
+        );
+      } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
+        await transfer.populate("sourceId", "locationName locationCode");
+        await transfer.populate(
+          "destinationStorefrontId",
+          "locationName locationCode"
+        );
+      }
+      await transfer.populate(
+        "lineItems.inventoryId",
+        "productName productCode SKU"
+      );
+      await transfer.populate("transferredBy", "name role");
+
       // Return DTO
-      return new TransferResponseDTO(newTransfer);
+      return new TransferResponseDTO(transfer);
     } catch (error) {
       // Rollback transaction on error if we started it
       if (!session) {
@@ -457,40 +490,34 @@ export class TransferService {
   }
 
   /**
-   * Get all transfers (matches legacy behavior - no pagination)
+   * Get all transfers (matches legacy behavior exactly - no pagination)
    * @param {Object} queryParams - Query parameters (unused, kept for consistency)
-   * @returns {Promise<TransferResponseDTO[]>} Array of transfer DTOs
+   * @returns {Promise<Object[]>} Array of transfers
    */
-  async getAllTransfers(queryParams = {}) {
-    // Build query (no filters - return all transfers like legacy)
-    const query = {};
-
-    // Execute query - fetch all transfers (legacy behavior)
-    const transfers = await this.repository.find(query, {
+  async getTransfers(queryParams = {}) {
+    // Execute query - fetch all transfers (matches legacy exactly - uses repository)
+    const transfers = await this.repository.find({}, {
       populate: {
         transferredBy: "name role",
         lineItems: "productName productCode SKU",
       },
+      lean: true,
     });
 
-    // Return array of DTOs (not paginated, matching legacy)
+    // Return array of DTOs
     return transfers.map((transfer) => new TransferResponseDTO(transfer));
   }
 
   /**
    * Get transfer by ID
+   * Matches legacy logic exactly
    * @param {string} id - Transfer ID
-   * @returns {Promise<TransferResponseDTO>} Transfer DTO
-   * @throws {CastError} If invalid ID format
+   * @returns {Promise<Object>} Transfer
+   * @throws {ValidationError} If invalid ID format
    * @throws {NotFoundError} If transfer not found
    */
   async getTransferById(id) {
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid transfer ID format", "id");
-    }
-
-    // Find transfer
+    // Find transfer (matches legacy exactly - uses repository)
     const transfer = await this.repository.findById(id, {
       transferredBy: "name role",
       lineItems: "productName productCode SKU",
@@ -500,14 +527,14 @@ export class TransferService {
       throw new NotFoundError("Transfer", id);
     }
 
-    // Populate source and destination based on transfer type
-    if (transfer.sourceType === TRANSFER_SOURCE_TYPE.GRN) {
+    // Populate source and destination based on transfer type (matches legacy exactly)
+    if (transfer.sourceType === "GRN") {
       await transfer.populate("sourceId", "grnNumber status");
       await transfer.populate(
         "destinationWarehouseId",
         "locationName locationCode"
       );
-    } else if (transfer.sourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
+    } else if (transfer.sourceType === "Warehouse") {
       await transfer.populate("sourceId", "locationName locationCode");
       await transfer.populate(
         "destinationStorefrontId",
@@ -560,47 +587,39 @@ export class TransferService {
   /**
    * Update transfer status
    * Uses MongoDB transaction to ensure ACID properties when completing transfer
+   * Matches legacy logic exactly
    * @param {string} id - Transfer ID
    * @param {string} status - New status (pending, in-transit, completed, cancelled)
    * @param {mongoose.ClientSession} session - MongoDB session for transaction (optional)
-   * @returns {Promise<TransferResponseDTO>} Updated transfer DTO
-   * @throws {CastError} If invalid ID format
-   * @throws {NotFoundError} If transfer not found
+   * @returns {Promise<Object>} Updated transfer
    * @throws {ValidationError} If status is invalid or validation fails
+   * @throws {NotFoundError} If transfer not found
    */
   async updateTransferStatus(id, status, session = null) {
-    // Validate status is provided
+    // Validate status is provided (matches legacy exactly)
     if (!status) {
-      throw new ValidationError("Status is required", TRANSFER_FIELDS.STATUS);
+      throw new ValidationError("Status is required");
     }
 
-    // Validate status is valid
-    const validStatuses = Object.values(TRANSFER_STATUS);
+    // Validate status is valid (matches legacy exactly)
+    const validStatuses = ["pending", "in-transit", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       throw new ValidationError(
-        `Invalid status. Allowed values: ${validStatuses.join(", ")}`,
-        TRANSFER_FIELDS.STATUS
+        `Invalid status. Allowed values: ${validStatuses.join(", ")}`
       );
     }
 
-    // Validate MongoDB ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new CastError("Invalid transfer ID format", "id");
-    }
-
-    // Use MongoDB transaction to ensure ACID properties when completing transfer
+    // Use MongoDB transaction to ensure ACID properties when completing transfer (matches legacy exactly)
     const transactionSession = session || await mongoose.startSession();
     if (!session) {
       transactionSession.startTransaction();
     }
 
     try {
-      // Update transfer status (legacy behavior: does NOT set receivedDate)
+      // Update transfer status (matches legacy exactly - uses repository)
       const updatedTransfer = await this.repository.findByIdAndUpdate(
         id,
-        {
-          [TRANSFER_FIELDS.STATUS]: status,
-        },
+        { status },
         { new: true, session: transactionSession }
       );
 
@@ -609,13 +628,13 @@ export class TransferService {
           await transactionSession.abortTransaction();
           await transactionSession.endSession();
         }
-        throw new NotFoundError("Transfer", id);
+        throw new NotFoundError("Transfer not found", id);
       }
 
-      // When status is "completed", update stock atomically
+      // When status is "completed", update stock atomically (matches legacy exactly - uses model instance method)
       // (handles both GRN → Warehouse and Warehouse → Storefront)
-      if (status === TRANSFER_STATUS.COMPLETED) {
-        await this.updateStock(id, transactionSession);
+      if (status === "completed") {
+        await updatedTransfer.updateStock(transactionSession);
       }
 
       // Commit transaction if we started it
@@ -624,31 +643,30 @@ export class TransferService {
         await transactionSession.endSession();
       }
 
-      // Refetch transfer with populated references for response
-      const populatedTransfer = await this.repository.findById(id, {
-        transferredBy: "name role",
-        lineItems: "productName productCode SKU",
-      });
-
-      // Populate source and destination based on transfer type
-      if (populatedTransfer.sourceType === TRANSFER_SOURCE_TYPE.GRN) {
-        await populatedTransfer.populate("sourceId", "grnNumber status");
-        await populatedTransfer.populate(
+      // Populate references for response based on transfer type (matches legacy exactly)
+      if (updatedTransfer.sourceType === "GRN") {
+        await updatedTransfer.populate("sourceId", "grnNumber status");
+        await updatedTransfer.populate(
           "destinationWarehouseId",
           "locationName locationCode"
         );
-      } else if (populatedTransfer.sourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
-        await populatedTransfer.populate("sourceId", "locationName locationCode");
-        await populatedTransfer.populate(
+      } else if (updatedTransfer.sourceType === "Warehouse") {
+        await updatedTransfer.populate("sourceId", "locationName locationCode");
+        await updatedTransfer.populate(
           "destinationStorefrontId",
           "locationName locationCode"
         );
       }
+      await updatedTransfer.populate(
+        "lineItems.inventoryId",
+        "productName productCode SKU"
+      );
+      await updatedTransfer.populate("transferredBy", "name role");
 
       // Return DTO
-      return new TransferResponseDTO(populatedTransfer);
+      return new TransferResponseDTO(updatedTransfer);
     } catch (error) {
-      // Rollback transaction on error if we started it
+      // Rollback transaction on error if we started it (matches legacy exactly)
       if (!session) {
         await transactionSession.abortTransaction();
         await transactionSession.endSession();
@@ -731,13 +749,10 @@ export class TransferService {
    * @private
    */
   async _updateGRNToWarehouseStock(transfer, session = null) {
-    const WarehouseStock = mongoose.model("WarehouseStock");
-    const GoodsRecievedNote = mongoose.model("GoodsRecievedNote");
-
-    // Fetch GRN to validate and update
-    const grn = await GoodsRecievedNote.findById(transfer.sourceId).session(
-      session || null
-    );
+    // Fetch GRN to validate and update (uses repository)
+    const grn = await this.goodsRecievedNoteRepository.findById(transfer.sourceId, {
+      session: session || null,
+    });
 
     if (!grn) {
       throw new NotFoundError("GRN", transfer.sourceId);
@@ -788,8 +803,8 @@ export class TransferService {
       }
 
       // Update GRN line item's transferredQuantity atomically using $inc
-      // Uses positional operator $ to update the specific line item
-      const grnUpdateResult = await GoodsRecievedNote.findOneAndUpdate(
+      // Uses positional operator $ to update the specific line item (uses repository)
+      const grnUpdateResult = await this.goodsRecievedNoteRepository.findOneAndUpdate(
         { _id: transfer.sourceId, "lineItems._id": grnLineItem._id },
         {
           $inc: {
@@ -807,8 +822,8 @@ export class TransferService {
       }
 
       // Find or create warehouse stock record and update atomically using $inc
-      // Uses upsert to create if doesn't exist, or update if exists
-      await WarehouseStock.findOneAndUpdate(
+      // Uses upsert to create if doesn't exist, or update if exists (uses repository)
+      await this.warehouseInventoryRepository.findOneAndUpdate(
         {
           inventoryId: transferItem.inventoryId,
           warehouseId: transfer.destinationWarehouseId,
@@ -838,15 +853,11 @@ export class TransferService {
    * @private
    */
   async _updateWarehouseToStorefrontStock(transfer, session = null) {
-    const WarehouseStock = mongoose.model("WarehouseStock");
-    const StorefrontInventory = mongoose.model("StorefrontInventory");
-    const LocationProfile = mongoose.model("LocationProfile");
-
-    // Validate source warehouse exists
-    const sourceWarehouse = await LocationProfile.findOne({
+    // Validate source warehouse exists (uses repository)
+    const sourceWarehouse = await this.locationRepository.findOne({
       _id: transfer.sourceId,
       type: "warehouse",
-    }).session(session || null);
+    }, { session: session || null });
 
     if (!sourceWarehouse) {
       throw new NotFoundError("Source warehouse", transfer.sourceId);
@@ -856,11 +867,11 @@ export class TransferService {
     for (const transferItem of transfer.lineItems) {
       if (transferItem.quantity <= 0) continue;
 
-      // Validate warehouse has sufficient stock
-      const warehouseStock = await WarehouseStock.findOne({
+      // Validate warehouse has sufficient stock (uses repository)
+      const warehouseStock = await this.warehouseInventoryRepository.findOne({
         inventoryId: transferItem.inventoryId,
         warehouseId: transfer.sourceId,
-      }).session(session || null);
+      }, { session: session || null });
 
       if (!warehouseStock) {
         throw new ValidationError(
@@ -877,8 +888,8 @@ export class TransferService {
         );
       }
 
-      // Deduct from warehouse stock atomically using $inc
-      await WarehouseStock.findOneAndUpdate(
+      // Deduct from warehouse stock atomically using $inc (uses repository)
+      await this.warehouseInventoryRepository.findOneAndUpdate(
         {
           inventoryId: transferItem.inventoryId,
           warehouseId: transfer.sourceId,
@@ -894,8 +905,8 @@ export class TransferService {
         }
       );
 
-      // Add to storefront inventory atomically using $inc
-      await StorefrontInventory.findOneAndUpdate(
+      // Add to storefront inventory atomically using $inc (uses repository)
+      await this.storefrontInventoryRepository.findOneAndUpdate(
         {
           inventoryId: transferItem.inventoryId,
           storefrontId: transfer.destinationStorefrontId,

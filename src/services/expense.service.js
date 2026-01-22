@@ -16,7 +16,6 @@ import { EXPENSE_FIELDS } from "../types/expense.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
-
 export class ExpenseService {
   /**
    * @param {ExpenseRepository} repository - Injected repository instance (optional, fallback creates new instance)
@@ -27,17 +26,20 @@ export class ExpenseService {
 
   /**
    * Create new expense
-   * @param {Object} data - Request data
+   * Matches legacy logic exactly
+   * @param {Object} data - Request data (category, amount, date, notes)
    * @param {Object} user - Authenticated user object (contains _id and locationId)
    * @returns {Promise<ExpenseResponseDTO>} Created expense DTO
    * @throws {CastError} If invalid locationId or adminId format
    */
   async createExpense(data, user) {
-    // Get locationId and adminId from authenticated user
+    const { category, amount, date, notes } = data;
+
+    // Get locationId and adminId from authenticated user (matches legacy exactly)
     const locationId = user.locationId;
     const adminId = user._id;
 
-    // Validate ObjectId formats
+    // Validate ObjectId formats (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(locationId)) {
       throw new CastError("Invalid location ID format", "locationId");
     }
@@ -45,98 +47,54 @@ export class ExpenseService {
       throw new CastError("Invalid admin ID format", "adminId");
     }
 
-    // Add locationId and adminId to data
-    const expenseData = {
-      ...data,
-      [EXPENSE_FIELDS.LOCATION_ID]: locationId,
-      [EXPENSE_FIELDS.ADMIN_ID]: adminId,
-    };
-
-    // Transform data using DTO
-    const dto = new CreateExpenseDTO(expenseData);
-    const modelData = dto.toModel();
-
-    // Create expense
-    const newExpense = await this.repository.create(modelData);
-
-    // Fetch with populated fields for response
-    const populatedExpense = await this.repository.findById(newExpense._id, {
-      locationId: "type locationName locationCode locationAddress",
-      adminId: "name role",
+    // Create expense (matches legacy exactly - no DTO transformation, direct creation)
+    const expense = await this.repository.create({
+      category,
+      amount,
+      date,
+      notes,
+      locationId,
+      adminId,
     });
 
-    // Return DTO
-    return new ExpenseResponseDTO(populatedExpense);
+    // Return DTO (matches legacy structure - no population after creation)
+    return new ExpenseResponseDTO(expense);
   }
 
   /**
-   * Get all expenses with pagination and filters
-   * @param {Object} queryParams - Query parameters (page, limit, startDate, endDate, sortBy, sortOrder)
-   * @returns {Promise<ExpenseListResponseDTO>} List of expense DTOs with pagination
+   * Get all expenses
+   * Matches legacy logic exactly - no pagination, just date filter
+   * @param {Object} queryParams - Query parameters (startDate, endDate)
+   * @returns {Promise<Array>} Array of expense DTOs
    */
   async getExpenses(queryParams = {}) {
-    const {
-      page = 1,
-      limit = 10,
-      startDate,
-      endDate,
-      sortBy = "date",
-      sortOrder = "desc",
-    } = queryParams;
-
-    // Build query filter
-    const query = {};
+    // Build query filter (matches legacy exactly)
+    const filter = {};
 
     // Add date range filter using dateFilter utility
-    // Filter by the 'date' field (expense date) rather than createdAt
+    // Filter by the 'date' field (expense date) rather than createdAt (matches legacy exactly)
     try {
-      const dateFilter = createDateFilter(
-        { startDate, endDate },
-        "date",
-        false
-      );
-      Object.assign(query, dateFilter);
+      const dateFilter = createDateFilter(queryParams, "date", false);
+      Object.assign(filter, dateFilter);
     } catch (error) {
-      // If it's a CustomError, convert to ValidationError
+      // If it's a CustomError, pass it through (matches legacy exactly)
       if (error instanceof CustomError) {
-        throw new ValidationError(error.message);
+        throw error;
       }
-      // For other errors, wrap and throw
+      // For other errors, wrap and throw (matches legacy exactly)
       throw new ValidationError(error.message || "Invalid date filter");
     }
 
-    // Pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
-
-    // Sort
-    const sort = {};
-    sort[sortBy] = sortOrder === "asc" ? 1 : -1;
-
-    // Populate options
-    const populate = {
-      locationId: "type locationName locationCode locationAddress",
-      adminId: "name role",
-    };
-
-    // Execute query
-    const expenses = await this.repository.find(query, {
-      sort,
-      skip,
-      limit: limitNum,
-      populate,
+    // Find all expenses with populate (matches legacy exactly - no pagination, no sorting)
+    const expenses = await this.repository.find(filter, {
+      populate: {
+        locationId: "type locationName locationCode locationAddress",
+        adminId: "name role",
+      },
     });
 
-    // Get total count for pagination
-    const total = await this.repository.countDocuments(query);
-
-    // Return list DTO with pagination (DTO expects raw models, transforms internally)
-    return new ExpenseListResponseDTO(expenses, {
-      page: pageNum,
-      limit: limitNum,
-      total,
-    });
+    // Return array of DTOs (matches legacy structure)
+    return expenses.map((expense) => new ExpenseResponseDTO(expense));
   }
 
   /**
@@ -168,86 +126,83 @@ export class ExpenseService {
 
   /**
    * Update expense
+   * Matches legacy logic exactly
    * @param {string} id - Expense ID
-   * @param {Object} data - Update data
+   * @param {Object} data - Update data (category, amount, date, notes)
    * @param {Object} user - Authenticated user object (contains _id)
    * @returns {Promise<ExpenseResponseDTO>} Updated expense DTO
    * @throws {CastError} If invalid ID format or invalid adminId format
    * @throws {NotFoundError} If expense not found
    */
   async updateExpense(id, data, user) {
-    // Validate MongoDB ObjectId format
+    const { category, amount, date, notes } = data;
+
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError("Invalid expense ID format", "id");
     }
 
-    // Get adminId from authenticated user
+    // Get adminId from authenticated user (matches legacy exactly)
     const adminId = user._id;
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
       throw new CastError("Invalid admin ID format", "adminId");
     }
 
-    // Check if expense exists
-    const existingExpense = await this.repository.findById(id);
-    if (!existingExpense) {
-      throw new NotFoundError("Expense", id);
-    }
-
-    // Transform data using DTO
-    const dto = new UpdateExpenseDTO(data);
-    const updateData = dto.toUpdateModel();
-
-    // Add adminId to update data (to track who updated it)
-    updateData[EXPENSE_FIELDS.ADMIN_ID] = adminId;
-
-    // Update expense
-    const updatedExpense = await this.repository.findByIdAndUpdate(
+    // Update expense with populate in same chain (matches legacy exactly - no existence check before, direct update)
+    const expense = await this.repository.findByIdAndUpdate(
       id,
-      { $set: updateData },
+      { category, amount, date, notes, adminId },
       { new: true, runValidators: true }
-    );
+    )
+      .populate({
+        path: "locationId",
+        select: "type locationName locationCode locationAddress",
+      })
+      .populate({
+        path: "adminId",
+        select: "name role",
+      });
 
-    if (!updatedExpense) {
-      throw new NotFoundError("Expense", id);
+    // Check if not found (matches legacy exactly)
+    if (!expense) {
+      throw new NotFoundError("Expense not found", id);
     }
-
-    // Fetch with populated fields for response
-    const populatedExpense = await this.repository.findById(updatedExpense._id, {
-      locationId: "type locationName locationCode locationAddress",
-      adminId: "name role",
-    });
 
     // Return DTO
-    return new ExpenseResponseDTO(populatedExpense);
+    return new ExpenseResponseDTO(expense);
   }
 
   /**
    * Delete expense
+   * Matches legacy logic exactly
    * @param {string} id - Expense ID
    * @returns {Promise<ExpenseResponseDTO>} Deleted expense DTO
    * @throws {CastError} If invalid ID format
    * @throws {NotFoundError} If expense not found
    */
   async deleteExpense(id) {
-    // Validate MongoDB ObjectId format
+    // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError("Invalid expense ID format", "id");
     }
 
-    // Find expense with populated fields before deletion
-    const expense = await this.repository.findById(id, {
-      locationId: "type locationName locationCode locationAddress",
-      adminId: "name role",
-    });
+    // Delete expense with populate in same chain (matches legacy exactly)
+    const expense = await this.repository.findByIdAndDelete(id)
+      .populate({
+        path: "locationId",
+        select: "type locationName locationCode locationAddress",
+      })
+      .populate({
+        path: "adminId",
+        select: "name role",
+      });
 
+    // Check if not found (matches legacy exactly)
     if (!expense) {
-      throw new NotFoundError("Expense", id);
+      throw new NotFoundError("Expense not found", id);
     }
 
-    // Delete expense
-    await this.repository.findByIdAndDelete(id);
-
-    // Return DTO of deleted expense
+    // Return DTO
     return new ExpenseResponseDTO(expense);
   }
 }

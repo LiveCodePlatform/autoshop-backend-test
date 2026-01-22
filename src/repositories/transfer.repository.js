@@ -7,8 +7,20 @@
 import Transfer from "../models/transfer.model.js";
 
 export class TransferRepository {
-  async create(data) {
-    return await Transfer.create(data);
+  async create(data, options = {}) {
+    const { session } = options;
+    // Handle both single object and array
+    if (Array.isArray(data)) {
+      if (session) {
+        return await Transfer.create(data, { session });
+      }
+      return await Transfer.create(data);
+    } else {
+      if (session) {
+        return await Transfer.create([data], { session });
+      }
+      return await Transfer.create(data);
+    }
   }
 
   async findById(id, populateOptions = {}) {
@@ -38,8 +50,12 @@ export class TransferRepository {
   }
 
   async find(query, options = {}) {
-    const { sort, skip, limit, populate } = options;
+    const { sort, skip, limit, populate, lean } = options;
     let queryBuilder = Transfer.find(query);
+    
+    if (lean) {
+      queryBuilder = queryBuilder.lean();
+    }
 
     // Apply populate options
     if (populate) {

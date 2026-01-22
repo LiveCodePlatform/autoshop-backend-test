@@ -1,4 +1,11 @@
 import mongoose from "mongoose";
+import {
+  CREDIT_RECORD_DEFAULTS,
+  PAYMENT_METHOD,
+  getValidPaymentMethods,
+} from "../types/creditRecord.types.js";
+// Import constraints from validators to ensure consistency
+import { VALIDATION_CONSTRAINTS } from "../validators/creditRecord.validator.js";
 
 const creditRecordSchema = new mongoose.Schema(
   {
@@ -10,11 +17,15 @@ const creditRecordSchema = new mongoose.Schema(
     creditPersonId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CreditPerson",
-      default: null,
+      default: null, // Optional field - no default in types
     },
     paidAmount: {
       type: Number,
       required: [true, "Paid amount is required"],
+      min: [
+        VALIDATION_CONSTRAINTS.PAID_AMOUNT.MIN,
+        "Paid amount cannot be negative",
+      ],
     },
     paymentDate: {
       type: Date,
@@ -23,11 +34,20 @@ const creditRecordSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      default: "cash",
+      enum: {
+        values: getValidPaymentMethods(), // ✅ Uses types for enum values
+        message: "Invalid payment method",
+      },
+      default: CREDIT_RECORD_DEFAULTS.PAYMENT_METHOD, // ✅ Uses types for default
     },
     notes: {
       type: String,
-      default: null,
+      trim: true,
+      maxlength: [
+        VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH,
+        `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
+      ],
+      default: CREDIT_RECORD_DEFAULTS.NOTES, // ✅ Uses types for default
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -36,11 +56,11 @@ const creditRecordSchema = new mongoose.Schema(
     },
     isDeleted: {
       type: Boolean,
-      default: false,
+      default: CREDIT_RECORD_DEFAULTS.IS_DELETED, // ✅ Uses types for default
     },
     deletedAt: {
       type: Date,
-      default: null,
+      default: CREDIT_RECORD_DEFAULTS.DELETED_AT, // ✅ Uses types for default
     },
   },
   {
