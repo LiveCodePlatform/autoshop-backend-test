@@ -38,7 +38,78 @@ const VALIDATION_CONSTRAINTS = {
 };
 
 /**
- * Transfer Line Item schema validation (for lineItems array)
+ * Transfer Line Item schema validation for CREATE request (for lineItems array)
+ * User can provide either productCode or inventoryId
+ */
+const createTransferLineItemSchema = Joi.object({
+  // productCode is optional - can use inventoryId instead
+  productCode: Joi.string()
+    .trim()
+    .optional()
+    .messages({
+      "string.empty": "Product code cannot be empty",
+    }),
+
+  // inventoryId is optional - can use productCode instead
+  [TRANSFER_LINE_ITEM_FIELDS.INVENTORY_ID]: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .optional()
+    .messages({
+      "any.invalid": "Inventory ID must be a valid ObjectId",
+    }),
+
+  [TRANSFER_LINE_ITEM_FIELDS.QUANTITY]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.QUANTITY.MIN)
+    .required()
+    .messages({
+      "number.base": "Transfer quantity must be a number",
+      "number.min": `Transfer quantity cannot be negative`,
+      "any.required": "Transfer quantity is required",
+    }),
+
+  [TRANSFER_LINE_ITEM_FIELDS.GRN_LINE_ITEM_ID]: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .allow(null, "")
+    .optional()
+    .messages({
+      "any.invalid": "GRN line item ID must be a valid ObjectId",
+    }),
+
+  [TRANSFER_LINE_ITEM_FIELDS.NOTES]: Joi.string()
+    .trim()
+    .max(VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH)
+    .allow(null, "")
+    .optional()
+    .messages({
+      "string.max": `Line item notes cannot exceed ${VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH} characters`,
+    }),
+})
+  .custom((value, helpers) => {
+    // Custom validation: Must provide either productCode or inventoryId
+    if (!value.productCode && !value[TRANSFER_LINE_ITEM_FIELDS.INVENTORY_ID]) {
+      return helpers.error("custom.productCodeOrInventoryIdRequired");
+    }
+    return value;
+  }, "Product identification validation")
+  .messages({
+    "custom.productCodeOrInventoryIdRequired":
+      "Each line item must have either productCode or inventoryId",
+  });
+
+/**
+ * Transfer Line Item schema validation for UPDATE request (full line item object)
  */
 const transferLineItemSchema = Joi.object({
   [TRANSFER_LINE_ITEM_FIELDS.INVENTORY_ID]: Joi.string()
@@ -106,12 +177,39 @@ export const createTransferSchema = Joi.object({
 
   [TRANSFER_FIELDS.SOURCE_TYPE]: Joi.string()
     .valid(...getValidSourceTypes())
-    .required()
+    .optional() // Can be determined from grnId or sourceWarehouseId
     .messages({
       "any.only": `Source type must be one of: ${getValidSourceTypes().join(", ")}`,
-      "any.required": "Source type is required",
     }),
 
+  // Support legacy field names for backward compatibility
+  grnId: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .optional()
+    .messages({
+      "any.invalid": "GRN ID must be a valid ObjectId",
+    }),
+
+  sourceWarehouseId: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .optional()
+    .messages({
+      "any.invalid": "Source warehouse ID must be a valid ObjectId",
+    }),
+
+  // sourceId is optional - can use grnId or sourceWarehouseId instead
   [TRANSFER_FIELDS.SOURCE_ID]: Joi.string()
     .trim()
     .custom((value, helpers) => {
@@ -120,11 +218,9 @@ export const createTransferSchema = Joi.object({
       }
       return value;
     })
-    .required()
+    .optional()
     .messages({
-      "string.empty": "Source ID is required",
       "any.invalid": "Source ID must be a valid ObjectId",
-      "any.required": "Source ID is required",
     }),
 
   [TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID]: Joi.string()
@@ -156,7 +252,7 @@ export const createTransferSchema = Joi.object({
     }),
 
   [TRANSFER_FIELDS.LINE_ITEMS]: Joi.array()
-    .items(transferLineItemSchema)
+    .items(createTransferLineItemSchema)
     .min(1)
     .required()
     .messages({
@@ -188,6 +284,7 @@ export const createTransferSchema = Joi.object({
       "string.max": `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
     }),
 
+  // transferredBy comes from authenticated user (req.user), not from request body
   [TRANSFER_FIELDS.TRANSFERRED_BY]: Joi.string()
     .trim()
     .custom((value, helpers) => {
@@ -196,29 +293,38 @@ export const createTransferSchema = Joi.object({
       }
       return value;
     })
-    .required()
+    .optional()
     .messages({
-      "string.empty": "Transferred by is required",
       "any.invalid": "Transferred by must be a valid ObjectId",
-      "any.required": "Transferred by is required",
     }),
 })
   .custom((value, helpers) => {
+    // Determine sourceType from provided fields
+    const sourceType = value[TRANSFER_FIELDS.SOURCE_TYPE] || 
+                      (value.grnId ? TRANSFER_SOURCE_TYPE.GRN : null) ||
+                      (value.sourceWarehouseId ? TRANSFER_SOURCE_TYPE.WAREHOUSE : null);
+
+    // Validate that source is provided (either sourceId, grnId, or sourceWarehouseId)
+    const hasSource = value[TRANSFER_FIELDS.SOURCE_ID] || value.grnId || value.sourceWarehouseId;
+    if (!hasSource) {
+      return helpers.error("custom.sourceRequired");
+    }
+
     // Custom validation: Ensure correct destination based on sourceType
-    if (value[TRANSFER_FIELDS.SOURCE_TYPE] === TRANSFER_SOURCE_TYPE.GRN) {
+    if (sourceType === TRANSFER_SOURCE_TYPE.GRN) {
       if (!value[TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID]) {
         return helpers.error("custom.grnRequiresWarehouse");
       }
-    } else if (
-      value[TRANSFER_FIELDS.SOURCE_TYPE] === TRANSFER_SOURCE_TYPE.WAREHOUSE
-    ) {
+    } else if (sourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
       if (!value[TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID]) {
         return helpers.error("custom.warehouseRequiresStorefront");
       }
     }
     return value;
-  }, "Destination validation")
+  }, "Source and destination validation")
   .messages({
+    "custom.sourceRequired":
+      "Source is required. Provide either sourceId, grnId (for GRN transfers), or sourceWarehouseId (for Warehouse transfers)",
     "custom.grnRequiresWarehouse":
       "destinationWarehouseId is required when sourceType is 'GRN' (GRN → Warehouse transfer)",
     "custom.warehouseRequiresStorefront":

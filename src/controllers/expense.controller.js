@@ -24,7 +24,7 @@ class ExpenseController {
     res.status(201).json({
       success: true,
       message: "Expense created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -34,7 +34,7 @@ class ExpenseController {
    */
   getExpenses = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getExpenses(req.query);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -53,7 +53,7 @@ class ExpenseController {
     res.status(200).json({
       success: true,
       message: "Expense fetched successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -68,7 +68,7 @@ class ExpenseController {
     res.status(200).json({
       success: true,
       message: "Expense updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -83,7 +83,7 @@ class ExpenseController {
     res.status(200).json({
       success: true,
       message: "Expense deleted successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

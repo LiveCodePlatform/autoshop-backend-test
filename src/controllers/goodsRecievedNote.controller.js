@@ -24,7 +24,7 @@ class GoodsRecievedNoteController {
     res.status(201).json({
       success: true,
       message: "GRN created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -34,7 +34,7 @@ class GoodsRecievedNoteController {
    */
   getAllGRN = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllGRN(req.query);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -53,7 +53,7 @@ class GoodsRecievedNoteController {
     res.status(200).json({
       success: true,
       message: "GRN retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -70,7 +70,7 @@ class GoodsRecievedNoteController {
     res.status(200).json({
       success: true,
       message: "GRN status updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -87,7 +87,7 @@ class GoodsRecievedNoteController {
     res.status(200).json({
       success: true,
       message: "GRN line items updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

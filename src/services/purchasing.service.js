@@ -10,7 +10,11 @@ import {
   PurchasingResponseDTO,
   PurchasingListResponseDTO,
 } from "../dtos/purchasing.dto.js";
-import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
+import {
+  NotFoundError,
+  CastError,
+  ValidationError,
+} from "../errors/errorTypes.js";
 import {
   PURCHASING_FIELDS,
   PRODUCT_FIELDS,
@@ -20,6 +24,7 @@ import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
 import { InventoryRepository } from "../repositories/inventory.repository.js";
+import Purchasing from "../models/purchasing.model.js";
 
 export class PurchasingService {
   /**
@@ -33,22 +38,22 @@ export class PurchasingService {
 
   /**
    * Create new purchasing order
-   * Matches legacy logic exactly
-   * @param {Object} data - Request data (supplierId, products, note, totalAmount)
+   * Automatically calculates totalAmount from products
+   * @param {Object} data - Request data (supplierId, products, note)
    * @param {Object} user - Authenticated user object (contains _id)
    * @returns {Promise<PurchasingResponseDTO>} Created purchasing DTO
    * @throws {ValidationError} If products are invalid or inventory items not found
    */
   async createPurchase(data, user) {
-    const { supplierId, products, note, totalAmount } = data;
+    const { supplierId, products, note } = data;
     const purchasedBy = user._id;
 
-    // Validate required fields (matches legacy exactly)
+    // Validate required fields
     if (!supplierId || !products || products.length === 0) {
       throw new ValidationError("Supplier ID and products are required");
     }
 
-    // Fetch product details for each product in the purchase (matches legacy exactly)
+    // Fetch product details for each product in the purchase
     const productsWithDetails = await Promise.all(
       products.map(async (item) => {
         if (!item.inventoryId || !item.purchaseQuantity) {
@@ -57,7 +62,9 @@ export class PurchasingService {
           );
         }
 
-        const inventoryItem = await this.inventoryRepository.findById(item.inventoryId);
+        const inventoryItem = await this.inventoryRepository.findById(
+          item.inventoryId
+        );
 
         if (!inventoryItem) {
           throw new NotFoundError(
@@ -76,10 +83,18 @@ export class PurchasingService {
       })
     );
 
+    // Calculate totalAmount automatically from products
+    // totalAmount = sum of (buyingPrice * purchaseQuantity) for each product
+    const totalAmount = productsWithDetails.reduce((sum, product) => {
+      const productTotal =
+        (product.buyingPrice || 0) * (product.purchaseQuantity || 0);
+      return sum + productTotal;
+    }, 0);
+
     // Generate PO number (matches legacy exactly - uses model static method)
     const poNumber = await Purchasing.generatePONumber();
 
-    // Create purchase (matches legacy exactly - direct creation, no DTO transformation)
+    // Create purchase
     const purchase = await this.repository.create({
       poNumber,
       supplierId,
@@ -199,7 +214,8 @@ export class PurchasingService {
           const remainingQty =
             product.remainingQuantity !== undefined
               ? product.remainingQuantity
-              : (product.purchaseQuantity || 0) - (product.receivedQuantity || 0);
+              : (product.purchaseQuantity || 0) -
+                (product.receivedQuantity || 0);
           return total + Math.max(0, remainingQty); // Ensure non-negative
         },
         0

@@ -24,7 +24,7 @@ class PurchasingController {
     res.status(201).json({
       success: true,
       message: "Purchase created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -38,7 +38,7 @@ class PurchasingController {
     res.status(200).json({
       success: true,
       message: "All purchases retrieved successfully",
-      data: result.purchases,
+      data: result.data,
       pagination: result.pagination,
     });
   });
@@ -55,7 +55,7 @@ class PurchasingController {
     res.status(200).json({
       success: true,
       message: "Purchase retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -71,7 +71,7 @@ class PurchasingController {
     res.status(200).json({
       success: true,
       message: "Purchase status updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -86,7 +86,7 @@ class PurchasingController {
     res.status(200).json({
       success: true,
       message: "Purchase order soft deleted successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -101,7 +101,7 @@ class PurchasingController {
     res.status(200).json({
       success: true,
       message: "Purchase order restored successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

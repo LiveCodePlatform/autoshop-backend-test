@@ -22,7 +22,9 @@ class TransferController {
   createTransfer = asyncErrorHandler(async (req, res, next) => {
     if (!req.user || !req.user._id) {
       return next(
-        new UnauthorizedError("Authentication required. Admin account ID is missing.")
+        new UnauthorizedError(
+          "Authentication required. Admin account ID is missing."
+        )
       );
     }
 
@@ -40,7 +42,7 @@ class TransferController {
    * GET /api/transfers
    */
   getTransfers = asyncErrorHandler(async (req, res, next) => {
-    const transfers = await this.service.getAllTransfers(req.query);
+    const transfers = await this.service.getTransfers(req.query);
     const transfersData = transfers.map((transfer) => transfer.toJSON());
 
     res.status(200).json({
@@ -61,7 +63,7 @@ class TransferController {
     res.status(200).json({
       success: true,
       message: "Transfer fetched successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -78,7 +80,7 @@ class TransferController {
     res.status(200).json({
       success: true,
       message: "Transfer status updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

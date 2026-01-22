@@ -79,6 +79,17 @@ export class PurchasingRepository {
     }
     return await document.save();
   }
+
+  /**
+   * Update one document matching the query
+   * @param {Object} query - MongoDB query
+   * @param {Object} updateData - Update data
+   * @param {Object} options - Update options
+   * @returns {Promise<Object>} Update result
+   */
+  async updateOne(query, updateData, options = {}) {
+    return await Purchasing.updateOne(query, updateData, options);
+  }
 }
 
 export default PurchasingRepository;

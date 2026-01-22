@@ -24,7 +24,7 @@ class AdminController {
     res.status(201).json({
       success: true,
       message: "Admin created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -38,7 +38,7 @@ class AdminController {
     res.status(200).json({
       success: true,
       message: "Admin Dashboard",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -82,7 +82,7 @@ class AdminController {
     res.status(200).json({
       success: true,
       message: "Admin retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -112,7 +112,7 @@ class AdminController {
     res.status(200).json({
       success: true,
       message: "Admin updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 

@@ -693,8 +693,8 @@ export class TransferService {
       throw new CastError("Invalid transfer ID format", "id");
     }
 
-    // Find transfer
-    const transfer = await this.repository.findById(id);
+    // Find transfer (pass session to query within transaction)
+    const transfer = await this.repository.findById(id, { session });
     if (!transfer || transfer.isDeleted) {
       throw new NotFoundError("Transfer", id);
     }
@@ -737,8 +737,8 @@ export class TransferService {
       await this._updateWarehouseToStorefrontStock(transfer, session);
     }
 
-    // Return updated transfer DTO
-    const updatedTransfer = await this.repository.findById(id);
+    // Return updated transfer DTO (pass session to query within transaction)
+    const updatedTransfer = await this.repository.findById(id, { session });
     return new TransferResponseDTO(updatedTransfer);
   }
 

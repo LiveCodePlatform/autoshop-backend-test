@@ -24,7 +24,7 @@ class StockAuditLogController {
     res.status(201).json({
       success: true,
       message: "Stock audit log created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -36,7 +36,7 @@ class StockAuditLogController {
     // Use validated query if available, otherwise fallback to original query
     const queryParams = req.validatedQuery || req.query;
     const result = await this.service.getAllStockAuditLogs(queryParams);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -55,7 +55,7 @@ class StockAuditLogController {
     res.status(200).json({
       success: true,
       message: "Stock audit log retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

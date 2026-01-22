@@ -384,12 +384,12 @@ export const getOrderService = () => {
 export const getSaleReportService = () => {
   if (!saleReportService) {
     // Inject repository dependencies
-    const orderRepository = getOrderRepository();
     const locationProfileRepository = getLocationProfileRepository();
+    const orderRepository = getOrderRepository();
     const creditRecordRepository = getCreditRecordRepository();
     saleReportService = new SaleReportService(
-      orderRepository,
       locationProfileRepository,
+      orderRepository,
       creditRecordRepository
     );
   }

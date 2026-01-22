@@ -24,7 +24,7 @@ class SupplierProfileController {
     res.status(201).json({
       success: true,
       message: "Supplier profile created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -34,7 +34,7 @@ class SupplierProfileController {
    */
   getAllSupplierProfiles = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllSupplierProfiles(req.query);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -53,7 +53,7 @@ class SupplierProfileController {
     res.status(200).json({
       success: true,
       message: "Supplier profile retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -68,7 +68,7 @@ class SupplierProfileController {
     res.status(200).json({
       success: true,
       message: "Supplier profile updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -83,7 +83,7 @@ class SupplierProfileController {
     res.status(200).json({
       success: true,
       message: "Supplier profile soft deleted successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -98,7 +98,7 @@ class SupplierProfileController {
     res.status(200).json({
       success: true,
       message: "Supplier profile restored successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -113,7 +113,7 @@ class SupplierProfileController {
     res.status(200).json({
       success: true,
       message: "Supplier profile deleted successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

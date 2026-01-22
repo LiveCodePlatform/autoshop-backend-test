@@ -24,7 +24,7 @@ class WarehouseProfileController {
     res.status(201).json({
       success: true,
       message: "Warehouse profile created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -35,7 +35,7 @@ class WarehouseProfileController {
   getAllWarehouseProfiles = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.validatedQuery || req.query;
     const result = await this.service.getAllWarehouseProfiles(queryParams);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -54,7 +54,7 @@ class WarehouseProfileController {
     res.status(200).json({
       success: true,
       message: "Warehouse profile retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -69,7 +69,7 @@ class WarehouseProfileController {
     res.status(200).json({
       success: true,
       message: "Warehouse profile updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

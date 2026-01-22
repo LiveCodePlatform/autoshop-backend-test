@@ -35,7 +35,7 @@ class StorefrontProfileController {
   getAllStorefrontProfiles = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.validatedQuery || req.query;
     const result = await this.service.getAllStorefrontProfiles(queryParams);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -54,7 +54,7 @@ class StorefrontProfileController {
     res.status(200).json({
       success: true,
       message: "Storefront profile retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -69,7 +69,7 @@ class StorefrontProfileController {
     res.status(200).json({
       success: true,
       message: "Storefront profile updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

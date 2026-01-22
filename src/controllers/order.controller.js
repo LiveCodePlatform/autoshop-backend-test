@@ -24,7 +24,7 @@ class OrderController {
     res.status(201).json({
       success: true,
       message: "Order created successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -54,7 +54,7 @@ class OrderController {
     res.status(200).json({
       success: true,
       message: "Order fetched successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -73,7 +73,7 @@ class OrderController {
     res.status(200).json({
       success: true,
       message: "Credit person ID updated successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -107,7 +107,7 @@ class OrderController {
     res.status(200).json({
       success: true,
       message: "Order items added successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -122,7 +122,7 @@ class OrderController {
     res.status(200).json({
       success: true,
       message: "Order items removed successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }

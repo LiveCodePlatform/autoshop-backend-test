@@ -214,7 +214,7 @@ export class InventoryService {
         (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined
       )
       .map((stock) => ({
-        locationId: stock.warehouseId._id,
+        locationId: stock.warehouseId.id || stock.warehouseId._id?.toString(),
         locationName: stock.warehouseId.locationName,
         locationCode: stock.warehouseId.locationCode,
         locationAddress: stock.warehouseId.locationAddress,
@@ -230,7 +230,7 @@ export class InventoryService {
         (stock) => stock.storefrontId !== null && stock.storefrontId !== undefined
       )
       .map((stock) => ({
-        locationId: stock.storefrontId._id,
+        locationId: stock.storefrontId.id || stock.storefrontId._id?.toString(),
         locationName: stock.storefrontId.locationName,
         locationCode: stock.storefrontId.locationCode,
         locationAddress: stock.storefrontId.locationAddress,

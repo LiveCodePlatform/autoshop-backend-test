@@ -52,7 +52,85 @@ const VALIDATION_CONSTRAINTS = {
 };
 
 /**
- * Product schema validation (for products array)
+ * Product schema validation for CREATE request (for products array)
+ * Only requires inventoryId and purchaseQuantity - other fields are fetched from inventory
+ */
+const createProductSchema = Joi.object({
+  [PRODUCT_FIELDS.INVENTORY_ID]: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .required()
+    .messages({
+      "string.empty": "Inventory ID is required",
+      "any.invalid": "Inventory ID must be a valid ObjectId",
+      "any.required": "Inventory ID is required",
+    }),
+
+  [PRODUCT_FIELDS.PURCHASE_QUANTITY]: Joi.number()
+    .integer()
+    .min(VALIDATION_CONSTRAINTS.PURCHASE_QUANTITY.MIN)
+    .required()
+    .messages({
+      "number.base": "Purchase quantity must be a number",
+      "number.integer": "Purchase quantity must be an integer",
+      "number.min": `Purchase quantity must be at least ${VALIDATION_CONSTRAINTS.PURCHASE_QUANTITY.MIN}`,
+      "any.required": "Purchase quantity is required",
+    }),
+
+  [PRODUCT_FIELDS.PRODUCT_STATUS]: Joi.string()
+    .valid(...Object.values(PRODUCT_STATUS))
+    .optional()
+    .messages({
+      "any.only": `Product status must be one of: ${Object.values(PRODUCT_STATUS).join(", ")}`,
+    }),
+
+  // These fields are auto-populated from inventory, so they're optional in the request
+  [PRODUCT_FIELDS.PRODUCT_NAME]: Joi.string()
+    .trim()
+    .min(VALIDATION_CONSTRAINTS.PRODUCT_NAME.MIN_LENGTH)
+    .max(VALIDATION_CONSTRAINTS.PRODUCT_NAME.MAX_LENGTH)
+    .optional()
+    .messages({
+      "string.min": `Product name must be at least ${VALIDATION_CONSTRAINTS.PRODUCT_NAME.MIN_LENGTH} character`,
+      "string.max": `Product name cannot exceed ${VALIDATION_CONSTRAINTS.PRODUCT_NAME.MAX_LENGTH} characters`,
+    }),
+
+  [PRODUCT_FIELDS.BUYING_PRICE]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.BUYING_PRICE.MIN)
+    .optional()
+    .messages({
+      "number.base": "Buying price must be a number",
+      "number.min": `Buying price cannot be negative`,
+    }),
+
+  [PRODUCT_FIELDS.PRODUCT_CODE]: Joi.string()
+    .trim()
+    .min(VALIDATION_CONSTRAINTS.PRODUCT_CODE.MIN_LENGTH)
+    .max(VALIDATION_CONSTRAINTS.PRODUCT_CODE.MAX_LENGTH)
+    .optional()
+    .messages({
+      "string.min": `Product code must be at least ${VALIDATION_CONSTRAINTS.PRODUCT_CODE.MIN_LENGTH} character`,
+      "string.max": `Product code cannot exceed ${VALIDATION_CONSTRAINTS.PRODUCT_CODE.MAX_LENGTH} characters`,
+    }),
+
+  [PRODUCT_FIELDS.RECEIVED_QUANTITY]: Joi.number()
+    .integer()
+    .min(VALIDATION_CONSTRAINTS.RECEIVED_QUANTITY.MIN)
+    .optional()
+    .messages({
+      "number.base": "Received quantity must be a number",
+      "number.integer": "Received quantity must be an integer",
+      "number.min": `Received quantity cannot be negative`,
+    }),
+});
+
+/**
+ * Product schema validation for UPDATE request (full product object)
  */
 const productSchema = Joi.object({
   [PRODUCT_FIELDS.INVENTORY_ID]: Joi.string()
@@ -165,7 +243,7 @@ export const createPurchasingSchema = Joi.object({
     }),
 
   [PURCHASING_FIELDS.PRODUCTS]: Joi.array()
-    .items(productSchema)
+    .items(createProductSchema)
     .min(1)
     .required()
     .messages({
@@ -191,15 +269,17 @@ export const createPurchasingSchema = Joi.object({
       "string.max": `Note cannot exceed ${VALIDATION_CONSTRAINTS.NOTE.MAX_LENGTH} characters`,
     }),
 
+  // totalAmount is now automatically calculated from products, so it's optional
+  // If provided, it will be ignored and recalculated
   [PURCHASING_FIELDS.TOTAL_AMOUNT]: Joi.number()
     .min(VALIDATION_CONSTRAINTS.TOTAL_AMOUNT.MIN)
-    .required()
+    .optional()
     .messages({
       "number.base": "Total amount must be a number",
       "number.min": `Total amount cannot be negative`,
-      "any.required": "Total amount is required",
     }),
 
+  // purchasedBy comes from authenticated user (req.user), not from request body
   [PURCHASING_FIELDS.PURCHASED_BY]: Joi.string()
     .trim()
     .custom((value, helpers) => {
@@ -208,37 +288,11 @@ export const createPurchasingSchema = Joi.object({
       }
       return value;
     })
-    .required()
+    .optional()
     .messages({
-      "string.empty": "Purchased by is required",
       "any.invalid": "Purchased by must be a valid ObjectId",
-      "any.required": "Purchased by is required",
     }),
-})
-  .custom((value, helpers) => {
-    // Custom validation: Validate that totalAmount matches sum of products
-    if (value[PURCHASING_FIELDS.PRODUCTS] && value[PURCHASING_FIELDS.TOTAL_AMOUNT]) {
-      const calculatedTotal = value[PURCHASING_FIELDS.PRODUCTS].reduce(
-        (sum, product) => {
-          const productTotal =
-            (product[PRODUCT_FIELDS.BUYING_PRICE] || 0) *
-            (product[PRODUCT_FIELDS.PURCHASE_QUANTITY] || 0);
-          return sum + productTotal;
-        },
-        0
-      );
-
-      // Allow small floating point differences (0.01)
-      if (Math.abs(calculatedTotal - value[PURCHASING_FIELDS.TOTAL_AMOUNT]) > 0.01) {
-        return helpers.error("custom.totalAmountMismatch");
-      }
-    }
-    return value;
-  }, "Total amount validation")
-  .messages({
-    "custom.totalAmountMismatch":
-      "Total amount must match the sum of all products (buyingPrice * purchaseQuantity)",
-  });
+});
 
 /**
  * Validation schema for updating purchasing

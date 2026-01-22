@@ -24,22 +24,32 @@ export class TransferRepository {
   }
 
   async findById(id, populateOptions = {}) {
+    const { session, lean, ...populate } = populateOptions;
     let query = Transfer.findById(id);
 
-    if (populateOptions.transferredBy) {
-      query = query.populate("transferredBy", populateOptions.transferredBy);
+    // Apply session if provided (for transactions)
+    if (session) {
+      query = query.session(session);
     }
-    if (populateOptions.sourceId) {
-      query = query.populate("sourceId", populateOptions.sourceId);
+
+    if (populate.transferredBy) {
+      query = query.populate("transferredBy", populate.transferredBy);
     }
-    if (populateOptions.destinationWarehouseId) {
-      query = query.populate("destinationWarehouseId", populateOptions.destinationWarehouseId);
+    if (populate.sourceId) {
+      query = query.populate("sourceId", populate.sourceId);
     }
-    if (populateOptions.destinationStorefrontId) {
-      query = query.populate("destinationStorefrontId", populateOptions.destinationStorefrontId);
+    if (populate.destinationWarehouseId) {
+      query = query.populate("destinationWarehouseId", populate.destinationWarehouseId);
     }
-    if (populateOptions.lineItems) {
-      query = query.populate("lineItems.inventoryId", populateOptions.lineItems);
+    if (populate.destinationStorefrontId) {
+      query = query.populate("destinationStorefrontId", populate.destinationStorefrontId);
+    }
+    if (populate.lineItems) {
+      query = query.populate("lineItems.inventoryId", populate.lineItems);
+    }
+
+    if (lean) {
+      query = query.lean();
     }
 
     return await query.exec();

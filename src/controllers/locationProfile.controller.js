@@ -21,7 +21,7 @@ class LocationProfileController {
   getAllLocationProfiles = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.query;
     const result = await this.service.getAllLocationProfiles(queryParams);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -40,16 +40,14 @@ class LocationProfileController {
     res.status(200).json({
       success: true,
       message: "Location profile retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 }
 
 // Export instance
 const locationProfileController = new LocationProfileController();
-export const {
-  getAllLocationProfiles,
-  getLocationProfileById,
-} = locationProfileController;
+export const { getAllLocationProfiles, getLocationProfileById } =
+  locationProfileController;
 
 export default locationProfileController;

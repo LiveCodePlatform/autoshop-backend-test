@@ -20,7 +20,9 @@ class SocialMediaSaleInventoryController {
    */
   createSocialMediaSaleInventory = asyncErrorHandler(async (req, res, next) => {
     const validatedData = req.validatedData || req.body;
-    const result = await this.service.createSocialMediaSaleInventory(validatedData);
+    const result = await this.service.createSocialMediaSaleInventory(
+      validatedData
+    );
 
     res.status(201).json({
       success: true,
@@ -35,8 +37,10 @@ class SocialMediaSaleInventoryController {
    */
   getAllSocialMediaSaleInventory = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.validatedQuery || req.query;
-    const result = await this.service.getAllSocialMediaSaleInventory(queryParams);
-    const response = result.toJSON();
+    const result = await this.service.getAllSocialMediaSaleInventory(
+      queryParams
+    );
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -48,16 +52,18 @@ class SocialMediaSaleInventoryController {
    * Get social media sale inventory by ID
    * GET /api/v2/social-inventory/:id
    */
-  getSocialMediaSaleInventoryById = asyncErrorHandler(async (req, res, next) => {
-    const { id } = req.params;
-    const result = await this.service.getSocialMediaSaleInventoryById(id);
+  getSocialMediaSaleInventoryById = asyncErrorHandler(
+    async (req, res, next) => {
+      const { id } = req.params;
+      const result = await this.service.getSocialMediaSaleInventoryById(id);
 
-    res.status(200).json({
-      success: true,
-      message: "Social media sale inventory retrieved successfully",
-      data: result.toJSON(),
-    });
-  });
+      res.status(200).json({
+        success: true,
+        message: "Social media sale inventory retrieved successfully",
+        data: result,
+      });
+    }
+  );
 
   /**
    * Update social media sale inventory quantity
@@ -88,7 +94,7 @@ class SocialMediaSaleInventoryController {
       res.status(200).json({
         success: true,
         message: result.message,
-        data: result.data.toJSON(),
+        data: result.data,
         operation: result.operation,
       });
     }
@@ -96,7 +102,8 @@ class SocialMediaSaleInventoryController {
 }
 
 // Export instance
-const socialMediaSaleInventoryController = new SocialMediaSaleInventoryController();
+const socialMediaSaleInventoryController =
+  new SocialMediaSaleInventoryController();
 export const {
   createSocialMediaSaleInventory,
   getAllSocialMediaSaleInventory,

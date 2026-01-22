@@ -37,11 +37,12 @@ class InventoryController {
    */
   getAllInventory = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllInventory(req.query);
-    const response = result.toJSON();
 
     res.status(200).json({
-      ...response,
+      success: true,
       message: "Inventory items retrieved successfully",
+      data: result.inventories,
+      pagination: result.pagination,
     });
   });
 
@@ -56,7 +57,7 @@ class InventoryController {
     res.status(200).json({
       success: true,
       message: "Inventory item retrieved successfully",
-      data: result.toJSON(),
+      data: result, // result is already a plain object, no need for .toJSON()
     });
   });
 

@@ -34,11 +34,12 @@ class StorefrontInventoryController {
    */
   getAllStorefrontInventory = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllStorefrontInventory(req.query);
-    const response = result.toJSON();
 
     res.status(200).json({
-      ...response,
+      success: true,
       message: "Storefront inventory retrieved successfully",
+      data: result.data,
+      ...(result.pagination && { pagination: result.pagination }),
     });
   });
 
@@ -53,7 +54,7 @@ class StorefrontInventoryController {
     res.status(200).json({
       success: true,
       message: "Storefront inventory retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -77,7 +78,7 @@ class StorefrontInventoryController {
       res.status(200).json({
         success: true,
         message: result.message,
-        data: result.storefrontInventory.toJSON(),
+        data: result.storefrontInventory,
         operation: result.operation,
       });
     }

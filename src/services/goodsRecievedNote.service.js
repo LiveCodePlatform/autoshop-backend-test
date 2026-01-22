@@ -341,8 +341,8 @@ export class GoodsRecievedNoteService {
     // purchaseQuantity remains unchanged (preserves original order quantity)
     // receivedQuantity tracks total received from all GRNs
     for (const grnLineItem of grnLineItems) {
-      // First, increment receivedQuantity
-      await Purchasing.updateOne(
+      // First, increment receivedQuantity using repository (SRC pattern)
+      await this.purchasingRepository.updateOne(
         {
           _id: purchasingId,
           "products.inventoryId":

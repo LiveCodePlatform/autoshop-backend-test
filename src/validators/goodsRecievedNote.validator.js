@@ -40,7 +40,99 @@ const VALIDATION_CONSTRAINTS = {
 };
 
 /**
- * GRN Line Item schema validation (for lineItems array)
+ * GRN Line Item schema validation for CREATE request
+ * User only needs to provide productCode, goodQuantity, and badQuantity
+ * Other fields are auto-filled from PO or auto-calculated
+ */
+const createGRNLineItemSchema = Joi.object({
+  // productCode is required to match products from the purchase order
+  productCode: Joi.string()
+    .trim()
+    .required()
+    .messages({
+      "string.empty": "Product code is required",
+      "any.required": "Product code is required to match products from the purchase order",
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.GOOD_QUANTITY]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.QUANTITY.MIN)
+    .required()
+    .messages({
+      "number.base": "Good quantity must be a number",
+      "number.min": `Good quantity cannot be negative`,
+      "any.required": "Good quantity is required",
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.BAD_QUANTITY]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.QUANTITY.MIN)
+    .default(GRN_LINE_ITEM_DEFAULTS.BAD_QUANTITY)
+    .required()
+    .messages({
+      "number.base": "Bad quantity must be a number",
+      "number.min": `Bad quantity cannot be negative`,
+      "any.required": "Bad quantity is required",
+    }),
+
+  // Optional fields - auto-calculated if not provided
+  [GRN_LINE_ITEM_FIELDS.RECEIVED_QUANTITY]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.QUANTITY.MIN)
+    .optional()
+    .messages({
+      "number.base": "Received quantity must be a number",
+      "number.min": `Received quantity cannot be negative`,
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.UNIT_PRICE]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.PRICE.MIN)
+    .optional()
+    .messages({
+      "number.base": "Unit price must be a number",
+      "number.min": `Unit price cannot be negative`,
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.NOTES]: Joi.string()
+    .trim()
+    .max(VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH)
+    .allow(null, "")
+    .optional()
+    .messages({
+      "string.max": `Line item notes cannot exceed ${VALIDATION_CONSTRAINTS.LINE_ITEM_NOTES.MAX_LENGTH} characters`,
+    }),
+
+  // These fields are auto-filled/calculated, so they're optional in the request
+  [GRN_LINE_ITEM_FIELDS.INVENTORY_ID]: Joi.string()
+    .trim()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .optional()
+    .messages({
+      "any.invalid": "Inventory ID must be a valid ObjectId",
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.TOTAL_PRICE]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.PRICE.MIN)
+    .optional()
+    .messages({
+      "number.base": "Total price must be a number",
+      "number.min": `Total price cannot be negative`,
+    }),
+
+  [GRN_LINE_ITEM_FIELDS.TRANSFERRED_QUANTITY]: Joi.number()
+    .min(VALIDATION_CONSTRAINTS.QUANTITY.MIN)
+    .default(GRN_LINE_ITEM_DEFAULTS.TRANSFERRED_QUANTITY)
+    .optional()
+    .messages({
+      "number.base": "Transferred quantity must be a number",
+      "number.min": `Transferred quantity cannot be negative`,
+    }),
+});
+
+/**
+ * GRN Line Item schema validation for UPDATE request (full line item object)
  */
 const grnLineItemSchema = Joi.object({
   [GRN_LINE_ITEM_FIELDS.INVENTORY_ID]: Joi.string()
@@ -137,11 +229,11 @@ const grnLineItemSchema = Joi.object({
       "Good quantity + Bad quantity must equal Received quantity",
   })
   .custom((value, helpers) => {
-    // Custom validation: totalPrice should equal goodQuantity * unitPrice
-    const goodQty = value[GRN_LINE_ITEM_FIELDS.GOOD_QUANTITY] || 0;
+    // Custom validation: totalPrice should equal receivedQuantity * unitPrice
+    const receivedQty = value[GRN_LINE_ITEM_FIELDS.RECEIVED_QUANTITY] || 0;
     const unitPrice = value[GRN_LINE_ITEM_FIELDS.UNIT_PRICE] || 0;
     const totalPrice = value[GRN_LINE_ITEM_FIELDS.TOTAL_PRICE] || 0;
-    const expectedTotal = goodQty * unitPrice;
+    const expectedTotal = receivedQty * unitPrice;
 
     // Allow small floating point differences (0.01)
     if (Math.abs(totalPrice - expectedTotal) > 0.01) {
@@ -151,7 +243,7 @@ const grnLineItemSchema = Joi.object({
   }, "Price validation")
   .messages({
     "custom.priceMismatch":
-      "Total price must equal Good quantity × Unit price",
+      "Total price must equal Received quantity × Unit price",
   });
 
 /**
@@ -199,7 +291,7 @@ export const createGRNSchema = Joi.object({
     }),
 
   [GRN_FIELDS.LINE_ITEMS]: Joi.array()
-    .items(grnLineItemSchema)
+    .items(createGRNLineItemSchema)
     .min(1)
     .required()
     .messages({
@@ -218,39 +310,16 @@ export const createGRNSchema = Joi.object({
       "string.max": `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
     }),
 
+  // totalAmount is now automatically calculated from line items, so it's optional
+  // If provided, it will be ignored and recalculated
   [GRN_FIELDS.TOTAL_AMOUNT]: Joi.number()
     .min(VALIDATION_CONSTRAINTS.PRICE.MIN)
-    .required()
+    .optional()
     .messages({
       "number.base": "Total amount must be a number",
       "number.min": `Total amount cannot be negative`,
-      "any.required": "Total amount is required",
     }),
-})
-  .custom((value, helpers) => {
-    // Custom validation: Validate that totalAmount matches sum of line items totalPrice
-    if (value[GRN_FIELDS.LINE_ITEMS] && value[GRN_FIELDS.TOTAL_AMOUNT]) {
-      const calculatedTotal = value[GRN_FIELDS.LINE_ITEMS].reduce(
-        (sum, item) => {
-          const itemTotal = item[GRN_LINE_ITEM_FIELDS.TOTAL_PRICE] || 0;
-          return sum + itemTotal;
-        },
-        0
-      );
-
-      // Allow small floating point differences (0.01)
-      if (
-        Math.abs(calculatedTotal - value[GRN_FIELDS.TOTAL_AMOUNT]) > 0.01
-      ) {
-        return helpers.error("custom.totalAmountMismatch");
-      }
-    }
-    return value;
-  }, "Total amount validation")
-  .messages({
-    "custom.totalAmountMismatch":
-      "Total amount must match the sum of all line items totalPrice",
-  });
+});
 
 /**
  * Validation schema for updating GRN

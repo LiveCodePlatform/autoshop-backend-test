@@ -34,7 +34,7 @@ class WarehouseInventoryController {
    */
   getAllWarehouseInventory = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllWarehouseInventory(req.query);
-    const response = result.toJSON();
+    const response = result;
 
     res.status(200).json({
       ...response,
@@ -53,7 +53,7 @@ class WarehouseInventoryController {
     res.status(200).json({
       success: true,
       message: "Warehouse inventory retrieved successfully",
-      data: result.toJSON(),
+      data: result,
     });
   });
 
@@ -77,7 +77,7 @@ class WarehouseInventoryController {
       res.status(200).json({
         success: true,
         message: result.message,
-        data: result.warehouseInventory.toJSON(),
+        data: result.warehouseInventory,
         operation: result.operation,
       });
     }
