@@ -8,7 +8,13 @@ import StockAuditLog from "../models/stockAuditLog.model.js";
 
 export class StockAuditLogRepository {
   async create(data, options = {}) {
-    return await StockAuditLog.create([data], options);
+    const { session } = options;
+    if (session) {
+      return await StockAuditLog.create([data], { session }).then(
+        (records) => records[0]
+      );
+    }
+    return await StockAuditLog.create(data);
   }
 
   async findById(id, populateOptions = {}) {

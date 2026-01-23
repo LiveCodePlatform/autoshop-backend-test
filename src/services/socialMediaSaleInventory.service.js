@@ -21,7 +21,7 @@ import {
 import {
   createStockAuditLog,
   determineActionType,
-} from "../legacy/services/stockAuditLog.service.js";
+} from "../shared/utils/stockAuditLog.utils.js";
 
 export class SocialMediaSaleInventoryService {
   /**

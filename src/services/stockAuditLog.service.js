@@ -53,11 +53,10 @@ export class StockAuditLogService {
 
     // Create audit log
     const createOptions = session ? { session } : {};
-    const newAuditLogs = await this.repository.create(
+    const newAuditLog = await this.repository.create(
       auditLogData,
       createOptions
     );
-    const newAuditLog = newAuditLogs[0];
 
     // Return DTO
     return new StockAuditLogResponseDTO(newAuditLog);
