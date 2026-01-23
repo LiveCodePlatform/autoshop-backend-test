@@ -51,7 +51,7 @@ const adminSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: getValidRoles(), // ✅ Uses types for enum values
-        message: `Role must be ${ADMIN_ROLE.OWNER} or ${ADMIN_ROLE.CASHIER}`,
+        message: `Role must be ${ADMIN_ROLE.OWNER} or ${ADMIN_ROLE.CASHIER} or ${ADMIN_ROLE.ADMIN}`,
       },
       default: ADMIN_DEFAULTS.ROLE, // ✅ Uses types for default
     },

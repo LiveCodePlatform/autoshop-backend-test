@@ -34,11 +34,11 @@ class ExpenseController {
    */
   getExpenses = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getExpenses(req.query);
-    const response = result;
 
     res.status(200).json({
-      ...response,
+      success: true,
       message: "Expenses fetched successfully",
+      data: result,
     });
   });
 

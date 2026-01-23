@@ -10,6 +10,7 @@
 export const ADMIN_ROLE = {
   OWNER: "owner",
   CASHIER: "cashier",
+  ADMIN: "admin",
 };
 
 /**
@@ -43,8 +44,7 @@ export const ADMIN_DEFAULTS = {
  * Helper Functions
  */
 export const getValidRoles = () => Object.values(ADMIN_ROLE);
-export const isValidRole = (role) =>
-  Object.values(ADMIN_ROLE).includes(role);
+export const isValidRole = (role) => Object.values(ADMIN_ROLE).includes(role);
 
 /**
  * Admin Type Definitions

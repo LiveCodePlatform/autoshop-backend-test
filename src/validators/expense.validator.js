@@ -6,10 +6,7 @@
  */
 
 import Joi from "joi";
-import {
-  EXPENSE_FIELDS,
-  EXPENSE_DEFAULTS,
-} from "../types/expense.types.js";
+import { EXPENSE_FIELDS, EXPENSE_DEFAULTS } from "../types/expense.types.js";
 
 /**
  * Validation Constraints
@@ -53,12 +50,10 @@ export const createExpenseSchema = Joi.object({
       "any.required": "Amount is required",
     }),
 
-  [EXPENSE_FIELDS.DATE]: Joi.date()
-    .required()
-    .messages({
-      "date.base": "Date must be a valid date",
-      "any.required": "Date is required",
-    }),
+  [EXPENSE_FIELDS.DATE]: Joi.date().required().messages({
+    "date.base": "Date must be a valid date",
+    "any.required": "Date is required",
+  }),
 
   [EXPENSE_FIELDS.NOTES]: Joi.string()
     .trim()
@@ -70,20 +65,15 @@ export const createExpenseSchema = Joi.object({
       "string.max": `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
     }),
 
+  // Note: locationId is optional - can be provided manually by admin/owner accounts
+  // For cashier accounts, it must come from their user profile (validated in service)
+  // adminId is NOT validated here - it always comes from the authenticated user (req.user)
   [EXPENSE_FIELDS.LOCATION_ID]: Joi.string()
-    .trim()
-    .required()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .allow(null, "")
+    .optional()
     .messages({
-      "string.empty": "Location ID is required",
-      "any.required": "Location is required",
-    }),
-
-  [EXPENSE_FIELDS.ADMIN_ID]: Joi.string()
-    .trim()
-    .required()
-    .messages({
-      "string.empty": "Admin ID is required",
-      "any.required": "Admin is required",
+      "string.pattern.base": "Location ID must be a valid ObjectId",
     }),
 });
 
@@ -109,11 +99,9 @@ export const updateExpenseSchema = Joi.object({
       "number.min": `Amount cannot be negative`,
     }),
 
-  [EXPENSE_FIELDS.DATE]: Joi.date()
-    .optional()
-    .messages({
-      "date.base": "Date must be a valid date",
-    }),
+  [EXPENSE_FIELDS.DATE]: Joi.date().optional().messages({
+    "date.base": "Date must be a valid date",
+  }),
 
   [EXPENSE_FIELDS.NOTES]: Joi.string()
     .trim()
@@ -124,13 +112,9 @@ export const updateExpenseSchema = Joi.object({
       "string.max": `Notes cannot exceed ${VALIDATION_CONSTRAINTS.NOTES.MAX_LENGTH} characters`,
     }),
 
-  [EXPENSE_FIELDS.LOCATION_ID]: Joi.string()
-    .trim()
-    .optional(),
-
-  [EXPENSE_FIELDS.ADMIN_ID]: Joi.string()
-    .trim()
-    .optional(),
+  // Note: locationId and adminId are NOT validated here
+  // - adminId comes from the authenticated user (req.user) in the service layer
+  // - locationId is not updatable (it's set during creation from req.user.locationId)
 }).min(1); // At least one field must be provided
 
 /**

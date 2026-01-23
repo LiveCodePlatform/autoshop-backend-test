@@ -40,7 +40,8 @@ const expenseSchema = new mongoose.Schema(
     locationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "LocationProfile",
-      required: [true, "Location is required"],
+      required: false, // Optional: owner and admin accounts may not have locationId
+      default: null,
     },
     adminId: {
       type: mongoose.Schema.Types.ObjectId,

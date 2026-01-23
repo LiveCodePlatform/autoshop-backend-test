@@ -53,12 +53,30 @@ export class ExpenseRepository {
     return await Expense.countDocuments(query);
   }
 
-  async findByIdAndUpdate(id, updateData, options) {
-    return await Expense.findByIdAndUpdate(id, updateData, options);
+  async findByIdAndUpdate(id, updateData, options = {}, populateOptions = {}) {
+    let query = Expense.findByIdAndUpdate(id, updateData, options);
+
+    if (populateOptions.locationId) {
+      query = query.populate("locationId", populateOptions.locationId);
+    }
+    if (populateOptions.adminId) {
+      query = query.populate("adminId", populateOptions.adminId);
+    }
+
+    return await query.exec();
   }
 
-  async findByIdAndDelete(id) {
-    return await Expense.findByIdAndDelete(id);
+  async findByIdAndDelete(id, populateOptions = {}) {
+    let query = Expense.findByIdAndDelete(id);
+
+    if (populateOptions.locationId) {
+      query = query.populate("locationId", populateOptions.locationId);
+    }
+    if (populateOptions.adminId) {
+      query = query.populate("adminId", populateOptions.adminId);
+    }
+
+    return await query.exec();
   }
 }
 

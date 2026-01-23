@@ -11,8 +11,13 @@ import {
   ExpenseResponseDTO,
   ExpenseListResponseDTO,
 } from "../dtos/expense.dto.js";
-import { NotFoundError, CastError, ValidationError } from "../errors/errorTypes.js";
+import {
+  NotFoundError,
+  CastError,
+  ValidationError,
+} from "../errors/errorTypes.js";
 import { EXPENSE_FIELDS } from "../types/expense.types.js";
+import { ADMIN_ROLE } from "../types/admin.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
 import CustomError from "../shared/utils/customError.js";
@@ -26,38 +31,76 @@ export class ExpenseService {
 
   /**
    * Create new expense
-   * Matches legacy logic exactly
-   * @param {Object} data - Request data (category, amount, date, notes)
-   * @param {Object} user - Authenticated user object (contains _id and locationId)
+   * @param {Object} data - Request data (category, amount, date, notes, locationId)
+   * @param {Object} user - Authenticated user object (contains _id, locationId, and role)
    * @returns {Promise<ExpenseResponseDTO>} Created expense DTO
    * @throws {CastError} If invalid locationId or adminId format
+   * @throws {ValidationError} If locationId is required but missing for cashier role
    */
   async createExpense(data, user) {
-    const { category, amount, date, notes } = data;
-
-    // Get locationId and adminId from authenticated user (matches legacy exactly)
-    const locationId = user.locationId;
-    const adminId = user._id;
-
-    // Validate ObjectId formats (matches legacy exactly)
-    if (!mongoose.Types.ObjectId.isValid(locationId)) {
-      throw new CastError("Invalid location ID format", "locationId");
-    }
-    if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      throw new CastError("Invalid admin ID format", "adminId");
-    }
-
-    // Create expense (matches legacy exactly - no DTO transformation, direct creation)
-    const expense = await this.repository.create({
+    const {
       category,
       amount,
       date,
       notes,
-      locationId,
-      adminId,
-    });
+      locationId: requestLocationId,
+    } = data;
 
-    // Return DTO (matches legacy structure - no population after creation)
+    // Get adminId and userRole from authenticated user
+    const adminId = user._id;
+    const userRole = user.role;
+    const userLocationId = user.locationId;
+
+    // Validate adminId format
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      throw new CastError("Invalid admin ID format", "adminId");
+    }
+
+    // Determine which locationId to use:
+    // - Admin/Owner: Can use manually provided locationId from request, or their own, or null
+    // - Cashier: Must use their own locationId (cannot override)
+    let finalLocationId = null;
+
+    if (userRole === ADMIN_ROLE.CASHIER) {
+      // Cashier must use their own locationId
+      finalLocationId = userLocationId;
+      if (!finalLocationId) {
+        throw new ValidationError(
+          "Location ID is required for cashier accounts",
+          "locationId"
+        );
+      }
+    } else {
+      // Admin/Owner: Prefer manually provided locationId, fallback to user's locationId
+      finalLocationId =
+        requestLocationId !== undefined ? requestLocationId : userLocationId;
+    }
+
+    // Validate locationId format if provided
+    if (finalLocationId !== null && finalLocationId !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(finalLocationId)) {
+        throw new CastError("Invalid location ID format", "locationId");
+      }
+    }
+
+    // Create expense data object
+    const expenseData = {
+      category,
+      amount,
+      date,
+      notes,
+      adminId,
+    };
+
+    // Only include locationId if it's provided (not null/undefined)
+    if (finalLocationId !== null && finalLocationId !== undefined) {
+      expenseData.locationId = finalLocationId;
+    }
+
+    // Create expense
+    const expense = await this.repository.create(expenseData);
+
+    // Return DTO
     return new ExpenseResponseDTO(expense);
   }
 
@@ -148,20 +191,16 @@ export class ExpenseService {
       throw new CastError("Invalid admin ID format", "adminId");
     }
 
-    // Update expense with populate in same chain (matches legacy exactly - no existence check before, direct update)
+    // Update expense with populate (matches legacy exactly - no existence check before, direct update)
     const expense = await this.repository.findByIdAndUpdate(
       id,
       { category, amount, date, notes, adminId },
-      { new: true, runValidators: true }
-    )
-      .populate({
-        path: "locationId",
-        select: "type locationName locationCode locationAddress",
-      })
-      .populate({
-        path: "adminId",
-        select: "name role",
-      });
+      { new: true, runValidators: true },
+      {
+        locationId: "type locationName locationCode locationAddress",
+        adminId: "name role",
+      }
+    );
 
     // Check if not found (matches legacy exactly)
     if (!expense) {
@@ -186,16 +225,11 @@ export class ExpenseService {
       throw new CastError("Invalid expense ID format", "id");
     }
 
-    // Delete expense with populate in same chain (matches legacy exactly)
-    const expense = await this.repository.findByIdAndDelete(id)
-      .populate({
-        path: "locationId",
-        select: "type locationName locationCode locationAddress",
-      })
-      .populate({
-        path: "adminId",
-        select: "name role",
-      });
+    // Delete expense with populate (matches legacy exactly)
+    const expense = await this.repository.findByIdAndDelete(id, {
+      locationId: "type locationName locationCode locationAddress",
+      adminId: "name role",
+    });
 
     // Check if not found (matches legacy exactly)
     if (!expense) {
