@@ -34,12 +34,8 @@ class CreditPersonaController {
    */
   getAllCreditPersons = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllCreditPersons(req.query);
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "Credit persons retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**

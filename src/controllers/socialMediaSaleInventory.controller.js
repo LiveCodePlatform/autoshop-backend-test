@@ -40,12 +40,8 @@ class SocialMediaSaleInventoryController {
     const result = await this.service.getAllSocialMediaSaleInventory(
       queryParams
     );
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "Social media sale inventory retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**
@@ -95,7 +91,6 @@ class SocialMediaSaleInventoryController {
         success: true,
         message: result.message,
         data: result.data,
-        operation: result.operation,
       });
     }
   );

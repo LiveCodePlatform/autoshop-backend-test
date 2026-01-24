@@ -157,7 +157,7 @@ export class WarehouseInventoryResponseDTO {
  * Warehouse Inventory List Response DTO (with pagination)
  */
 export class WarehouseInventoryListResponseDTO {
-  constructor(warehouseInventories, pagination) {
+  constructor(warehouseInventories, pagination, message = "Warehouse inventory retrieved successfully") {
     this.warehouseInventories =
       WarehouseInventoryResponseDTO.fromArray(warehouseInventories);
     this.pagination = {
@@ -166,6 +166,7 @@ export class WarehouseInventoryListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -175,6 +176,7 @@ export class WarehouseInventoryListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.warehouseInventories,
       pagination: this.pagination,
     };

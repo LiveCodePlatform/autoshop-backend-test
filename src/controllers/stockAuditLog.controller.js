@@ -36,12 +36,8 @@ class StockAuditLogController {
     // Use validated query if available, otherwise fallback to original query
     const queryParams = req.validatedQuery || req.query;
     const result = await this.service.getAllStockAuditLogs(queryParams);
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "Stock audit logs retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**

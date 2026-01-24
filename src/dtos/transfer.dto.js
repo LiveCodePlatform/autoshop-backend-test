@@ -284,7 +284,7 @@ export class TransferResponseDTO {
  * Transfer List Response DTO (with pagination)
  */
 export class TransferListResponseDTO {
-  constructor(transfers, pagination) {
+  constructor(transfers, pagination, message = "Transfers retrieved successfully") {
     this.transfers = TransferResponseDTO.fromArray(transfers);
     this.pagination = {
       page: pagination.page,
@@ -292,6 +292,7 @@ export class TransferListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -301,6 +302,7 @@ export class TransferListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.transfers,
       pagination: this.pagination,
     };

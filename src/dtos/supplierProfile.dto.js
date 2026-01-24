@@ -133,7 +133,7 @@ export class SupplierProfileResponseDTO {
  * Supplier Profile List Response DTO (with pagination)
  */
 export class SupplierProfileListResponseDTO {
-  constructor(supplierProfiles, pagination) {
+  constructor(supplierProfiles, pagination, message = "Supplier profiles retrieved successfully") {
     this.supplierProfiles =
       SupplierProfileResponseDTO.fromArray(supplierProfiles);
     this.pagination = {
@@ -142,6 +142,7 @@ export class SupplierProfileListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -151,6 +152,7 @@ export class SupplierProfileListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.supplierProfiles,
       pagination: this.pagination,
     };

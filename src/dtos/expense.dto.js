@@ -151,7 +151,7 @@ export class ExpenseResponseDTO {
  * Expense List Response DTO (with pagination)
  */
 export class ExpenseListResponseDTO {
-  constructor(expenses, pagination) {
+  constructor(expenses, pagination, message = "Expenses retrieved successfully") {
     this.expenses = ExpenseResponseDTO.fromArray(expenses);
     this.pagination = {
       page: pagination.page,
@@ -159,6 +159,7 @@ export class ExpenseListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -168,6 +169,7 @@ export class ExpenseListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.expenses,
       pagination: this.pagination,
     };

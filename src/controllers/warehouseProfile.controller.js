@@ -35,12 +35,8 @@ class WarehouseProfileController {
   getAllWarehouseProfiles = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.validatedQuery || req.query;
     const result = await this.service.getAllWarehouseProfiles(queryParams);
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "Warehouse profiles retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**

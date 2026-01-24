@@ -163,7 +163,7 @@ export class AdminResponseDTO {
  * Admin List Response DTO (with pagination)
  */
 export class AdminListResponseDTO {
-  constructor(admins, pagination) {
+  constructor(admins, pagination, message = "Admins retrieved successfully") {
     this.admins = AdminResponseDTO.fromArray(admins);
     this.pagination = {
       page: pagination.page,
@@ -171,6 +171,7 @@ export class AdminListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -180,6 +181,7 @@ export class AdminListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.admins,
       pagination: this.pagination,
     };

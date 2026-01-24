@@ -179,7 +179,7 @@ export class CreditRecordResponseDTO {
  * Credit Record List Response DTO (with pagination)
  */
 export class CreditRecordListResponseDTO {
-  constructor(creditRecords, pagination) {
+  constructor(creditRecords, pagination, message = "Credit records retrieved successfully") {
     this.creditRecords = CreditRecordResponseDTO.fromArray(creditRecords);
     this.pagination = {
       page: pagination.page,
@@ -187,6 +187,7 @@ export class CreditRecordListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -196,6 +197,7 @@ export class CreditRecordListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.creditRecords,
       pagination: this.pagination,
     };

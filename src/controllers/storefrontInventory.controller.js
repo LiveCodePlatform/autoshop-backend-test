@@ -79,7 +79,6 @@ class StorefrontInventoryController {
         success: true,
         message: result.message,
         data: result.storefrontInventory,
-        operation: result.operation,
       });
     }
   );

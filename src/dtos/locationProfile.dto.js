@@ -482,7 +482,7 @@ export class LocationProfileResponseDTO {
  * Location Profile List Response DTO (with pagination)
  */
 export class LocationProfileListResponseDTO {
-  constructor(locationProfiles, pagination) {
+  constructor(locationProfiles, pagination, message = "Location profiles retrieved successfully") {
     this.locationProfiles = LocationProfileResponseDTO.fromArray(locationProfiles);
     this.pagination = {
       page: pagination.page,
@@ -490,6 +490,7 @@ export class LocationProfileListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -499,6 +500,7 @@ export class LocationProfileListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.locationProfiles,
       pagination: this.pagination,
     };

@@ -34,12 +34,8 @@ class GoodsRecievedNoteController {
    */
   getAllGRN = asyncErrorHandler(async (req, res, next) => {
     const result = await this.service.getAllGRN(req.query);
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "GRNs retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**

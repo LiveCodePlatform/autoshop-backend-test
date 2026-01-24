@@ -21,12 +21,8 @@ class LocationProfileController {
   getAllLocationProfiles = asyncErrorHandler(async (req, res, next) => {
     const queryParams = req.query;
     const result = await this.service.getAllLocationProfiles(queryParams);
-    const response = result;
 
-    res.status(200).json({
-      ...response,
-      message: "Location profiles retrieved successfully",
-    });
+    res.status(200).json(result.toJSON());
   });
 
   /**

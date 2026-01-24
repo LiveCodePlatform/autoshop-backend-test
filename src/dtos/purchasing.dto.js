@@ -271,7 +271,7 @@ export class PurchasingResponseDTO {
  * Purchasing List Response DTO (with pagination)
  */
 export class PurchasingListResponseDTO {
-  constructor(purchasings, pagination) {
+  constructor(purchasings, pagination, message = "Purchasing records retrieved successfully") {
     this.purchasings = PurchasingResponseDTO.fromArray(purchasings);
     this.pagination = {
       page: pagination.page,
@@ -279,6 +279,7 @@ export class PurchasingListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -288,6 +289,7 @@ export class PurchasingListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.purchasings,
       pagination: this.pagination,
     };

@@ -131,7 +131,7 @@ export class SocialMediaSaleInventoryResponseDTO {
  * Social Media Sale Inventory List Response DTO (with pagination)
  */
 export class SocialMediaSaleInventoryListResponseDTO {
-  constructor(socialMediaSaleInventories, pagination) {
+  constructor(socialMediaSaleInventories, pagination, message = "Social media sale inventory retrieved successfully") {
     this.socialMediaSaleInventories =
       SocialMediaSaleInventoryResponseDTO.fromArray(socialMediaSaleInventories);
     this.pagination = {
@@ -140,6 +140,7 @@ export class SocialMediaSaleInventoryListResponseDTO {
       totalItems: pagination.totalItems,
       itemsPerPage: pagination.itemsPerPage,
     };
+    this.message = message;
   }
 
   /**
@@ -149,6 +150,7 @@ export class SocialMediaSaleInventoryListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.socialMediaSaleInventories,
       pagination: this.pagination,
     };

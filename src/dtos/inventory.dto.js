@@ -267,7 +267,7 @@ export class InventoryResponseDTO {
  * Inventory List Response DTO (with pagination)
  */
 export class InventoryListResponseDTO {
-  constructor(inventories, pagination) {
+  constructor(inventories, pagination, message = "Inventories retrieved successfully") {
     this.inventories = InventoryResponseDTO.fromArray(inventories);
     this.pagination = {
       page: pagination.page,
@@ -275,6 +275,7 @@ export class InventoryListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -284,6 +285,7 @@ export class InventoryListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.inventories,
       pagination: this.pagination,
     };

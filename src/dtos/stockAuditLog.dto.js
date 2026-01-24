@@ -229,7 +229,7 @@ export class StockAuditLogResponseDTO {
  * Stock Audit Log List Response DTO (with pagination)
  */
 export class StockAuditLogListResponseDTO {
-  constructor(stockAuditLogs, pagination) {
+  constructor(stockAuditLogs, pagination, message = "Stock audit logs retrieved successfully") {
     this.stockAuditLogs = StockAuditLogResponseDTO.fromArray(stockAuditLogs);
     this.pagination = {
       page: pagination.page,
@@ -237,6 +237,7 @@ export class StockAuditLogListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -246,6 +247,7 @@ export class StockAuditLogListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.stockAuditLogs,
       pagination: this.pagination,
     };

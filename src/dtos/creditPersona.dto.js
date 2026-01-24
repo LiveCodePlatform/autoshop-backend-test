@@ -150,7 +150,7 @@ export class CreditPersonaResponseDTO {
  * Credit Persona List Response DTO (with pagination)
  */
 export class CreditPersonaListResponseDTO {
-  constructor(creditPersonas, pagination) {
+  constructor(creditPersonas, pagination, message = "Credit persons retrieved successfully") {
     this.creditPersonas =
       CreditPersonaResponseDTO.fromArray(creditPersonas);
     this.pagination = {
@@ -159,6 +159,7 @@ export class CreditPersonaListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -168,6 +169,7 @@ export class CreditPersonaListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.creditPersonas,
       pagination: this.pagination,
     };

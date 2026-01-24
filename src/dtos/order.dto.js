@@ -253,7 +253,7 @@ export class OrderResponseDTO {
  * Order List Response DTO (with pagination)
  */
 export class OrderListResponseDTO {
-  constructor(orders, pagination) {
+  constructor(orders, pagination, message = "Orders retrieved successfully") {
     this.orders = OrderResponseDTO.fromArray(orders);
     this.pagination = {
       page: pagination.page,
@@ -261,6 +261,7 @@ export class OrderListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -270,6 +271,7 @@ export class OrderListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.orders,
       pagination: this.pagination,
     };

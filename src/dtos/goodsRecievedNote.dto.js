@@ -272,7 +272,7 @@ export class GRNResponseDTO {
  * GRN List Response DTO (with pagination)
  */
 export class GRNListResponseDTO {
-  constructor(grns, pagination) {
+  constructor(grns, pagination, message = "GRNs retrieved successfully") {
     this.grns = GRNResponseDTO.fromArray(grns);
     this.pagination = {
       page: pagination.page,
@@ -280,6 +280,7 @@ export class GRNListResponseDTO {
       total: pagination.total,
       totalPages: Math.ceil(pagination.total / pagination.limit),
     };
+    this.message = message;
   }
 
   /**
@@ -289,6 +290,7 @@ export class GRNListResponseDTO {
   toJSON() {
     return {
       success: true,
+      message: this.message,
       data: this.grns,
       pagination: this.pagination,
     };
