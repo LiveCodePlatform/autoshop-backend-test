@@ -1,0 +1,145 @@
+{
+  "info": {
+    "_postman_id": "62a171aa-b301-468a-807a-889e64533c9d",
+    "name": "Inventory",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-62a171aa-b301-468a-807a-889e64533c9d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "inventory",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"productName\": \"Coca Cola 1.5l Bottle\", // required\n    \"productCode\": \"COKE1.5L\", // required, unique\n    \"saleCode\": \"FB-COKE1.5\", // optional, unique (if provided), default: null, sparse\n    \n    //\"barcode\": \"1234567890123\", // optional, unique (if provided), default: null, sparse\n    \"category\": \"Beverages\", // required, default: \"Unknown\"\n    \"subCategory\": \"Soft Drinks\", // optional, default: \"Unknown\"\n    \"brand\": \"Coca Cola\", // optional, default: \"Unknown\"\n    \"description\": \"Refreshing carbonated soft drink in 500ml plastic bottle. Perfect for any occasion.\", // optional, default: \"No description available\"\n    \"buyingPrice\": 100, // required, min: 0\n    \"sellingPrice\": 1100, // required, min: 0, must be >= buyingPrice\n    \"unitOfMeasure\": \"piece\", // required, enum: [\"piece\", \"kg\", \"gram\", \"liter\", \"ml\", \"meter\", \"cm\", \"box\", \"pack\", \"carton\", \"dozen\", \"pair\"], default: \"piece\"\n    \"reorderPoint\": 100, // optional, min: 0, default: 0\n    \"reorderQuantity\": 500, // optional, min: 0, default: 0\n    \"taxRate\": 5, // optional, min: 0, max: 100, default: 0\n    \"status\": \"active\", // optional, enum: [\"active\", \"inactive\", \"discontinued\"], default: \"active\"\n    \"tags\": [\"beverage\", \"soft-drink\", \"carbonated\", \"popular\"] // optional, array of strings\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}inventory",
+          "host": [
+            "{{url}}inventory"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "inventories",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}inventory",
+          "host": [
+            "{{url}}inventory"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "inventory",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"productName\": \"Coca Cola 500ml Bottle\",\n    \"productCode\": \"COKE500ML\",\n    \"saleCode\": \"FB-COKE500\",\n    \"SKU\": \"COKE-500-ML-BTL\",\n    \"barcode\": \"1234567890123\",\n    \"category\": \"Beverages\",\n    \"subCategory\": \"Soft Drinks\",\n    \"brand\": \"Coca Cola\",\n    \"description\": \"Refreshing carbonated soft drink in 500ml plastic bottle. Perfect for any occasion.\",\n    \"buyingPrice\": 50,\n    \"sellingPrice\": 75,\n    \"unitOfMeasure\": \"piece\",\n    \"reorderPoint\": 100,\n    \"reorderQuantity\": 500,\n    \"taxRate\": 5,\n    \"status\": \"active\",\n    \"tags\": [\"beverage\", \"soft-drink\", \"carbonated\", \"popular\"]\n      }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}inventory/6978dc5c7cdb7bb3b1d34a01",
+          "host": [
+            "{{url}}inventory"
+          ],
+          "path": [
+            "6978dc5c7cdb7bb3b1d34a01"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "inventory",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"buyingPrice\": 100, // required, min: 0\n    \"sellingPrice\": 1100 // required, min: 0, must be >= buyingPrice\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}inventory/69723e8958fcb0d017d66d6b",
+          "host": [
+            "{{url}}inventory"
+          ],
+          "path": [
+            "69723e8958fcb0d017d66d6b"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

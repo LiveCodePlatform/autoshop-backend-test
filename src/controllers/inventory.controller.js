@@ -8,6 +8,7 @@
 
 import { asyncErrorHandler } from "../shared/utils/asyncErrorHandler.js";
 import { getInventoryService } from "../loaders/services.loader.js";
+import { uploadImageToR2, deleteImageFromR2 } from "../shared/utils/cloudflareR2.utils.js";
 
 class InventoryController {
   /**
@@ -22,7 +23,23 @@ class InventoryController {
    * POST /api/inventory
    */
   createInventory = asyncErrorHandler(async (req, res, next) => {
-    const result = await this.service.createInventory(req.body);
+    const payload = { ...req.body };
+
+    if (req.files && req.files.length > 0) {
+      const images = [];
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const uploadedImage = await uploadImageToR2(file, "inventory");
+        images.push({
+          url: uploadedImage.url,
+          key: uploadedImage.spaceKey,
+          primary: i === 0,
+        });
+      }
+      payload.images = images;
+    }
+
+    const result = await this.service.createInventory(payload);
 
     res.status(201).json({
       success: true,
@@ -67,7 +84,23 @@ class InventoryController {
    */
   updateInventory = asyncErrorHandler(async (req, res, next) => {
     const { id } = req.params;
-    const result = await this.service.updateInventory(id, req.body);
+    const payload = { ...req.body };
+
+    if (req.files && req.files.length > 0) {
+      const images = [];
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const uploadedImage = await uploadImageToR2(file, "inventory");
+        images.push({
+          url: uploadedImage.url,
+          key: uploadedImage.spaceKey,
+          primary: false, // New images will default to not primary unless managed by frontend
+        });
+      }
+      payload.images = images;
+    }
+
+    const result = await this.service.updateInventory(id, payload);
 
     res.status(200).json({
       success: true,

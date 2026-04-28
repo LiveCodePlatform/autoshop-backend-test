@@ -1,0 +1,237 @@
+{
+  "info": {
+    "_postman_id": "218e8b5e-65d7-4f64-9166-aa7e9c05e8a7",
+    "name": "warehouse",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-218e8b5e-65d7-4f64-9166-aa7e9c05e8a7?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "warehouse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryIds\" : [\"696201b7e3d386dec4260169\" , \"696326ba5cde263f3744bb0c\"],\n    \"warehouseId\" : \"69723108fccaa9791e7f573a\",\n    \"quantity\" : 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse",
+          "host": [
+            "{{url}}warehouse"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "warehouses",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryId\" : \"692d4d9b0d4f47004b15b41e\",\n    \"warehouseId\" : \"692e9874dd3d115e42a24e4f\",\n    \"quantity\" : 1000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse",
+          "host": [
+            "{{url}}warehouse"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "pangination",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"inventoryId\" : \"692d4d9b0d4f47004b15b41e\",\n    \"warehouseId\" : \"692e9874dd3d115e42a24e4f\",\n    \"quantity\" : 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}warehouse?page=1&limit=10",
+              "host": [
+                "{{url}}warehouse"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "each warehouse inventories",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"inventoryId\" : \"692d4d9b0d4f47004b15b41e\",\n    \"warehouseId\" : \"692e9874dd3d115e42a24e4f\",\n    \"quantity\" : 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}warehouse?warehouseId=",
+              "host": [
+                "{{url}}warehouse"
+              ],
+              "query": [
+                {
+                  "key": "warehouseId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "sorting",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"inventoryId\" : \"692d4d9b0d4f47004b15b41e\",\n    \"warehouseId\" : \"692e9874dd3d115e42a24e4f\",\n    \"quantity\" : 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}warehouse?sortOrder=desc",
+              "host": [
+                "{{url}}warehouse"
+              ],
+              "query": [
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "warehouse",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryId\" : \"692d4d9b0d4f47004b15b41e\",\n    \"warehouseId\" : \"692e9874dd3d115e42a24e4f\",\n    \"quantity\" : 1000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse/696f38e4b43355e130dffac9",
+          "host": [
+            "{{url}}warehouse"
+          ],
+          "path": [
+            "696f38e4b43355e130dffac9"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "stock quantity change",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"quantityChange\" : 100,\n    \"reason\" : \"Testing warehouse stock update and audit log.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse/69723b85feabbd40860e831d/quantity",
+          "host": [
+            "{{url}}warehouse"
+          ],
+          "path": [
+            "69723b85feabbd40860e831d",
+            "quantity"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

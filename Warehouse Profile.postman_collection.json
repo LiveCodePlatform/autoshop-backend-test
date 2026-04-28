@@ -1,0 +1,103 @@
+{
+  "info": {
+    "_postman_id": "1d8ddc4e-5c39-409a-bbfe-b8af84cc3400",
+    "name": "Warehouse Profile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-1d8ddc4e-5c39-409a-bbfe-b8af84cc3400?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "warehouse Profile",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": " {\n        \"warehouseCode\": \"WH001\", // required, unique, uppercase (auto-converted), maxlength: 50\n        \"warehouseName\": \"Main Warehouse\", // required, unique, maxlength: 200\n        \"warehouseAddress\": \"123 Main Street, Industrial Zone, Yangon, Myanmar\", // required, maxlength: 500\n        \"warehousePhone\": \"09451315280\", // required, validated at controller level (google-libphonenumber), formatted to E.164 (e.g., +959123456789), maxlength: 20\n        \"warehouseEmail\": \"warehouse1@example.com\", // optional, unique (if provided), default: null, sparse, lowercase (auto-converted), email validated, maxlength: 200\n        \"managerName\": \"John Doe\", // optional, default: null, maxlength: 200\n        \"status\": \"active\", // optional, enum: [\"active\", \"inactive\"], default: \"active\"\n        \"description\": \"Main storage facility located in Yangon. Handles all inventory items and serves as primary distribution center.\", // optional, default: \"No description available\", maxlength: 1000\n        \"notes\": \"Operating hours: 8 AM - 6 PM. Contact manager for special access.\" // optional, default: \"No notes available\", maxlength: 500\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse-profile",
+          "host": [
+            "{{url}}warehouse-profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "warehouse Profiles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}warehouse-profile",
+          "host": [
+            "{{url}}warehouse-profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "warehouse Profile",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse-profile/69723108fccaa9791e7f573a",
+          "host": [
+            "{{url}}warehouse-profile"
+          ],
+          "path": [
+            "69723108fccaa9791e7f573a"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "warehouse Profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"warehouseCode\" :\"WH02\"\n    //\"warehouseName\" :,\n    //\"warehouseAddress\" :,\n    //\"warehousePhone\" :,\n    //\"warehouseEmail\" :,\n    //\"managerName\" :,\n    //\"status\" :,\n    //\"description\" :,\n    //\"notes\" :,\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}warehouse-profile/69723108fccaa9791e7f573a",
+          "host": [
+            "{{url}}warehouse-profile"
+          ],
+          "path": [
+            "69723108fccaa9791e7f573a"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

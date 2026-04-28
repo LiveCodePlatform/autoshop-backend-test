@@ -1,0 +1,191 @@
+{
+  "info": {
+    "_postman_id": "033eada4-3e8f-462c-a547-2da5463eeee5",
+    "name": "expense",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-033eada4-3e8f-462c-a547-2da5463eeee5?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "expense",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"category\" : \"electricity\",\n    \"amount\" : 1000000,\n    \"date\" : \"2025-12-25\",\n    \"notes\" : \"electricity bill\",\n    \"locationId\": \"507f1f77bcf86cd799439011\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}expense",
+          "host": [
+            "{{url}}expense"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "expenses",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}expense",
+          "host": [
+            "{{url}}expense"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "expense",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}expense/69730a7ceacd637ae4adf885",
+          "host": [
+            "{{url}}expense"
+          ],
+          "path": [
+            "69730a7ceacd637ae4adf885"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "expense",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    //\"category\" : \"electricity\",\n    \"amount\" : 10000000000\n    //\"date\" : \"2025-12-25\",\n    //\"notes\" : \"electricity bill\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}expense/69730a7ceacd637ae4adf885",
+          "host": [
+            "{{url}}expense"
+          ],
+          "path": [
+            "69730a7ceacd637ae4adf885"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "expense",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    //\"category\" : \"electricity\",\n    \"amount\" : 10000000000\n    //\"date\" : \"2025-12-25\",\n    //\"notes\" : \"electricity bill\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}expense/69730a7ceacd637ae4adf885",
+          "host": [
+            "{{url}}expense"
+          ],
+          "path": [
+            "69730a7ceacd637ae4adf885"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

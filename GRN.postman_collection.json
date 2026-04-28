@@ -1,0 +1,193 @@
+{
+  "info": {
+    "_postman_id": "8e7ff41f-1d35-4005-8814-6930d07d62d6",
+    "name": "GRN",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-8e7ff41f-1d35-4005-8814-6930d07d62d6?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "GRN",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"purchasingId\": \"69723455d63ddc7ae8d64b53\",\n    \"lineItems\": [\n        {\n            \"productCode\": \"COKE1.5L\",\n            \"receivedQuantity\": 100,\n            \"goodQuantity\": 90,\n            \"badQuantity\": 10\n        },\n        {\n            \"productCode\": \"PC001\",\n            \"receivedQuantity\": 100,\n            \"goodQuantity\": 90,\n            \"badQuantity\": 10\n        }\n    ],\n    \"grnDate\": \"2026-01-22\",\n    \"notes\": \"Testing 1\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}grn",
+          "host": [
+            "{{url}}grn"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GRNs",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}grn",
+          "host": [
+            "{{url}}grn"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GRN",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"purchasingId\" : \"693fa4bd56fda4070d90885e\",\n    \"lineItems\" : [{\n        \"productCode\": \"E0001\",\n        \"goodQuantity\": 95,\n        \"badQuantity\": 5}],\n    \"grnDate\" : \"2025-12-15\",\n    \"notes\" : \"Testing 1\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}grn/697237c829aff4785d71f741",
+          "host": [
+            "{{url}}grn"
+          ],
+          "path": [
+            "697237c829aff4785d71f741"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GRN status update",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\" : \"verified\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}grn/697237c829aff4785d71f741/status",
+          "host": [
+            "{{url}}grn"
+          ],
+          "path": [
+            "697237c829aff4785d71f741",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update lineitems quantity",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lineItems\": [\n    {\n      \"lineItemId\": \"697237c829aff4785d71f742\",\n      \"goodQuantity\": 80,\n      \"badQuantity\": 20,\n      \"notes\": \"Optional notes\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}grn/697237c829aff4785d71f741/line-items",
+          "host": [
+            "{{url}}grn"
+          ],
+          "path": [
+            "697237c829aff4785d71f741",
+            "line-items"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

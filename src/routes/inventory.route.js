@@ -9,6 +9,7 @@ import {
   validateCreateInventory,
   validateUpdateInventory,
 } from "../validators/inventory.validator.js";
+import { uploadImage } from "../middlewares/upload.middleware.js";
 
 const router = Router();
 
@@ -19,9 +20,19 @@ router.get("/inventory", getAllInventory);
 router.get("/inventory/:id", getInventoryById);
 
 // Create new inventory item (with validation middleware)
-router.post("/inventory", validateCreateInventory, createInventory);
+router.post(
+  "/inventory",
+  uploadImage.array("images", 5),
+  validateCreateInventory,
+  createInventory
+);
 
 // Update inventory item metadata (with validation middleware)
-router.patch("/inventory/:id", validateUpdateInventory, updateInventory);
+router.patch(
+  "/inventory/:id",
+  uploadImage.array("images", 5),
+  validateUpdateInventory,
+  updateInventory
+);
 
 export default router;

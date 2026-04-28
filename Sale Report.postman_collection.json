@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "4ad30924-66d8-4292-b5be-fe366df7f7d8",
+    "name": "Sale Report",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-4ad30924-66d8-4292-b5be-fe366df7f7d8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Sale Report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Date query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report?startDate=2025-12-25&endDate=2025-12-29",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-12-25"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-29"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "storefrontId query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report?storefrontId=",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "query": [
+                {
+                  "key": "storefrontId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "Sale Report",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/products-by-credit-person?inventoryId=",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "products-by-credit-person"
+              ],
+              "query": [
+                {
+                  "key": "inventoryId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "Sale Report Paid orders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/paid-orders",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            "paid-orders"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Date query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/paid-orders?startDate=2025-12-25&endDate=2025-12-29",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "paid-orders"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-12-25"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-29"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "storefrontId query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/storefront/paid-orders?storefrontId=",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "storefront",
+                "paid-orders"
+              ],
+              "query": [
+                {
+                  "key": "storefrontId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Sale Report credit orders",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/credit-orders",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            "credit-orders"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Date query Copy",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/credit-orders?storefrontId=",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "credit-orders"
+              ],
+              "query": [
+                {
+                  "key": "storefrontId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "Date query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/credit-orders?startDate=2026-02-02&endDate=2026-02-02",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "credit-orders"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-02-02"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-02-02"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "sales statistics report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/products",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            "products"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Date query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/products?startDate=2025-12-25&endDate=2025-12-29",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-12-25"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-29"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "Date query Copy",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}sale-report/products?storefrontId=",
+              "host": [
+                "{{url}}sale-report"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "storefrontId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Sale Report credit orders",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/credit-orders?storefrontId=698012bf08d6f45ef280a6f3?startDate=2026-02-01&endDate=2025-02-06",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            "credit-orders"
+          ],
+          "query": [
+            {
+              "key": "storefrontId",
+              "value": "698012bf08d6f45ef280a6f3?startDate=2026-02-01"
+            },
+            {
+              "key": "endDate",
+              "value": "2025-02-06"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "credit persona products analytic",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}sale-report/credit-persona-products?creditPersonaId=",
+          "host": [
+            "{{url}}sale-report"
+          ],
+          "path": [
+            "credit-persona-products"
+          ],
+          "query": [
+            {
+              "key": "creditPersonaId",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

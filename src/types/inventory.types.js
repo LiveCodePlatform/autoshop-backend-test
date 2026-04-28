@@ -52,6 +52,7 @@ export const INVENTORY_FIELDS = {
   TAX_RATE: "taxRate",
   STATUS: "status",
   TAGS: "tags",
+  IMAGES: "images",
   CREATED_AT: "createdAt",
   UPDATED_AT: "updatedAt",
 };
@@ -105,6 +106,7 @@ export const INVENTORY_TYPES = {
     taxRate: "number?",
     status: "enum?",
     tags: "string[]?",
+    images: "object[]?",
   },
 
   // Update Inventory Input Type
@@ -126,6 +128,7 @@ export const INVENTORY_TYPES = {
     taxRate: "number?",
     status: "enum?",
     tags: "string[]?",
+    images: "object[]?",
   },
 
   // Inventory Response Type (what client sees)
@@ -148,6 +151,7 @@ export const INVENTORY_TYPES = {
     taxRate: "number",
     status: "enum",
     tags: "string[]",
+    images: "object[]",
     profitMargin: "number", // virtual
     profitAmount: "number", // virtual
     createdAt: "date",
