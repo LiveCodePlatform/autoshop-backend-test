@@ -1,0 +1,125 @@
+{
+  "info": {
+    "_postman_id": "2d9b372c-b3d5-42a6-a3fe-e0be10fe4437",
+    "name": "storefront profile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-2d9b372c-b3d5-42a6-a3fe-e0be10fe4437?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Storefront Profile",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"storefrontCode\": \"SF-1\",\n    \"storefrontName\": \"Pyi Lan Store\",\n    \"storefrontAddress\": \"12345\",\n    \"storefrontPhone\": \"09451315280\",\n    //\"storefrontEmail\": \"\", //default: null,\n    //\"managerName\": \"\", //default: null,\n    \"status\": \"active\", //enum: { [\"active\", \"inactive\"]} //default: \"active\",\n    \"description\": \"\", //default: \"No description available\",\n    \"notes\": \"\" // default: \"No notes available\",\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-profile",
+          "host": [
+            "{{url}}storefront-profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Storefront Profiles",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"storefrontCode\": \"SF-1\",\n    \"storefrontName\": \"Pyi Lan Store\",\n    \"storefrontAddress\": \"12345\",\n    \"storefrontPhone\": \"09451315280\",\n    //\"storefrontEmail\": \"\", //default: null,\n    //\"managerName\": \"\", //default: null,\n    \"status\": \"\", //enum: { [\"active\", \"inactive\"]} //default: \"active\",\n    \"description\": \"\", //default: \"No description available\",\n    \"notes\": \"\" // default: \"No notes available\",\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-profile",
+          "host": [
+            "{{url}}storefront-profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Storefront Profile",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-profile/6972323c302fd1e227232c5f",
+          "host": [
+            "{{url}}storefront-profile"
+          ],
+          "path": [
+            "6972323c302fd1e227232c5f"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Storefront Profile",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"storefrontCode\": \"SF-01\"\n    //\"storefrontName\": \"Pyi Lan Store\",\n    //\"storefrontAddress\": \"12345\",\n    //\"storefrontPhone\": \"09451315280\",\n    //\"storefrontEmail\": \"\", //default: null,\n    //\"managerName\": \"\", //default: null,\n    //\"status\": \"\", //enum: { [\"active\", \"inactive\"]} //default: \"active\",\n    //\"description\": \"\", //default: \"No description available\",\n    //\"notes\": \"\" // default: \"No notes available\",\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-profile/6972323c302fd1e227232c5f",
+          "host": [
+            "{{url}}storefront-profile"
+          ],
+          "path": [
+            "6972323c302fd1e227232c5f"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

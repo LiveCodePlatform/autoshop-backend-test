@@ -1,10 +1,9 @@
-import s3Client from "../../legacy/configs/doSpaces.config.js";
+import s3Client from "../../config/cloudflareR2.config.js";
 import { Upload } from "@aws-sdk/lib-storage";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
-import logger from "./logger.utils.js";
 
-export const uploadImageToSpaces = async (file, folderName) => {
+export const uploadImageToR2 = async (file, folderName) => {
   if (
     !file ||
     !file.buffer ||
@@ -25,11 +24,12 @@ export const uploadImageToSpaces = async (file, folderName) => {
   const key = folderName ? `${folderName}/${uniqueFileName}` : uniqueFileName;
 
   const uploadParams = {
-    Bucket: process.env.DO_SPACES_BUCKET,
+    Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     Body: file.buffer,
-    ACL: "public-read",
     ContentType: file.mimetype,
+    // Note: Cloudflare R2 handles public access via bucket policies/custom domains,
+    // so ACL: "public-read" is usually not needed or supported in the same way as S3.
   };
 
   try {
@@ -39,40 +39,44 @@ export const uploadImageToSpaces = async (file, folderName) => {
     });
 
     uploader.on("httpUploadProgress", (progress) => {
-      console.log("Upload progress:", progress);
+      console.log("Cloudflare R2 upload progress:", progress);
     });
 
     const data = await uploader.done(); // Execute the upload
 
+    // Cloudflare R2 requires a public domain (.r2.dev or custom) to access files publicly.
+    const publicUrl = process.env.R2_PUBLIC_URL; 
+    const url = publicUrl ? `${publicUrl.replace(/\/$/, '')}/${key}` : `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
+
     return {
-      url: data.Location,
-      spaceKey: data.Key,
+      url,
+      spaceKey: key,
     };
   } catch (err) {
-    logger.error("DigitalOcean Spaces upload error:", err);
+    console.error("Cloudflare R2 upload error:", err);
     throw new Error(
-      `DigitalOcean Spaces upload failed: ${err.message || "Unknown error"}`
+      `Cloudflare R2 upload failed: ${err.message || "Unknown error"}`
     );
   }
 };
 
-export const deleteImageFromSpaces = async (spaceKey) => {
+export const deleteImageFromR2 = async (spaceKey) => {
   if (typeof spaceKey !== "string" || spaceKey.trim() === "") {
     throw new Error("A valid spaceKey must be provided for deletion.");
   }
 
   const deleteParams = {
-    Bucket: process.env.DO_SPACES_BUCKET,
+    Bucket: process.env.R2_BUCKET_NAME,
     Key: spaceKey,
   };
 
   try {
     await s3Client.send(new DeleteObjectCommand(deleteParams));
-    logger.info("Deleted image from DigitalOcean Spaces.", { spaceKey });
+    console.log("Deleted image from Cloudflare R2.", { spaceKey });
   } catch (err) {
-    logger.error("DigitalOcean Spaces delete error:", err);
+    console.error("Cloudflare R2 delete error:", err);
     throw new Error(
-      `DigitalOcean Spaces delete failed: ${err.message || "Unknown error"}`
+      `Cloudflare R2 delete failed: ${err.message || "Unknown error"}`
     );
   }
 };

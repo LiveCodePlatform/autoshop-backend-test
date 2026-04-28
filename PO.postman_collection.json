@@ -1,0 +1,395 @@
+{
+  "info": {
+    "_postman_id": "1fbda452-8d0a-4b32-9e3a-6bff4782a90e",
+    "name": "PO",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-1fbda452-8d0a-4b32-9e3a-6bff4782a90e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "PO",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"products\" : [{\"inventoryId\": \"69722ac11f5bc6857f097721\",\"purchaseQuantity\" : 200},{\"inventoryId\": \"696705978d14471841650bb7\",\"purchaseQuantity\" : 200}],\n    \"supplierId\" : \"697232e6302fd1e227232c75\"\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    //\"totalAmount\" : 5000 auto calculate\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase",
+          "host": [
+            "{{url}}purchase"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PO's",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase",
+          "host": [
+            "{{url}}purchase"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "pangination",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}purchase?page=1&limit=10",
+              "host": [
+                "{{url}}purchase"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "sorting",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}purchase?sortBy=createdAt",
+              "host": [
+                "{{url}}purchase"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "sorting",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}purchase?sortOrder=desc",
+              "host": [
+                "{{url}}purchase"
+              ],
+              "query": [
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "filter",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}purchase?isDeleted=false",
+              "host": [
+                "{{url}}purchase"
+              ],
+              "query": [
+                {
+                  "key": "isDeleted",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "status filter",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}purchase?status=verified",
+              "host": [
+                "{{url}}purchase"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "verified"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "PO",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"products\" : [{\"productId\": \"692d4d9b0d4f47004b15b41e\",\"purchaseQuantity\" : \"500\"}],\n    \"supplierId\" : \"6931890f0e66bc06363eb46e\",\n    //\"status\" : \"\", //default : pending\n    //\"note\" : \"\", //default : No note available\n    \"totalAmount\" : \"5000000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase/69723455d63ddc7ae8d64b53",
+          "host": [
+            "{{url}}purchase"
+          ],
+          "path": [
+            "69723455d63ddc7ae8d64b53"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PO status",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\" : \"arrived\" //default : pending\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase/69723455d63ddc7ae8d64b53/status",
+          "host": [
+            "{{url}}purchase"
+          ],
+          "path": [
+            "69723455d63ddc7ae8d64b53",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "soft-delete",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase/69723455d63ddc7ae8d64b53/soft-delete",
+          "host": [
+            "{{url}}purchase"
+          ],
+          "path": [
+            "69723455d63ddc7ae8d64b53",
+            "soft-delete"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "restore",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}purchase/69723455d63ddc7ae8d64b53/restore",
+          "host": [
+            "{{url}}purchase"
+          ],
+          "path": [
+            "69723455d63ddc7ae8d64b53",
+            "restore"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

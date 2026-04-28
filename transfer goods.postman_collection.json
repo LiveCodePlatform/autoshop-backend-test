@@ -1,0 +1,188 @@
+{
+  "info": {
+    "_postman_id": "14cfe10f-9f24-43aa-9174-feceaf341ec5",
+    "name": "transfer goods",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-14cfe10f-9f24-43aa-9174-feceaf341ec5?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "transfer to storefront",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"sourceType\": \"Warehouse\", // required, enum: [\"GRN\", \"Warehouse\"]\n    \"sourceWarehouseId\": \"69723108fccaa9791e7f573a\", // required for Warehouse → Storefront transfers, must be valid ObjectId\n    \"destinationStorefrontId\": \"6972323c302fd1e227232c5f\", // required for Warehouse → Storefront transfers, must be valid ObjectId\n    \"lineItems\": [\n        {\n            \"productCode\": \"COKE1.5L\", // required, must exist in Inventory and have stock in source warehouse\n            \"quantity\": 50, // required, must be positive number, cannot exceed available warehouse stock\n            \"notes\": \"Restocking storefront\" // optional, maxlength: 500\n        }\n    ],\n    \"transferDate\": \"2025-12-15\", // optional, default: current date, ISO date format\n    \"notes\": \"Weekly restocking for downtown storefront\" // optional, maxlength: 1000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}transfer",
+          "host": [
+            "{{url}}transfer"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transfer to warehouse",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"sourceType\": \"GRN\", // required, enum: [\"GRN\", \"Warehouse\"]\n    \"grnId\": \"697237c829aff4785d71f741\", // required for GRN transfers, must be valid ObjectId\n    \"destinationWarehouseId\": \"69723108fccaa9791e7f573a\", // required for GRN → Warehouse transfers, must be valid ObjectId\n    \"lineItems\": [\n        {\n            \"productCode\": \"COKE1.5L\", // required, must exist in Inventory and match GRN line items\n            \"quantity\": 50, // required, must be positive number, cannot exceed available quantity from GRN (goodQuantity - transferredQuantity)\n            \"notes\": \"First batch transfer\" // optional, maxlength: 500\n        }\n    ],\n    \"transferDate\": \"2026-01-22\", // optional, default: current date, ISO date format\n    \"notes\": \"Initial transfer to main warehouse\" // optional, maxlength: 1000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}transfer",
+          "host": [
+            "{{url}}transfer"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transfers",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"grnId\": \"69423dffc3944532b47d437e\",\n    \"destinationWarehouseId\": \"69423e8db32d0e627da6841a\",\n    \"lineItems\": [\n        {\n            \"productCode\": \"COKE500ML\",\n            \"quantity\": 80\n            //\"notes\": \"Transfer to main warehouse\"\n        }\n    ],\n    \"transferDate\": \"2025-12-15\",\n    \"notes\": \"This is testing\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}transfer",
+          "host": [
+            "{{url}}transfer"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transfer",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"grnId\": \"69423dffc3944532b47d437e\",\n    \"destinationWarehouseId\": \"69423e8db32d0e627da6841a\",\n    \"lineItems\": [\n        {\n            \"productCode\": \"COKE500ML\",\n            \"quantity\": 80\n            //\"notes\": \"Transfer to main warehouse\"\n        }\n    ],\n    \"transferDate\": \"2025-12-15\",\n    \"notes\": \"This is testing\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}transfer/69723d97aa67d4500d6912cb",
+          "host": [
+            "{{url}}transfer"
+          ],
+          "path": [
+            "69723d97aa67d4500d6912cb"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "transfer status update",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\" : \"completed\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}transfer/69723d97aa67d4500d6912cb",
+          "host": [
+            "{{url}}transfer"
+          ],
+          "path": [
+            "69723d97aa67d4500d6912cb"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

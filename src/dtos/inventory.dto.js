@@ -42,6 +42,7 @@ export class CreateInventoryDTO {
     this.taxRate = data[INVENTORY_FIELDS.TAX_RATE] || INVENTORY_DEFAULTS.TAX_RATE;
     this.status = data[INVENTORY_FIELDS.STATUS] || INVENTORY_DEFAULTS.STATUS;
     this.tags = data[INVENTORY_FIELDS.TAGS] || INVENTORY_DEFAULTS.TAGS;
+    this.images = data[INVENTORY_FIELDS.IMAGES] || [];
   }
 
   /**
@@ -67,6 +68,7 @@ export class CreateInventoryDTO {
       [INVENTORY_FIELDS.TAX_RATE]: this.taxRate,
       [INVENTORY_FIELDS.STATUS]: this.status,
       [INVENTORY_FIELDS.TAGS]: this.tags,
+      [INVENTORY_FIELDS.IMAGES]: this.images,
     };
   }
 
@@ -136,6 +138,8 @@ export class UpdateInventoryDTO {
     }
     if (data[INVENTORY_FIELDS.TAGS] !== undefined)
       this.tags = data[INVENTORY_FIELDS.TAGS];
+    if (data[INVENTORY_FIELDS.IMAGES] !== undefined)
+      this.images = data[INVENTORY_FIELDS.IMAGES];
   }
 
   /**
@@ -176,6 +180,7 @@ export class UpdateInventoryDTO {
     if (this.status !== undefined)
       updateData[INVENTORY_FIELDS.STATUS] = this.status;
     if (this.tags !== undefined) updateData[INVENTORY_FIELDS.TAGS] = this.tags;
+    if (this.images !== undefined) updateData[INVENTORY_FIELDS.IMAGES] = this.images;
 
     return updateData;
   }
@@ -206,6 +211,7 @@ export class InventoryResponseDTO {
     this.taxRate = inventoryModel[INVENTORY_FIELDS.TAX_RATE] || 0;
     this.status = inventoryModel[INVENTORY_FIELDS.STATUS] || INVENTORY_STATUS.ACTIVE;
     this.tags = inventoryModel[INVENTORY_FIELDS.TAGS] || [];
+    this.images = inventoryModel[INVENTORY_FIELDS.IMAGES] || [];
     this.profitMargin = inventoryModel.profitMargin || null; // virtual
     this.profitAmount = inventoryModel.profitAmount || null; // virtual
     this.createdAt = inventoryModel[INVENTORY_FIELDS.CREATED_AT];
@@ -236,6 +242,7 @@ export class InventoryResponseDTO {
       taxRate: this.taxRate,
       status: this.status,
       tags: this.tags,
+      images: this.images,
       profitMargin: this.profitMargin,
       profitAmount: this.profitAmount,
       createdAt: this.createdAt,

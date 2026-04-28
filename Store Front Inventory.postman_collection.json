@@ -1,0 +1,247 @@
+{
+  "info": {
+    "_postman_id": "7ed1f711-852c-499c-8d5d-967624519bae",
+    "name": "Store Front Inventory",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-7ed1f711-852c-499c-8d5d-967624519bae?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "storefront inventory",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryIds\" : [\"696201b7e3d386dec4260169\",\"696326ba5cde263f3744bb0c\"],\n    \"storefrontId\" : \"6972323c302fd1e227232c5f\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-inventory",
+          "host": [
+            "{{url}}storefront-inventory"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "storefront inventories",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-inventory",
+          "host": [
+            "{{url}}storefront-inventory"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "pangination",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}storefront-inventory?page=1&limit=10",
+              "host": [
+                "{{url}}storefront-inventory"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "each stroefront inventory",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}storefront-inventory?storefrontId=69520e16733af6e4c84c391c",
+              "host": [
+                "{{url}}storefront-inventory"
+              ],
+              "query": [
+                {
+                  "key": "storefrontId",
+                  "value": "69520e16733af6e4c84c391c"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "sorting Order",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}storefront-inventory?sortOrder=desc",
+              "host": [
+                "{{url}}storefront-inventory"
+              ],
+              "query": [
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "storefront inventory",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-inventory/6973013b41a819e7132b2b7d",
+          "host": [
+            "{{url}}storefront-inventory"
+          ],
+          "path": [
+            "6973013b41a819e7132b2b7d"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "stock quantity change",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"quantityChange\" : 100,\n    \"reason\" : \"Testing stock update and audit log.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}storefront-inventory/69723e8958fcb0d017d66d6b/quantity",
+          "host": [
+            "{{url}}storefront-inventory"
+          ],
+          "path": [
+            "69723e8958fcb0d017d66d6b",
+            "quantity"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

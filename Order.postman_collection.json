@@ -1,0 +1,372 @@
+{
+  "info": {
+    "_postman_id": "9e19039b-81d5-47d6-9015-18bda1c2a931",
+    "name": "Order",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-9e19039b-81d5-47d6-9015-18bda1c2a931?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Order",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"storefrontId\": \"696b15bd7b207eb2e286ba92\",\n    \"ordersProducts\": [\n        {\n            \"inventoryId\": \"697b7dd3e702a5e2261963a2\",\n            \"quantity\": 1\n        }\n    ],\n    \"subTotal\":3570000, // Optional\n    \"tax\": 0, // Optional\n    \"discount\": 0, // Optional\n    \"finalAmount\": 3570000, // Optional\n    \"paidAmount\": 0, // Required\n    \"extraChange\" :  0,\n    \"paymentType\": \"credit\", // enum: [\"credit\", \"paid\"],\n    \"paymentMethid\" : \"normal\" // default : cash\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order",
+          "host": [
+            "{{url}}order"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Orders",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order",
+          "host": [
+            "{{url}}order"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "paymentType and method query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}order?paymentType=f rf&paymentMethod=",
+              "host": [
+                "{{url}}order"
+              ],
+              "query": [
+                {
+                  "key": "paymentType",
+                  "value": "f rf"
+                },
+                {
+                  "key": "paymentMethod",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        },
+        {
+          "name": "Date query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}order?startDate=2026-01-17&startDate=2026-01-17",
+              "host": [
+                "{{url}}order"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-01-17"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2026-01-17"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/696b16d67b207eb2e286bb5a",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "696b16d67b207eb2e286bb5a"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Order",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/696b311d7b207eb2e286bc3f",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "696b311d7b207eb2e286bc3f"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "paid amount edit",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"paidAmount\" : 1234\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/696b311d7b207eb2e286bc3f/paid-amount",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "696b311d7b207eb2e286bc3f",
+            "paid-amount"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "remove items",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"items\": [\n        {\n            \"inventoryId\": \"65a1b2c3d4e5f6789abcdef0\",\n            \"quantity\": -5\n        },\n        {\n            \"inventoryId\": \"65a1b2c3d4e5f6789abcdef1\",\n            \"quantity\": -2\n        }\n    ],\n    \"subTotal\": 35000,\n    \"tax\": 3500,\n    \"discount\": 1500,\n    \"finalAmount\": 37000,\n    \"extraChange\": 0,\n    \"paidAmount\": 37000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/order/:orderId/items/add",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "order",
+            ":orderId",
+            "items",
+            "add"
+          ],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add items",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"inventoryId\": \"65a1b2c3d4e5f6789abcdef0\",\n      \"quantity\": 5\n    },\n    \n    {\n      \"inventoryId\": \"65a1b2c3d4e5f6789abcdef1\",\n      \"quantity\": 2\n    }\n  ],\n  \"subTotal\": 35000,\n  \"tax\": 3500,\n  \"discount\": 1500,\n  \"finalAmount\": 37000,\n  \"extraChange\": 0,\n  \"paidAmount\": 37000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/order/:orderId/items/remove",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "order",
+            ":orderId",
+            "items",
+            "remove"
+          ],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "add credit  person",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"creditPersonId\" : \"694a29f23b32d5da18c18718\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/694a950bff308ddc48b78404/credit-person",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "694a950bff308ddc48b78404",
+            "credit-person"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Order by storefront Id",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/storefront/69480c85898d2a68c2d39b18",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "storefront",
+            "69480c85898d2a68c2d39b18"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

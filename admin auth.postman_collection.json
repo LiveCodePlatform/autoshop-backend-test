@@ -1,0 +1,307 @@
+{
+  "info": {
+    "_postman_id": "91fb65a9-6be0-403c-8658-cb3e235eea22",
+    "name": "admin auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-91fb65a9-6be0-403c-8658-cb3e235eea22?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "signup",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\" :  \"aungthuyeinheincash\",\n    \"password\" : \"aungthuyeinheincash\",\n    \"confirmPassword\" : \"aungthuyeinheincash\",\n    \"locationId\" : \"6972323c302fd1e227232c5f\",\n    \"role\"  :  \"cashier\" ///default :owner\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/signup",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "signup"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Parse the JSON response",
+              "const response = pm.response.json();",
+              "",
+              "// Extract the token from the response (it's inside response.data.token)",
+              "const token = response.data.token;",
+              "",
+              "// Log the token to the console for debugging",
+              "console.log(\"Extracted Token:\", token);",
+              "",
+              "// Check if the token exists in the response",
+              "if (token) {",
+              "    // Save or update the JWT token in the environment variable",
+              "    pm.environment.set(\"jwt\", token);",
+              "    console.log(\"JWT token saved/updated in environment variable: jwt\");",
+              "} else {",
+              "    console.error(\"Token not found in the response\");",
+              "}",
+              "",
+              "// Optional: Verify that the token has been saved correctly",
+              "const savedToken = pm.environment.get(\"jwt\");",
+              "if (savedToken) {",
+              "    console.log(\"Verified saved JWT token:\", savedToken);",
+              "} else {",
+              "    console.error(\"Failed to save JWT token in environment\");",
+              "}",
+              "",
+              "// Test to ensure the request was successful (e.g., status 200)",
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Optional: Test if the response includes a token",
+              "pm.test(\"Response contains a token\", function () {",
+              "    pm.expect(response).to.have.property(\"data\");",
+              "    pm.expect(response.data).to.have.property(\"token\");",
+              "    pm.expect(response.data.token).to.be.a(\"string\").and.not.empty;",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\" :  \"owner\",\n    \"password\" : \"123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/login",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "accounts",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin",
+          "host": [
+            "{{url}}admin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "account",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "account",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\" : \"aungthuyeinhein\",\n    \"role\" : \"owner\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "password change",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"newPassword\" : \"aungthuyeinhein\",\n    \"confirmPassword\" : \"aungthuyeinhein\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/update-password/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "update-password",
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "soft delete",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"newPassowrd\" : \"\",\n    \"confirmPassword\" : \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/soft-delete/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "soft-delete",
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "restore",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"newPassowrd\" : \"\",\n    \"confirmPassword\" : \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/restore/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "restore",
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "hard delete",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"newPassowrd\" : \"\",\n    \"confirmPassword\" : \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}admin/697219f63cea40d193da5fee",
+          "host": [
+            "{{url}}admin"
+          ],
+          "path": [
+            "697219f63cea40d193da5fee"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    }
+  ]
+}

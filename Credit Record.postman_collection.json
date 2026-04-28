@@ -1,0 +1,252 @@
+{
+  "info": {
+    "_postman_id": "1315f397-8c3e-45b7-ad7e-cec086064172",
+    "name": "Credit Record",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30336782",
+    "_collection_link": "https://go.postman.co/collection/29255640-1315f397-8c3e-45b7-ad7e-cec086064172?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Credit Record",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"orderId\" : \"694cec86c2baaa5cd1ad016a\",\n    \"paidAmount\"  : 50,\n    \"paymentMethod\" : \"cash\",\n    \"paymentDate\" : \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}credit-record",
+          "host": [
+            "{{url}}credit-record"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Credit Records",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}credit-record",
+          "host": [
+            "{{url}}credit-record"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Credit Records",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}credit-record?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD",
+              "host": [
+                "{{url}}credit-record"
+              ],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "af",
+                  "disabled": true
+                },
+                {
+                  "key": "creditpersonId",
+                  "value": "765",
+                  "disabled": true
+                },
+                {
+                  "key": "paymentMethod",
+                  "value": "cash",
+                  "disabled": true
+                },
+                {
+                  "key": "startDate",
+                  "value": "YYYY-MM-DD"
+                },
+                {
+                  "key": "endDate",
+                  "value": "YYYY-MM-DD"
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Credit Record",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}credit-record/694a9baba0041fe6be417933",
+          "host": [
+            "{{url}}credit-record"
+          ],
+          "path": [
+            "694a9baba0041fe6be417933"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Credit Record by order id",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}order/694a950bff308ddc48b78404/credit-records",
+          "host": [
+            "{{url}}order"
+          ],
+          "path": [
+            "694a950bff308ddc48b78404",
+            "credit-records"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Credit Records by  person",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}credit-persona/694e27fcad96caa515e3a596/credit-records",
+          "host": [
+            "{{url}}credit-persona"
+          ],
+          "path": [
+            "694e27fcad96caa515e3a596",
+            "credit-records"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "paymentMethod and type query",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\" : \"694a950bff308ddc48b78404\",\n    \"paidAmount\"  : \"200\",\n    \"paymentMethod\" : \"cash\" \n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}credit-persona/694e27fcad96caa515e3a596/credit-records?paymentMethod=sgf&paymentType=",
+              "host": [
+                "{{url}}credit-persona"
+              ],
+              "path": [
+                "694e27fcad96caa515e3a596",
+                "credit-records"
+              ],
+              "query": [
+                {
+                  "key": "paymentMethod",
+                  "value": "sgf"
+                },
+                {
+                  "key": "paymentType",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": null
+        }
+      ]
+    }
+  ]
+}
