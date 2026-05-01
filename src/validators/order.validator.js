@@ -70,13 +70,11 @@ const objectId = Joi.string()
  * Order Product Schema
  */
 const orderProductSchema = Joi.object({
-  [ORDER_FIELDS.INVENTORY_ID]: objectId
-    .required()
-    .messages({
-      "any.required": "Inventory ID is required",
-      "string.empty": "Inventory ID is required",
-      "any.invalid": "Inventory ID must be a valid ObjectId",
-    }),
+  [ORDER_FIELDS.INVENTORY_ID]: objectId.required().messages({
+    "any.required": "Inventory ID is required",
+    "string.empty": "Inventory ID is required",
+    "any.invalid": "Inventory ID must be a valid ObjectId",
+  }),
 
   [ORDER_FIELDS.QUANTITY]: Joi.number()
     .integer()
@@ -103,13 +101,11 @@ const orderProductSchema = Joi.object({
  * Validation schema for creating order
  */
 export const createOrderSchema = Joi.object({
-  [ORDER_FIELDS.STOREFRONT_ID]: objectId
-    .required()
-    .messages({
-      "any.required": "Storefront is required",
-      "string.empty": "Storefront is required",
-      "any.invalid": "Storefront ID must be a valid ObjectId",
-    }),
+  [ORDER_FIELDS.STOREFRONT_ID]: objectId.required().messages({
+    "any.required": "Storefront is required",
+    "string.empty": "Storefront is required",
+    "any.invalid": "Storefront ID must be a valid ObjectId",
+  }),
 
   [ORDER_FIELDS.ORDERS_PRODUCTS]: Joi.array()
     .items(orderProductSchema)
@@ -181,13 +177,11 @@ export const createOrderSchema = Joi.object({
       "any.only": `Order status must be one of: ${getValidOrderStatuses().join(", ")}`,
     }),
 
-  [ORDER_FIELDS.SOLD_BY]: objectId
-    .required()
-    .messages({
-      "any.required": "Sold by is required",
-      "string.empty": "Sold by is required",
-      "any.invalid": "Sold by must be a valid ObjectId",
-    }),
+  [ORDER_FIELDS.SOLD_BY]: objectId.required().messages({
+    "any.required": "Sold by is required",
+    "string.empty": "Sold by is required",
+    "any.invalid": "Sold by must be a valid ObjectId",
+  }),
 
   [ORDER_FIELDS.PAYMENT_TYPE]: Joi.string()
     .valid(...getValidPaymentTypes())

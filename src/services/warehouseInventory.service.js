@@ -35,11 +35,10 @@ export class WarehouseInventoryService {
     repository,
     inventoryRepository,
     locationRepository,
-    stockAuditLogService
+    stockAuditLogService,
   ) {
     this.repository = repository || new WarehouseInventoryRepository();
-    this.inventoryRepository =
-      inventoryRepository || new InventoryRepository();
+    this.inventoryRepository = inventoryRepository || new InventoryRepository();
     this.locationRepository =
       locationRepository || new LocationProfileRepository();
     this.stockAuditLogService =
@@ -65,7 +64,7 @@ export class WarehouseInventoryService {
     if (!Array.isArray(inventoryIds) || inventoryIds.length === 0) {
       throw new ValidationError(
         "inventoryIds must be a non-empty array of inventory IDs",
-        "inventoryIds"
+        "inventoryIds",
       );
     }
 
@@ -76,12 +75,12 @@ export class WarehouseInventoryService {
 
     // Validate all inventoryIds are valid MongoDB ObjectIds
     const invalidIds = inventoryIds.filter(
-      (id) => !mongoose.Types.ObjectId.isValid(id)
+      (id) => !mongoose.Types.ObjectId.isValid(id),
     );
     if (invalidIds.length > 0) {
       throw new CastError(
         `Invalid inventory ID format(s): ${invalidIds.join(", ")}`,
-        "inventoryIds"
+        "inventoryIds",
       );
     }
 
@@ -103,25 +102,26 @@ export class WarehouseInventoryService {
     });
     const foundInventoryIds = inventories.map((inv) => inv._id.toString());
     const missingInventoryIds = inventoryIds.filter(
-      (id) => !foundInventoryIds.includes(id.toString())
+      (id) => !foundInventoryIds.includes(id.toString()),
     );
     if (missingInventoryIds.length > 0) {
       throw new NotFoundError(
-        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`
+        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`,
       );
     }
 
     // Check which combinations already exist
-    const existingRecords = await this.repository.findByInventoryIdsAndWarehouse(
-      inventoryIds,
-      warehouseId
-    );
+    const existingRecords =
+      await this.repository.findByInventoryIdsAndWarehouse(
+        inventoryIds,
+        warehouseId,
+      );
 
     const existingInventoryIds = existingRecords.map((record) =>
-      record.inventoryId.toString()
+      record.inventoryId.toString(),
     );
     const newInventoryIds = inventoryIds.filter(
-      (id) => !existingInventoryIds.includes(id.toString())
+      (id) => !existingInventoryIds.includes(id.toString()),
     );
 
     // Create new records for inventoryIds that don't exist
@@ -151,11 +151,11 @@ export class WarehouseInventoryService {
             if (existingRecord) {
               await existingRecord.populate(
                 "inventoryId",
-                "productName productCode"
+                "productName productCode",
               );
               await existingRecord.populate(
                 "warehouseId",
-                "locationName locationCode"
+                "locationName locationCode",
               );
               return { status: "duplicate", record: existingRecord };
             }
@@ -251,7 +251,8 @@ export class WarehouseInventoryService {
     const populate = [
       {
         path: "inventoryId",
-        select: "productName productCode SKU category buyingPrice sellingPrice barcode",
+        select:
+          "productName productCode SKU category buyingPrice sellingPrice barcode",
       },
       {
         path: "warehouseId",
@@ -325,11 +326,11 @@ export class WarehouseInventoryService {
     // Populate related fields
     await warehouseInventory.populate(
       "inventoryId",
-      "productName productCode SKU category buyingPrice sellingPrice barcode"
+      "productName productCode SKU category buyingPrice sellingPrice barcode",
     );
     await warehouseInventory.populate(
       "warehouseId",
-      "locationName locationCode locationAddress"
+      "locationName locationCode locationAddress",
     );
 
     // Return DTO
@@ -357,7 +358,9 @@ export class WarehouseInventoryService {
 
     // Validate adminId
     if (!adminId || !mongoose.Types.ObjectId.isValid(adminId)) {
-      throw new UnauthorizedError("Authentication required. Admin ID not found.");
+      throw new UnauthorizedError(
+        "Authentication required. Admin ID not found.",
+      );
     }
 
     // Start MongoDB session for transaction (ACID properties)
@@ -370,8 +373,14 @@ export class WarehouseInventoryService {
       const stockToUpdate = await this.repository.findById(id, {
         session,
         populate: [
-          { path: "inventoryId", select: "productName productCode SKU barcode" },
-          { path: "warehouseId", select: "locationName locationCode type isDeleted" },
+          {
+            path: "inventoryId",
+            select: "productName productCode SKU barcode",
+          },
+          {
+            path: "warehouseId",
+            select: "locationName locationCode type isDeleted",
+          },
         ],
       });
 
@@ -385,7 +394,10 @@ export class WarehouseInventoryService {
       if (stockToUpdate.warehouseId?.isDeleted) {
         await session.abortTransaction();
         session.endSession();
-        throw new NotFoundError("Warehouse is deleted", stockToUpdate.warehouseId._id);
+        throw new NotFoundError(
+          "Warehouse is deleted",
+          stockToUpdate.warehouseId._id,
+        );
       }
 
       // Validate location type
@@ -404,7 +416,7 @@ export class WarehouseInventoryService {
         session.endSession();
         throw new ValidationError(
           `Cannot update stock quantity. Current quantity: ${beforeQuantity}, requested change: ${quantityChange}. This would result in a negative quantity (${afterQuantity}).`,
-          "quantityChange"
+          "quantityChange",
         );
       }
 
@@ -412,7 +424,7 @@ export class WarehouseInventoryService {
       const updatedStock = await this.repository.updateQuantity(
         id,
         quantityChange,
-        { session }
+        { session },
       );
 
       if (!updatedStock) {
@@ -424,7 +436,7 @@ export class WarehouseInventoryService {
       // Create audit log entry
       const action = this.stockAuditLogService.determineActionType(
         quantityChange,
-        false
+        false,
       );
       await this.stockAuditLogService.createStockAuditLog(
         {
@@ -441,7 +453,7 @@ export class WarehouseInventoryService {
           relatedTransactionId: null,
           relatedTransactionType: null,
         },
-        { session }
+        { session },
       );
 
       // Commit the transaction

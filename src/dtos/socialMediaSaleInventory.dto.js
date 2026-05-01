@@ -20,7 +20,8 @@ export class CreateSocialMediaSaleInventoryDTO {
         ? data[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.QUANTITY]
         : SOCIAL_MEDIA_SALE_INVENTORY_DEFAULTS.QUANTITY;
     this.sellingGuidePrompt =
-      data[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.SELLING_GUIDE_PROMPT] !== undefined
+      data[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.SELLING_GUIDE_PROMPT] !==
+      undefined
         ? data[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.SELLING_GUIDE_PROMPT]
         : SOCIAL_MEDIA_SALE_INVENTORY_DEFAULTS.SELLING_GUIDE_PROMPT;
     this.buyingGuidePrompt =
@@ -59,12 +60,17 @@ export class CreateSocialMediaSaleInventoryDTO {
  */
 export class SocialMediaSaleInventoryResponseDTO {
   constructor(socialMediaSaleInventoryModel) {
-    this.id =
-      socialMediaSaleInventoryModel._id || socialMediaSaleInventoryModel.id;
+    this._id = socialMediaSaleInventoryModel._id
+      ? socialMediaSaleInventoryModel._id.toString()
+      : socialMediaSaleInventoryModel.id;
     this.inventoryId =
-      socialMediaSaleInventoryModel[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.INVENTORY_ID];
+      socialMediaSaleInventoryModel[
+        SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.INVENTORY_ID
+      ];
     this.quantity =
-      socialMediaSaleInventoryModel[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.QUANTITY] || 0;
+      socialMediaSaleInventoryModel[
+        SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.QUANTITY
+      ] || 0;
     this.sellingGuidePrompt =
       socialMediaSaleInventoryModel[
         SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.SELLING_GUIDE_PROMPT
@@ -81,11 +87,17 @@ export class SocialMediaSaleInventoryResponseDTO {
       socialMediaSaleInventoryModel[
         SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.LAST_UPDATED
       ] ||
-      socialMediaSaleInventoryModel[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.CREATED_AT];
+      socialMediaSaleInventoryModel[
+        SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.CREATED_AT
+      ];
     this.createdAt =
-      socialMediaSaleInventoryModel[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.CREATED_AT];
+      socialMediaSaleInventoryModel[
+        SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.CREATED_AT
+      ];
     this.updatedAt =
-      socialMediaSaleInventoryModel[SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.UPDATED_AT];
+      socialMediaSaleInventoryModel[
+        SOCIAL_MEDIA_SALE_INVENTORY_FIELDS.UPDATED_AT
+      ];
   }
 
   /**
@@ -94,7 +106,7 @@ export class SocialMediaSaleInventoryResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       inventoryId: this.inventoryId,
       quantity: this.quantity,
       sellingGuidePrompt: this.sellingGuidePrompt,
@@ -120,9 +132,8 @@ export class SocialMediaSaleInventoryResponseDTO {
    * @returns {Array}
    */
   static fromArray(socialMediaSaleInventories) {
-    return socialMediaSaleInventories.map(
-      (inventory) =>
-        new SocialMediaSaleInventoryResponseDTO(inventory).toJSON()
+    return socialMediaSaleInventories.map((inventory) =>
+      new SocialMediaSaleInventoryResponseDTO(inventory).toJSON(),
     );
   }
 }
@@ -131,7 +142,11 @@ export class SocialMediaSaleInventoryResponseDTO {
  * Social Media Sale Inventory List Response DTO (with pagination)
  */
 export class SocialMediaSaleInventoryListResponseDTO {
-  constructor(socialMediaSaleInventories, pagination, message = "Social media sale inventory retrieved successfully") {
+  constructor(
+    socialMediaSaleInventories,
+    pagination,
+    message = "Social media sale inventory retrieved successfully",
+  ) {
     this.socialMediaSaleInventories =
       SocialMediaSaleInventoryResponseDTO.fromArray(socialMediaSaleInventories);
     this.pagination = {

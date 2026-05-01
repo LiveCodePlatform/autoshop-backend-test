@@ -93,7 +93,9 @@ export class UpdateWarehouseInventoryDTO {
  */
 export class WarehouseInventoryResponseDTO {
   constructor(warehouseInventoryModel) {
-    this.id = warehouseInventoryModel._id || warehouseInventoryModel.id;
+    this._id = warehouseInventoryModel._id
+      ? warehouseInventoryModel._id.toString()
+      : warehouseInventoryModel.id;
     this.inventoryId =
       warehouseInventoryModel[WAREHOUSE_INVENTORY_FIELDS.INVENTORY_ID];
     this.warehouseId =
@@ -121,7 +123,7 @@ export class WarehouseInventoryResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       inventoryId: this.inventoryId,
       warehouseId: this.warehouseId,
       quantity: this.quantity,
@@ -147,8 +149,8 @@ export class WarehouseInventoryResponseDTO {
    * @returns {Array}
    */
   static fromArray(warehouseInventories) {
-    return warehouseInventories.map(
-      (inventory) => new WarehouseInventoryResponseDTO(inventory).toJSON()
+    return warehouseInventories.map((inventory) =>
+      new WarehouseInventoryResponseDTO(inventory).toJSON(),
     );
   }
 }
@@ -157,7 +159,11 @@ export class WarehouseInventoryResponseDTO {
  * Warehouse Inventory List Response DTO (with pagination)
  */
 export class WarehouseInventoryListResponseDTO {
-  constructor(warehouseInventories, pagination, message = "Warehouse inventory retrieved successfully") {
+  constructor(
+    warehouseInventories,
+    pagination,
+    message = "Warehouse inventory retrieved successfully",
+  ) {
     this.warehouseInventories =
       WarehouseInventoryResponseDTO.fromArray(warehouseInventories);
     this.pagination = {

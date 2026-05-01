@@ -36,7 +36,7 @@ class LocationProfileController {
     res.status(200).json({
       success: true,
       message: "Location profile retrieved successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 }

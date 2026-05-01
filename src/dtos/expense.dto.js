@@ -3,10 +3,7 @@
  * Transforms data between layers using types from types/expense.types.js
  */
 
-import {
-  EXPENSE_FIELDS,
-  EXPENSE_DEFAULTS,
-} from "../types/expense.types.js";
+import { EXPENSE_FIELDS, EXPENSE_DEFAULTS } from "../types/expense.types.js";
 
 /**
  * Create Expense DTO
@@ -78,10 +75,8 @@ export class UpdateExpenseDTO {
       updateData[EXPENSE_FIELDS.CATEGORY] = this.category;
     if (this.amount !== undefined)
       updateData[EXPENSE_FIELDS.AMOUNT] = this.amount;
-    if (this.date !== undefined)
-      updateData[EXPENSE_FIELDS.DATE] = this.date;
-    if (this.notes !== undefined)
-      updateData[EXPENSE_FIELDS.NOTES] = this.notes;
+    if (this.date !== undefined) updateData[EXPENSE_FIELDS.DATE] = this.date;
+    if (this.notes !== undefined) updateData[EXPENSE_FIELDS.NOTES] = this.notes;
     if (this.locationId !== undefined)
       updateData[EXPENSE_FIELDS.LOCATION_ID] = this.locationId;
     if (this.adminId !== undefined)
@@ -97,12 +92,11 @@ export class UpdateExpenseDTO {
  */
 export class ExpenseResponseDTO {
   constructor(expenseModel) {
-    this.id = expenseModel._id || expenseModel.id;
+    this._id = expenseModel._id ? expenseModel._id.toString() : expenseModel.id;
     this.category = expenseModel[EXPENSE_FIELDS.CATEGORY];
     this.amount = expenseModel[EXPENSE_FIELDS.AMOUNT];
     this.date = expenseModel[EXPENSE_FIELDS.DATE];
-    this.notes =
-      expenseModel[EXPENSE_FIELDS.NOTES] || EXPENSE_DEFAULTS.NOTES;
+    this.notes = expenseModel[EXPENSE_FIELDS.NOTES] || EXPENSE_DEFAULTS.NOTES;
     this.locationId = expenseModel[EXPENSE_FIELDS.LOCATION_ID];
     this.adminId = expenseModel[EXPENSE_FIELDS.ADMIN_ID];
     this.createdAt = expenseModel[EXPENSE_FIELDS.CREATED_AT];
@@ -115,7 +109,7 @@ export class ExpenseResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       category: this.category,
       amount: this.amount,
       date: this.date,
@@ -141,9 +135,7 @@ export class ExpenseResponseDTO {
    * @returns {Array}
    */
   static fromArray(expenses) {
-    return expenses.map(
-      (expense) => new ExpenseResponseDTO(expense).toJSON()
-    );
+    return expenses.map((expense) => new ExpenseResponseDTO(expense).toJSON());
   }
 }
 
@@ -151,7 +143,11 @@ export class ExpenseResponseDTO {
  * Expense List Response DTO (with pagination)
  */
 export class ExpenseListResponseDTO {
-  constructor(expenses, pagination, message = "Expenses retrieved successfully") {
+  constructor(
+    expenses,
+    pagination,
+    message = "Expenses retrieved successfully",
+  ) {
     this.expenses = ExpenseResponseDTO.fromArray(expenses);
     this.pagination = {
       page: pagination.page,

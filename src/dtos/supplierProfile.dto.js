@@ -26,8 +26,10 @@ export class CreateSupplierProfileDTO {
     return {
       [SUPPLIER_PROFILE_FIELDS.SUPPLIER_NAME]: this.supplierName,
       [SUPPLIER_PROFILE_FIELDS.CONTACT_NUMBER]: this.contactNumber,
-      [SUPPLIER_PROFILE_FIELDS.IS_DELETED]: SUPPLIER_PROFILE_DEFAULTS.IS_DELETED,
-      [SUPPLIER_PROFILE_FIELDS.DELETED_AT]: SUPPLIER_PROFILE_DEFAULTS.DELETED_AT,
+      [SUPPLIER_PROFILE_FIELDS.IS_DELETED]:
+        SUPPLIER_PROFILE_DEFAULTS.IS_DELETED,
+      [SUPPLIER_PROFILE_FIELDS.DELETED_AT]:
+        SUPPLIER_PROFILE_DEFAULTS.DELETED_AT,
     };
   }
 
@@ -75,7 +77,9 @@ export class UpdateSupplierProfileDTO {
  */
 export class SupplierProfileResponseDTO {
   constructor(supplierProfileModel) {
-    this.id = supplierProfileModel._id || supplierProfileModel.id;
+    this._id = supplierProfileModel._id
+      ? supplierProfileModel._id.toString()
+      : supplierProfileModel.id;
     this.supplierName =
       supplierProfileModel[SUPPLIER_PROFILE_FIELDS.SUPPLIER_NAME];
     this.contactNumber =
@@ -86,10 +90,8 @@ export class SupplierProfileResponseDTO {
     this.deletedAt =
       supplierProfileModel[SUPPLIER_PROFILE_FIELDS.DELETED_AT] ||
       SUPPLIER_PROFILE_DEFAULTS.DELETED_AT;
-    this.createdAt =
-      supplierProfileModel[SUPPLIER_PROFILE_FIELDS.CREATED_AT];
-    this.updatedAt =
-      supplierProfileModel[SUPPLIER_PROFILE_FIELDS.UPDATED_AT];
+    this.createdAt = supplierProfileModel[SUPPLIER_PROFILE_FIELDS.CREATED_AT];
+    this.updatedAt = supplierProfileModel[SUPPLIER_PROFILE_FIELDS.UPDATED_AT];
   }
 
   /**
@@ -98,7 +100,7 @@ export class SupplierProfileResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       supplierName: this.supplierName,
       contactNumber: this.contactNumber,
       isDeleted: this.isDeleted,
@@ -122,9 +124,8 @@ export class SupplierProfileResponseDTO {
    * @returns {Array}
    */
   static fromArray(supplierProfiles) {
-    return supplierProfiles.map(
-      (supplierProfile) =>
-        new SupplierProfileResponseDTO(supplierProfile).toJSON()
+    return supplierProfiles.map((supplierProfile) =>
+      new SupplierProfileResponseDTO(supplierProfile).toJSON(),
     );
   }
 }
@@ -133,7 +134,11 @@ export class SupplierProfileResponseDTO {
  * Supplier Profile List Response DTO (with pagination)
  */
 export class SupplierProfileListResponseDTO {
-  constructor(supplierProfiles, pagination, message = "Supplier profiles retrieved successfully") {
+  constructor(
+    supplierProfiles,
+    pagination,
+    message = "Supplier profiles retrieved successfully",
+  ) {
     this.supplierProfiles =
       SupplierProfileResponseDTO.fromArray(supplierProfiles);
     this.pagination = {

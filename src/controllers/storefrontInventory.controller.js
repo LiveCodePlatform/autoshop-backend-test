@@ -72,7 +72,7 @@ class StorefrontInventoryController {
         id,
         quantityChange,
         reason,
-        adminId
+        adminId,
       );
 
       res.status(200).json({
@@ -80,7 +80,7 @@ class StorefrontInventoryController {
         message: result.message,
         data: result.storefrontInventory,
       });
-    }
+    },
   );
 }
 

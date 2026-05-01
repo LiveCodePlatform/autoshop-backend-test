@@ -4,7 +4,11 @@
  * Uses repositories for data access and DTOs for data transformation
  */
 
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+import {
+  ValidationError,
+  NotFoundError,
+  CastError,
+} from "../errors/errorTypes.js";
 import { validatePhoneNumber } from "../shared/utils/phoneValidation.utils.js";
 import mongoose from "mongoose";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
@@ -146,10 +150,9 @@ export class WarehouseProfileService {
     const total = await this.repository.countDocuments(query);
 
     return new LocationProfileListResponseDTO(warehouses, {
-      currentPage: pageNum,
-      totalPages: Math.ceil(total / limitNum),
-      totalItems: total,
-      itemsPerPage: limitNum,
+      page: pageNum,
+      limit: limitNum,
+      total: total,
     });
   }
 
@@ -285,7 +288,9 @@ export class WarehouseProfileService {
     // Update status if provided (matches legacy exactly)
     if (status !== undefined) {
       if (!["active", "inactive"].includes(status)) {
-        throw new ValidationError("Status must be either 'active' or 'inactive'");
+        throw new ValidationError(
+          "Status must be either 'active' or 'inactive'",
+        );
       }
       updateFields.status = status;
     }
@@ -326,7 +331,7 @@ export class WarehouseProfileService {
     const updatedWarehouse = await this.repository.findByIdAndUpdate(
       id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     // Return DTO

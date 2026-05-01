@@ -11,10 +11,9 @@
  * @returns {Object} Transformed object with id instead of _id
  */
 export const transformId = (doc, ret) => {
-  // Convert _id to id
+  // Keep _id as is (convert to string for consistency)
   if (ret._id) {
-    ret.id = ret._id.toString();
-    delete ret._id;
+    ret._id = ret._id.toString();
   }
 
   // Remove version key

@@ -13,7 +13,11 @@ import {
   InventoryResponseDTO,
   InventoryListResponseDTO,
 } from "../dtos/inventory.dto.js";
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+import {
+  ValidationError,
+  NotFoundError,
+  CastError,
+} from "../errors/errorTypes.js";
 import { INVENTORY_FIELDS } from "../types/inventory.types.js";
 import mongoose from "mongoose";
 
@@ -26,11 +30,13 @@ export class InventoryService {
   constructor(
     repository,
     warehouseInventoryRepository,
-    storefrontInventoryRepository
+    storefrontInventoryRepository,
   ) {
     this.repository = repository || new InventoryRepository();
-    this.warehouseInventoryRepository = warehouseInventoryRepository || new WarehouseInventoryRepository();
-    this.storefrontInventoryRepository = storefrontInventoryRepository || new StorefrontInventoryRepository();
+    this.warehouseInventoryRepository =
+      warehouseInventoryRepository || new WarehouseInventoryRepository();
+    this.storefrontInventoryRepository =
+      storefrontInventoryRepository || new StorefrontInventoryRepository();
   }
 
   /**
@@ -48,17 +54,22 @@ export class InventoryService {
     // Check if productCode already exists (matches legacy exactly)
     if (inventoryData[INVENTORY_FIELDS.PRODUCT_CODE]) {
       const existingProduct = await this.repository.findOne({
-        [INVENTORY_FIELDS.PRODUCT_CODE]: inventoryData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
+        [INVENTORY_FIELDS.PRODUCT_CODE]:
+          inventoryData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
       });
       if (existingProduct) {
-        throw new ValidationError("Product code already exists", INVENTORY_FIELDS.PRODUCT_CODE);
+        throw new ValidationError(
+          "Product code already exists",
+          INVENTORY_FIELDS.PRODUCT_CODE,
+        );
       }
     }
 
     // Check if SKU already exists (matches legacy exactly)
     if (inventoryData[INVENTORY_FIELDS.SKU]) {
       const existingSKU = await this.repository.findOne({
-        [INVENTORY_FIELDS.SKU]: inventoryData[INVENTORY_FIELDS.SKU].toUpperCase(),
+        [INVENTORY_FIELDS.SKU]:
+          inventoryData[INVENTORY_FIELDS.SKU].toUpperCase(),
       });
       if (existingSKU) {
         throw new ValidationError("SKU already exists", INVENTORY_FIELDS.SKU);
@@ -71,17 +82,24 @@ export class InventoryService {
         [INVENTORY_FIELDS.BARCODE]: inventoryData[INVENTORY_FIELDS.BARCODE],
       });
       if (existingBarcode) {
-        throw new ValidationError("Barcode already exists", INVENTORY_FIELDS.BARCODE);
+        throw new ValidationError(
+          "Barcode already exists",
+          INVENTORY_FIELDS.BARCODE,
+        );
       }
     }
 
     // Check if saleCode already exists (if provided) (matches legacy exactly)
     if (inventoryData[INVENTORY_FIELDS.SALE_CODE]) {
       const existingSaleCode = await this.repository.findOne({
-        [INVENTORY_FIELDS.SALE_CODE]: inventoryData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
+        [INVENTORY_FIELDS.SALE_CODE]:
+          inventoryData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
       });
       if (existingSaleCode) {
-        throw new ValidationError("Sale code already exists", INVENTORY_FIELDS.SALE_CODE);
+        throw new ValidationError(
+          "Sale code already exists",
+          INVENTORY_FIELDS.SALE_CODE,
+        );
       }
     }
 
@@ -177,32 +195,38 @@ export class InventoryService {
     }
 
     // Get stock availability for all warehouses (matches legacy exactly - uses repository)
-    const warehouseStocks = await this.warehouseInventoryRepository.find({
-      inventoryId: id,
-    }, {
-      populate: {
-        path: "warehouseId",
-        select: "locationName locationCode locationAddress type status",
+    const warehouseStocks = await this.warehouseInventoryRepository.find(
+      {
+        inventoryId: id,
       },
-    });
+      {
+        populate: {
+          path: "warehouseId",
+          select: "locationName locationCode locationAddress type status",
+        },
+      },
+    );
     // Select only needed fields (matching legacy behavior)
-    const warehouseStocksFiltered = warehouseStocks.map(stock => ({
+    const warehouseStocksFiltered = warehouseStocks.map((stock) => ({
       warehouseId: stock.warehouseId,
       quantity: stock.quantity,
       lastUpdated: stock.lastUpdated,
     }));
 
     // Get stock availability for all storefronts (matches legacy exactly - uses repository)
-    const storefrontStocks = await this.storefrontInventoryRepository.find({
-      inventoryId: id,
-    }, {
-      populate: {
-        path: "storefrontId",
-        select: "locationName locationCode locationAddress type status",
+    const storefrontStocks = await this.storefrontInventoryRepository.find(
+      {
+        inventoryId: id,
       },
-    });
+      {
+        populate: {
+          path: "storefrontId",
+          select: "locationName locationCode locationAddress type status",
+        },
+      },
+    );
     // Select only needed fields (matching legacy behavior)
-    const storefrontStocksFiltered = storefrontStocks.map(stock => ({
+    const storefrontStocksFiltered = storefrontStocks.map((stock) => ({
       storefrontId: stock.storefrontId,
       quantity: stock.quantity,
       lastUpdated: stock.lastUpdated,
@@ -211,10 +235,13 @@ export class InventoryService {
     // Format warehouse stock data - filter out null warehouseId (deleted locations) (matches legacy exactly)
     const warehouseStockAvailability = warehouseStocks
       .filter(
-        (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined
+        (stock) =>
+          stock.warehouseId !== null && stock.warehouseId !== undefined,
       )
       .map((stock) => ({
-        locationId: stock.warehouseId.id || stock.warehouseId._id?.toString(),
+        locationId: stock.warehouseId._id
+          ? stock.warehouseId._id.toString()
+          : stock.warehouseId.id,
         locationName: stock.warehouseId.locationName,
         locationCode: stock.warehouseId.locationCode,
         locationAddress: stock.warehouseId.locationAddress,
@@ -227,10 +254,13 @@ export class InventoryService {
     // Format storefront stock data - filter out null storefrontId (deleted locations) (matches legacy exactly)
     const storefrontStockAvailability = storefrontStocksFiltered
       .filter(
-        (stock) => stock.storefrontId !== null && stock.storefrontId !== undefined
+        (stock) =>
+          stock.storefrontId !== null && stock.storefrontId !== undefined,
       )
       .map((stock) => ({
-        locationId: stock.storefrontId.id || stock.storefrontId._id?.toString(),
+        locationId: stock.storefrontId._id
+          ? stock.storefrontId._id.toString()
+          : stock.storefrontId.id,
         locationName: stock.storefrontId.locationName,
         locationCode: stock.storefrontId.locationCode,
         locationAddress: stock.storefrontId.locationAddress,
@@ -243,12 +273,14 @@ export class InventoryService {
     // Calculate total quantities - only count stocks with valid locations (matches legacy exactly)
     const totalWarehouseQuantity = warehouseStocks
       .filter(
-        (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined
+        (stock) =>
+          stock.warehouseId !== null && stock.warehouseId !== undefined,
       )
       .reduce((sum, stock) => sum + (stock.quantity || 0), 0);
     const totalStorefrontQuantity = storefrontStocks
       .filter(
-        (stock) => stock.storefrontId !== null && stock.storefrontId !== undefined
+        (stock) =>
+          stock.storefrontId !== null && stock.storefrontId !== undefined,
       )
       .reduce((sum, stock) => sum + (stock.quantity || 0), 0);
     const totalQuantity = totalWarehouseQuantity + totalStorefrontQuantity;
@@ -299,11 +331,15 @@ export class InventoryService {
     // Check for uniqueness conflicts if unique fields are being updated (matches legacy exactly)
     if (updateData[INVENTORY_FIELDS.PRODUCT_CODE]) {
       const existingProduct = await this.repository.findOne({
-        [INVENTORY_FIELDS.PRODUCT_CODE]: updateData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
+        [INVENTORY_FIELDS.PRODUCT_CODE]:
+          updateData[INVENTORY_FIELDS.PRODUCT_CODE].toUpperCase(),
         _id: { $ne: id },
       });
       if (existingProduct) {
-        throw new ValidationError("Product code already exists", INVENTORY_FIELDS.PRODUCT_CODE);
+        throw new ValidationError(
+          "Product code already exists",
+          INVENTORY_FIELDS.PRODUCT_CODE,
+        );
       }
     }
 
@@ -323,17 +359,24 @@ export class InventoryService {
         _id: { $ne: id },
       });
       if (existingBarcode) {
-        throw new ValidationError("Barcode already exists", INVENTORY_FIELDS.BARCODE);
+        throw new ValidationError(
+          "Barcode already exists",
+          INVENTORY_FIELDS.BARCODE,
+        );
       }
     }
 
     if (updateData[INVENTORY_FIELDS.SALE_CODE]) {
       const existingSaleCode = await this.repository.findOne({
-        [INVENTORY_FIELDS.SALE_CODE]: updateData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
+        [INVENTORY_FIELDS.SALE_CODE]:
+          updateData[INVENTORY_FIELDS.SALE_CODE].toUpperCase(),
         _id: { $ne: id },
       });
       if (existingSaleCode) {
-        throw new ValidationError("Sale code already exists", INVENTORY_FIELDS.SALE_CODE);
+        throw new ValidationError(
+          "Sale code already exists",
+          INVENTORY_FIELDS.SALE_CODE,
+        );
       }
     }
 
@@ -351,7 +394,7 @@ export class InventoryService {
     if (finalSellingPrice < finalBuyingPrice) {
       throw new ValidationError(
         `Selling price (${finalSellingPrice}) should be greater than or equal to buying price (${finalBuyingPrice})`,
-        "sellingPrice"
+        "sellingPrice",
       );
     }
 
