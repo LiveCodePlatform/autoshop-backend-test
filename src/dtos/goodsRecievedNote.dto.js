@@ -57,7 +57,9 @@ export class GRNLineItemDTO {
  */
 export class GRNLineItemResponseDTO {
   constructor(lineItemModel) {
-    this.id = lineItemModel._id || lineItemModel.id;
+    this._id = lineItemModel._id
+      ? lineItemModel._id.toString()
+      : lineItemModel.id;
     this.inventoryId = lineItemModel[GRN_LINE_ITEM_FIELDS.INVENTORY_ID];
     this.receivedQuantity =
       lineItemModel[GRN_LINE_ITEM_FIELDS.RECEIVED_QUANTITY];
@@ -73,8 +75,7 @@ export class GRNLineItemResponseDTO {
     this.notes = lineItemModel[GRN_LINE_ITEM_FIELDS.NOTES] || null;
     this.profitMargin = lineItemModel.profitMargin || null; // virtual field
     this.profitAmount = lineItemModel.profitAmount || null; // virtual field
-    this.availableQuantity =
-      lineItemModel.availableQuantity || null; // virtual field
+    this.availableQuantity = lineItemModel.availableQuantity || null; // virtual field
   }
 
   /**
@@ -83,7 +84,7 @@ export class GRNLineItemResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       inventoryId: this.inventoryId,
       receivedQuantity: this.receivedQuantity,
       goodQuantity: this.goodQuantity,
@@ -110,7 +111,7 @@ export class CreateGRNDTO {
     this.grnDate = data[GRN_FIELDS.GRN_DATE] || new Date();
     this.status = data[GRN_FIELDS.STATUS] || GRN_DEFAULTS.STATUS;
     this.lineItems = (data[GRN_FIELDS.LINE_ITEMS] || []).map(
-      (lineItem) => new GRNLineItemDTO(lineItem)
+      (lineItem) => new GRNLineItemDTO(lineItem),
     );
     this.notes = data[GRN_FIELDS.NOTES] || GRN_DEFAULTS.NOTES;
     this.totalAmount = data[GRN_FIELDS.TOTAL_AMOUNT];
@@ -127,7 +128,7 @@ export class CreateGRNDTO {
       [GRN_FIELDS.GRN_DATE]: this.grnDate,
       [GRN_FIELDS.STATUS]: this.status,
       [GRN_FIELDS.LINE_ITEMS]: this.lineItems.map((lineItem) =>
-        lineItem.toModel()
+        lineItem.toModel(),
       ),
       [GRN_FIELDS.NOTES]: this.notes,
       [GRN_FIELDS.TOTAL_AMOUNT]: this.totalAmount,
@@ -162,7 +163,7 @@ export class UpdateGRNDTO {
       this.status = data[GRN_FIELDS.STATUS];
     if (data[GRN_FIELDS.LINE_ITEMS] !== undefined)
       this.lineItems = data[GRN_FIELDS.LINE_ITEMS].map(
-        (lineItem) => new GRNLineItemDTO(lineItem)
+        (lineItem) => new GRNLineItemDTO(lineItem),
       );
     if (data[GRN_FIELDS.NOTES] !== undefined)
       this.notes = data[GRN_FIELDS.NOTES] || null;
@@ -183,11 +184,10 @@ export class UpdateGRNDTO {
       updateData[GRN_FIELDS.PURCHASING_ID] = this.purchasingId;
     if (this.grnDate !== undefined)
       updateData[GRN_FIELDS.GRN_DATE] = this.grnDate;
-    if (this.status !== undefined)
-      updateData[GRN_FIELDS.STATUS] = this.status;
+    if (this.status !== undefined) updateData[GRN_FIELDS.STATUS] = this.status;
     if (this.lineItems !== undefined)
       updateData[GRN_FIELDS.LINE_ITEMS] = this.lineItems.map((lineItem) =>
-        lineItem.toModel()
+        lineItem.toModel(),
       );
     if (this.notes !== undefined) updateData[GRN_FIELDS.NOTES] = this.notes;
     if (this.totalAmount !== undefined)
@@ -203,13 +203,13 @@ export class UpdateGRNDTO {
  */
 export class GRNResponseDTO {
   constructor(grnModel) {
-    this.id = grnModel._id || grnModel.id;
+    this._id = grnModel._id ? grnModel._id.toString() : grnModel.id;
     this.grnNumber = grnModel[GRN_FIELDS.GRN_NUMBER];
     this.purchasingId = grnModel[GRN_FIELDS.PURCHASING_ID];
     this.grnDate = grnModel[GRN_FIELDS.GRN_DATE];
     this.status = grnModel[GRN_FIELDS.STATUS] || GRN_DEFAULTS.STATUS;
-    this.lineItems = (grnModel[GRN_FIELDS.LINE_ITEMS] || []).map(
-      (lineItem) => new GRNLineItemResponseDTO(lineItem).toJSON()
+    this.lineItems = (grnModel[GRN_FIELDS.LINE_ITEMS] || []).map((lineItem) =>
+      new GRNLineItemResponseDTO(lineItem).toJSON(),
     );
     this.notes = grnModel[GRN_FIELDS.NOTES] || GRN_DEFAULTS.NOTES;
     this.totalAmount = grnModel[GRN_FIELDS.TOTAL_AMOUNT];
@@ -220,8 +220,7 @@ export class GRNResponseDTO {
       grnModel[GRN_FIELDS.IS_DELETED] !== undefined
         ? grnModel[GRN_FIELDS.IS_DELETED]
         : GRN_DEFAULTS.IS_DELETED;
-    this.deletedAt =
-      grnModel[GRN_FIELDS.DELETED_AT] || GRN_DEFAULTS.DELETED_AT;
+    this.deletedAt = grnModel[GRN_FIELDS.DELETED_AT] || GRN_DEFAULTS.DELETED_AT;
     this.createdAt = grnModel[GRN_FIELDS.CREATED_AT];
     this.updatedAt = grnModel[GRN_FIELDS.UPDATED_AT];
   }
@@ -232,7 +231,7 @@ export class GRNResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       grnNumber: this.grnNumber,
       purchasingId: this.purchasingId,
       grnDate: this.grnDate,

@@ -30,8 +30,7 @@ export class SocialMediaSaleInventoryService {
    */
   constructor(repository, inventoryRepository) {
     this.repository = repository || new SocialMediaSaleInventoryRepository();
-    this.inventoryRepository =
-      inventoryRepository || new InventoryRepository();
+    this.inventoryRepository = inventoryRepository || new InventoryRepository();
   }
 
   /**
@@ -53,7 +52,7 @@ export class SocialMediaSaleInventoryService {
     // Validate inventoryIds - should be an array (matches legacy exactly)
     if (!Array.isArray(inventoryIds) || inventoryIds.length === 0) {
       throw new ValidationError(
-        "inventoryIds must be a non-empty array of inventory IDs"
+        "inventoryIds must be a non-empty array of inventory IDs",
       );
     }
 
@@ -64,11 +63,11 @@ export class SocialMediaSaleInventoryService {
 
     // Validate all inventoryIds are valid MongoDB ObjectIds (matches legacy exactly)
     const invalidIds = inventoryIds.filter(
-      (id) => !mongoose.Types.ObjectId.isValid(id)
+      (id) => !mongoose.Types.ObjectId.isValid(id),
     );
     if (invalidIds.length > 0) {
       throw new ValidationError(
-        `Invalid inventory ID format(s): ${invalidIds.join(", ")}`
+        `Invalid inventory ID format(s): ${invalidIds.join(", ")}`,
       );
     }
 
@@ -78,11 +77,11 @@ export class SocialMediaSaleInventoryService {
     });
     const foundInventoryIds = inventories.map((inv) => inv._id.toString());
     const missingInventoryIds = inventoryIds.filter(
-      (id) => !foundInventoryIds.includes(id.toString())
+      (id) => !foundInventoryIds.includes(id.toString()),
     );
     if (missingInventoryIds.length > 0) {
       throw new NotFoundError(
-        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`
+        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`,
       );
     }
 
@@ -92,10 +91,10 @@ export class SocialMediaSaleInventoryService {
     });
 
     const existingInventoryIds = existingRecords.map((record) =>
-      record.inventoryId.toString()
+      record.inventoryId.toString(),
     );
     const newInventoryIds = inventoryIds.filter(
-      (id) => !existingInventoryIds.includes(id.toString())
+      (id) => !existingInventoryIds.includes(id.toString()),
     );
 
     // Create new records for inventoryIds that don't exist (matches legacy exactly)
@@ -125,7 +124,7 @@ export class SocialMediaSaleInventoryService {
             if (existingRecord) {
               await existingRecord.populate(
                 "inventoryId",
-                "productName productCode"
+                "productName productCode",
               );
               return { status: "duplicate", record: existingRecord };
             }
@@ -164,11 +163,11 @@ export class SocialMediaSaleInventoryService {
     }
 
     return {
-      created: createdRecords.map(
-        (record) => new SocialMediaSaleInventoryResponseDTO(record).toJSON()
+      created: createdRecords.map((record) =>
+        new SocialMediaSaleInventoryResponseDTO(record).toJSON(),
       ),
-      alreadyExists: allExistingRecords.map(
-        (record) => new SocialMediaSaleInventoryResponseDTO(record).toJSON()
+      alreadyExists: allExistingRecords.map((record) =>
+        new SocialMediaSaleInventoryResponseDTO(record).toJSON(),
       ),
       summary: {
         total: inventoryIds.length,
@@ -234,8 +233,7 @@ export class SocialMediaSaleInventoryService {
       populate: [
         {
           path: "inventoryId",
-          select:
-            "productName productCode SKU category sellingPrice barcode",
+          select: "productName productCode SKU category sellingPrice barcode",
         },
       ],
     });
@@ -264,7 +262,7 @@ export class SocialMediaSaleInventoryService {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new CastError(
         "Invalid social media sale inventory ID format",
-        "id"
+        "id",
       );
     }
 
@@ -303,12 +301,12 @@ export class SocialMediaSaleInventoryService {
     id,
     quantityChange,
     reason,
-    adminId
+    adminId,
   ) {
     // Validate MongoDB ObjectId format (matches legacy exactly)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new ValidationError(
-        "Invalid social media sale inventory ID format"
+        "Invalid social media sale inventory ID format",
       );
     }
 
@@ -319,14 +317,14 @@ export class SocialMediaSaleInventoryService {
       !Number.isFinite(quantityChange)
     ) {
       throw new ValidationError(
-        "A valid non-zero numeric 'quantityChange' is required. Use positive number to add, negative number to subtract."
+        "A valid non-zero numeric 'quantityChange' is required. Use positive number to add, negative number to subtract.",
       );
     }
 
     // Get admin ID from authenticated user (matches legacy exactly)
     if (!adminId) {
       throw new UnauthorizedError(
-        "Authentication required. Admin ID not found."
+        "Authentication required. Admin ID not found.",
       );
     }
 
@@ -361,7 +359,7 @@ export class SocialMediaSaleInventoryService {
         await session.abortTransaction();
         session.endSession();
         throw new ValidationError(
-          `Cannot update social media sale inventory quantity. Current quantity: ${beforeQuantity}, requested change: ${quantityChange}. This would result in a negative quantity (${afterQuantity}).`
+          `Cannot update social media sale inventory quantity. Current quantity: ${beforeQuantity}, requested change: ${quantityChange}. This would result in a negative quantity (${afterQuantity}).`,
         );
       }
 
@@ -382,7 +380,7 @@ export class SocialMediaSaleInventoryService {
               select: "productName productCode SKU category barcode",
             },
           ],
-        }
+        },
       );
 
       // Create audit log entry (matches legacy exactly - uses legacy service functions)

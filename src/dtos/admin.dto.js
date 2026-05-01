@@ -20,7 +20,8 @@ export class CreateAdminDTO {
     this.password = data[ADMIN_FIELDS.PASSWORD];
     this.confirmPassword = data[ADMIN_FIELDS.CONFIRM_PASSWORD];
     this.role = data[ADMIN_FIELDS.ROLE] || ADMIN_DEFAULTS.ROLE;
-    this.locationId = data[ADMIN_FIELDS.LOCATION_ID] || ADMIN_DEFAULTS.LOCATION_ID;
+    this.locationId =
+      data[ADMIN_FIELDS.LOCATION_ID] || ADMIN_DEFAULTS.LOCATION_ID;
   }
 
   /**
@@ -71,7 +72,7 @@ export class UpdateAdminDTO {
         this.role = role;
       } else {
         throw new Error(
-          `Invalid role. Must be one of: ${Object.values(ADMIN_ROLE).join(", ")}`
+          `Invalid role. Must be one of: ${Object.values(ADMIN_ROLE).join(", ")}`,
         );
       }
     }
@@ -88,15 +89,13 @@ export class UpdateAdminDTO {
   toUpdateModel() {
     const updateData = {};
 
-    if (this.name !== undefined)
-      updateData[ADMIN_FIELDS.NAME] = this.name;
+    if (this.name !== undefined) updateData[ADMIN_FIELDS.NAME] = this.name;
     if (this.password !== undefined) {
       updateData[ADMIN_FIELDS.PASSWORD] = this.password;
       // confirmPassword is handled by the model's pre-save hook
       updateData[ADMIN_FIELDS.CONFIRM_PASSWORD] = this.confirmPassword;
     }
-    if (this.role !== undefined)
-      updateData[ADMIN_FIELDS.ROLE] = this.role;
+    if (this.role !== undefined) updateData[ADMIN_FIELDS.ROLE] = this.role;
     if (this.locationId !== undefined)
       updateData[ADMIN_FIELDS.LOCATION_ID] = this.locationId;
     if (this.lastActiveAt !== undefined)
@@ -115,7 +114,7 @@ export class UpdateAdminDTO {
  */
 export class AdminResponseDTO {
   constructor(adminModel) {
-    this.id = adminModel._id || adminModel.id;
+    this._id = adminModel._id ? adminModel._id.toString() : adminModel.id;
     this.name = adminModel[ADMIN_FIELDS.NAME];
     this.role = adminModel[ADMIN_FIELDS.ROLE] || ADMIN_DEFAULTS.ROLE;
     this.locationId = adminModel[ADMIN_FIELDS.LOCATION_ID] || null;
@@ -131,7 +130,7 @@ export class AdminResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       name: this.name,
       role: this.role,
       locationId: this.locationId,

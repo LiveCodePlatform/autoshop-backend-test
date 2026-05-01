@@ -16,6 +16,168 @@ import { LocationProfileRepository } from "../repositories/locationProfile.repos
 import { OrderRepository } from "../repositories/order.repository.js";
 import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
 import { getAIResponse } from "./gemini.service.js";
+import * as chrono from "chrono-node";
+
+// =========================
+// Parameter Extraction Helpers (No AI needed - instant parsing)
+// =========================
+
+const MYANMAR_MONTHS = {
+  ဇန်နဝါရီ: 1,
+  ဖေဖော်ဝါရီ: 2,
+  မတ်: 3,
+  ဧပြီ: 4,
+  မေ: 5,
+  ဇွန်: 6,
+  ဇူလိုင်: 7,
+  ဩဂုတ်: 8,
+  စက်တင်ဘာ: 9,
+  အောက်တိုဘာ: 10,
+  နိုဝင်ဘာ: 11,
+  ဒီဇင်ဘာ: 12,
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
+const MYANMAR_NUMBERS = {
+  "၀": 0,
+  "၁": 1,
+  "၂": 2,
+  "၃": 3,
+  "၄": 4,
+  "၅": 5,
+  "၆": 6,
+  "၇": 7,
+  "၈": 8,
+  "၉": 9,
+};
+
+function myanmarToArabic(str) {
+  return str
+    .split("")
+    .map((c) => (MYANMAR_NUMBERS[c] !== undefined ? MYANMAR_NUMBERS[c] : c))
+    .join("");
+}
+
+/**
+ * Extract dates from natural language text (English via chrono-node + Burmese fallback)
+ */
+function extractDatesFromText(text) {
+  let startDate = null;
+  let endDate = null;
+
+  // 1. Try chrono-node for English dates
+  const chronoResults = chrono.parse(text, new Date(), { forwardDate: false });
+  if (chronoResults.length >= 2) {
+    startDate = chronoResults[0].start.date().toISOString().split("T")[0];
+    endDate = chronoResults[1].start.date().toISOString().split("T")[0];
+  } else if (chronoResults.length === 1) {
+    const d = chronoResults[0].start.date();
+    startDate = d.toISOString().split("T")[0];
+    // If only one date and text has "to/today/until", set endDate to today
+    if (/to|until|through|ထိ|အထိ|ဒီနေ့|ယနေ့/i.test(text)) {
+      endDate = new Date().toISOString().split("T")[0];
+    }
+  }
+
+  // 2. Burmese regex fallback (e.g., "၄ လပိုင်း ၁ ရက်" -> April 1)
+  if (!startDate) {
+    const monthPattern = Object.keys(MYANMAR_MONTHS).join("|");
+    // Match patterns like "၄ လပိုင်း" or "ဧပြီ လ" or "မေ ၅ ရက်"
+    const mmDateRegex = new RegExp(
+      `([၀-၉]+)\\s*လ(?:ပိုင်း)?|(${monthPattern})`,
+      "i",
+    );
+    const dayRegex = /([၀-၉]+)\s*ရက်/;
+    const monthMatch = text.match(mmDateRegex);
+    const dayMatch = text.match(dayRegex);
+
+    if (monthMatch) {
+      let month;
+      if (monthMatch[1]) {
+        month = parseInt(myanmarToArabic(monthMatch[1]), 10);
+      } else if (monthMatch[2]) {
+        month = MYANMAR_MONTHS[monthMatch[2].toLowerCase()];
+      }
+      const day = dayMatch ? parseInt(myanmarToArabic(dayMatch[1]), 10) : 1;
+      const year = new Date().getFullYear();
+      if (month) {
+        startDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+    }
+  }
+
+  // 3. Handle relative Burmese terms
+  const today = new Date();
+  const lowerText = text.toLowerCase();
+  if (/ဒီနေ့|ယနေ့|today/.test(text) && !startDate) {
+    startDate = today.toISOString().split("T")[0];
+    endDate = today.toISOString().split("T")[0];
+  }
+  if (/မနေ့က|yesterday/.test(text) && !startDate) {
+    const y = new Date(today);
+    y.setDate(y.getDate() - 1);
+    startDate = y.toISOString().split("T")[0];
+    endDate = y.toISOString().split("T")[0];
+  }
+  if (/ယခုလ|this month/.test(text) && !startDate) {
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    startDate = firstDay.toISOString().split("T")[0];
+    endDate = today.toISOString().split("T")[0];
+  }
+  if (/ပြီးခဲ့တဲ့လ|last month|လွန်ခဲ့တဲ့ လ/.test(text) && !startDate) {
+    const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+    startDate = firstDay.toISOString().split("T")[0];
+    endDate = lastDay.toISOString().split("T")[0];
+  }
+  if (/ယခုအပတ်|this week/.test(text) && !startDate) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - d.getDay());
+    startDate = d.toISOString().split("T")[0];
+    endDate = today.toISOString().split("T")[0];
+  }
+
+  // If "from X to Y" pattern with only startDate found, set endDate to today
+  if (startDate && !endDate && /ထိ|မှ|from|to|until|–|-/.test(text)) {
+    endDate = today.toISOString().split("T")[0];
+  }
+
+  return { startDate, endDate };
+}
+
+/**
+ * Extract storefront name from text by matching against all storefronts
+ */
+async function extractStorefrontFromText(text, locationRepository) {
+  const allStorefronts = await locationRepository.find(
+    {
+      type: "storefront",
+      isDeleted: false,
+    },
+    { select: "locationName" },
+  );
+
+  if (!allStorefronts || !allStorefronts.length) return null;
+
+  const lowerText = text.toLowerCase();
+  for (const sf of allStorefronts) {
+    if (lowerText.includes(sf.locationName.toLowerCase())) {
+      return sf.locationName;
+    }
+  }
+  return null;
+}
 
 export class SaleReportService {
   /**
@@ -692,67 +854,20 @@ export class SaleReportService {
       );
     }
 
-    // Step 1: Use AI to extract parameters from the natural language question
-    const today = new Date().toISOString().split("T")[0]; // e.g. "2024-05-01"
-    const paramExtractionPrompt = `
-You are a parameter extraction AI.
-The user is asking a question about their sales report in natural language (English or Burmese).
-Today's date is: ${today}
-
-Your task is to extract the following parameters from their question if they exist:
-1. "startDate" (YYYY-MM-DD format)
-2. "endDate" (YYYY-MM-DD format)
-3. "locationName" or "storefrontName" (string)
-
-Rules:
-- If they say "from April 1st to today", set startDate to "2024-04-01" and endDate to today's date.
-- If they say "last month", calculate the start and end dates of the previous month.
-- If they say "this month", calculate the start and end dates of the current month.
-- If they mention a specific shop name (e.g., "Mandalay branch", "Main shop"), extract it as locationName.
-- Only return a valid JSON object. Do not include markdown formatting like \`\`\`json.
-- If a parameter is not mentioned, set its value to null.
-
-User Question: "${question}"
-
-Expected JSON format:
-{
-  "startDate": "YYYY-MM-DD" | null,
-  "endDate": "YYYY-MM-DD" | null,
-  "locationName": "string" | null
-}
-`;
-
-    let extractedParams = {
-      startDate: null,
-      endDate: null,
-      locationName: null,
-    };
-    try {
-      const extractionResponseText = await getAIResponse(
-        paramExtractionPrompt,
-        [],
-      );
-      // Clean up the response to ensure it's valid JSON (remove markdown block if AI accidentally included it)
-      const cleanJsonStr = extractionResponseText
-        .replace(/```json/gi, "")
-        .replace(/```/gi, "")
-        .trim();
-      extractedParams = JSON.parse(cleanJsonStr);
-    } catch (error) {
-      console.warn(
-        "Failed to extract parameters with AI. Proceeding without filters.",
-        error.message,
-      );
-    }
+    // Step 1: Fast parameter extraction (NO AI call - instant parsing)
+    const extractedDates = extractDatesFromText(question);
+    const extractedLocationName = await extractStorefrontFromText(
+      question,
+      this.locationRepository,
+    );
 
     // Step 2: Resolve storefrontId if a location name was mentioned
     let resolvedStorefrontId = null;
     let resolvedStorefrontName = null;
 
-    if (extractedParams.locationName) {
-      // Try to find the storefront by name (case-insensitive)
+    if (extractedLocationName) {
       const storefront = await this.locationRepository.findOne({
-        locationName: { $regex: new RegExp(extractedParams.locationName, "i") },
+        locationName: { $regex: new RegExp(extractedLocationName, "i") },
         type: "storefront",
         isDeleted: false,
       });
@@ -765,8 +880,8 @@ Expected JSON format:
 
     // Step 3: Fetch the necessary report data using extracted parameters
     const reportQuery = {
-      startDate: extractedParams.startDate,
-      endDate: extractedParams.endDate,
+      startDate: extractedDates.startDate,
+      endDate: extractedDates.endDate,
       storefrontId: resolvedStorefrontId,
     };
 
@@ -797,8 +912,8 @@ You are an intelligent business analyst AI for a POS and inventory system.
 The user is asking a question about their sales report.
 
 Context regarding their query parameters (extracted automatically):
-- Start Date: ${extractedParams.startDate || "All Time"}
-- End Date: ${extractedParams.endDate || "All Time"}
+- Start Date: ${extractedDates.startDate || "All Time"}
+- End Date: ${extractedDates.endDate || "All Time"}
 - Storefront/Location: ${resolvedStorefrontName || "All Locations"}
 
 Here is the contextual sales report data (in JSON format) fetched based on their query:
@@ -818,9 +933,9 @@ Please reply in the same language as the user's question (e.g., if the user asks
         question,
         answer: responseText,
         extractedFilters: {
-          startDate: extractedParams.startDate,
-          endDate: extractedParams.endDate,
-          locationName: extractedParams.locationName,
+          startDate: extractedDates.startDate,
+          endDate: extractedDates.endDate,
+          locationName: extractedLocationName,
           resolvedStorefront: resolvedStorefrontName,
         },
         contextUsed: {

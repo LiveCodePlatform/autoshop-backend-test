@@ -30,8 +30,7 @@ export class CreateStockAuditLogDTO {
     this.quantityChange = data[STOCK_AUDIT_LOG_FIELDS.QUANTITY_CHANGE];
     this.action = data[STOCK_AUDIT_LOG_FIELDS.ACTION];
     this.reason =
-      data[STOCK_AUDIT_LOG_FIELDS.REASON] ||
-      STOCK_AUDIT_LOG_DEFAULTS.REASON;
+      data[STOCK_AUDIT_LOG_FIELDS.REASON] || STOCK_AUDIT_LOG_DEFAULTS.REASON;
     this.relatedTransactionId =
       data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] ||
       STOCK_AUDIT_LOG_DEFAULTS.RELATED_TRANSACTION_ID;
@@ -61,7 +60,10 @@ export class CreateStockAuditLogDTO {
     if (this.reason !== null && this.reason !== undefined) {
       modelData[STOCK_AUDIT_LOG_FIELDS.REASON] = this.reason;
     }
-    if (this.relatedTransactionId !== null && this.relatedTransactionId !== undefined) {
+    if (
+      this.relatedTransactionId !== null &&
+      this.relatedTransactionId !== undefined
+    ) {
       modelData[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] =
         this.relatedTransactionId;
     }
@@ -96,15 +98,11 @@ export class UpdateStockAuditLogDTO {
     if (data[STOCK_AUDIT_LOG_FIELDS.REASON] !== undefined) {
       this.reason = data[STOCK_AUDIT_LOG_FIELDS.REASON] || null;
     }
-    if (
-      data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] !== undefined
-    ) {
+    if (data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] !== undefined) {
       this.relatedTransactionId =
         data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] || null;
     }
-    if (
-      data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_TYPE] !== undefined
-    ) {
+    if (data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_TYPE] !== undefined) {
       const transactionType =
         data[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_TYPE];
       if (isValidRelatedTransactionType(transactionType)) {
@@ -112,10 +110,10 @@ export class UpdateStockAuditLogDTO {
       } else {
         throw new Error(
           `Invalid related transaction type. Must be one of: ${Object.values(
-            RELATED_TRANSACTION_TYPE
+            RELATED_TRANSACTION_TYPE,
           )
             .filter((t) => t !== null)
-            .join(", ")}, or null`
+            .join(", ")}, or null`,
         );
       }
     }
@@ -150,7 +148,9 @@ export class UpdateStockAuditLogDTO {
  */
 export class StockAuditLogResponseDTO {
   constructor(stockAuditLogModel) {
-    this.id = stockAuditLogModel._id || stockAuditLogModel.id;
+    this._id = stockAuditLogModel._id
+      ? stockAuditLogModel._id.toString()
+      : stockAuditLogModel.id;
     this.inventoryId = stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.INVENTORY_ID];
     this.adminId = stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.ADMIN_ID];
     this.locationId = stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.LOCATION_ID];
@@ -165,11 +165,9 @@ export class StockAuditLogResponseDTO {
     this.quantityChange =
       stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.QUANTITY_CHANGE];
     this.action = stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.ACTION];
-    this.reason =
-      stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.REASON] || null;
+    this.reason = stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.REASON] || null;
     this.relatedTransactionId =
-      stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] ||
-      null;
+      stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_ID] || null;
     this.relatedTransactionType =
       stockAuditLogModel[STOCK_AUDIT_LOG_FIELDS.RELATED_TRANSACTION_TYPE] ||
       null;
@@ -185,7 +183,7 @@ export class StockAuditLogResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       inventoryId: this.inventoryId,
       adminId: this.adminId,
       locationId: this.locationId,
@@ -219,8 +217,8 @@ export class StockAuditLogResponseDTO {
    * @returns {Array}
    */
   static fromArray(stockAuditLogs) {
-    return stockAuditLogs.map(
-      (log) => new StockAuditLogResponseDTO(log).toJSON()
+    return stockAuditLogs.map((log) =>
+      new StockAuditLogResponseDTO(log).toJSON(),
     );
   }
 }
@@ -229,7 +227,11 @@ export class StockAuditLogResponseDTO {
  * Stock Audit Log List Response DTO (with pagination)
  */
 export class StockAuditLogListResponseDTO {
-  constructor(stockAuditLogs, pagination, message = "Stock audit logs retrieved successfully") {
+  constructor(
+    stockAuditLogs,
+    pagination,
+    message = "Stock audit logs retrieved successfully",
+  ) {
     this.stockAuditLogs = StockAuditLogResponseDTO.fromArray(stockAuditLogs);
     this.pagination = {
       page: pagination.page,

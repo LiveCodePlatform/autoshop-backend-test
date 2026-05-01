@@ -45,7 +45,7 @@ export class AdminService {
     if (!name || !password || !confirmPassword) {
       throw new ValidationError(
         "Missing required fields for signup.",
-        "name, password, confirmPassword"
+        "name, password, confirmPassword",
       );
     }
 
@@ -84,7 +84,7 @@ export class AdminService {
     if (!name || !password) {
       throw new ValidationError(
         "Missing required fields for login.",
-        "name, password"
+        "name, password",
       );
     }
 
@@ -93,7 +93,7 @@ export class AdminService {
       { name },
       {
         select: "+password",
-      }
+      },
     );
 
     // Business logic: Check if admin exists (matches legacy exactly)
@@ -109,7 +109,7 @@ export class AdminService {
     // Business logic: Verify password (matches legacy exactly)
     const isPasswordCorrect = await admin.comparePasswordInDb(
       password,
-      admin.password
+      admin.password,
     );
 
     if (!isPasswordCorrect) {
@@ -120,7 +120,7 @@ export class AdminService {
     if (admin.locationId) {
       await admin.populate(
         "locationId",
-        "type locationName locationCode locationAddress"
+        "type locationName locationCode locationAddress",
       );
     }
 
@@ -154,7 +154,7 @@ export class AdminService {
     if (!newPassword) {
       throw new ValidationError(
         "Please provide a new password.",
-        "newPassword"
+        "newPassword",
       );
     }
 
@@ -162,7 +162,7 @@ export class AdminService {
     if (confirmPassword && newPassword !== confirmPassword) {
       throw new ValidationError(
         "New password and confirm password do not match.",
-        "confirmPassword"
+        "confirmPassword",
       );
     }
 
@@ -186,7 +186,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin.id || admin._id.toString(),
+      _id: admin._id ? admin._id.toString() : admin.id,
       name: admin.name,
     };
   }
@@ -220,7 +220,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin.id || admin._id.toString(),
+      _id: admin._id ? admin._id.toString() : admin.id,
       name: admin.name,
     };
   }
@@ -237,7 +237,7 @@ export class AdminService {
     const admin = await this.repository.findByIdAndUpdate(
       accountId,
       { softDeleted: false },
-      { new: true }
+      { new: true },
     );
 
     if (!admin) {
@@ -246,7 +246,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin.id || admin._id.toString(),
+      _id: admin._id ? admin._id.toString() : admin.id,
       name: admin.name,
     };
   }
@@ -268,7 +268,7 @@ export class AdminService {
 
     // Return response (matches legacy structure)
     return {
-      accountId: admin.id || admin._id.toString(),
+      _id: admin._id ? admin._id.toString() : admin.id,
       name: admin.name,
     };
   }
@@ -287,7 +287,7 @@ export class AdminService {
         populate: {
           locationId: "type locationName locationCode locationAddress",
         },
-      }
+      },
     );
 
     // Return response (matches legacy structure)
@@ -323,7 +323,7 @@ export class AdminService {
 
     // Return response (matches legacy structure exactly)
     return {
-      accountId: admin.id || admin._id.toString(),
+      _id: admin._id ? admin._id.toString() : admin.id,
       name: admin.name,
       role: admin.role,
       locationId: admin.locationId,
@@ -389,7 +389,7 @@ export class AdminService {
     const updatedUser = await this.repository.findByIdAndUpdate(
       accountId,
       { $set: updateFields },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedUser) {
@@ -399,7 +399,7 @@ export class AdminService {
     // Populate locationId (matches legacy exactly)
     await updatedUser.populate(
       "locationId",
-      "type locationName locationCode locationAddress"
+      "type locationName locationCode locationAddress",
     );
 
     // Return updated user (matches legacy structure)
@@ -435,7 +435,7 @@ export class AdminService {
       if (adminWithSameName) {
         throw new ConflictError(
           "Admin with this name already exists",
-          ADMIN_FIELDS.NAME
+          ADMIN_FIELDS.NAME,
         );
       }
     }
@@ -444,14 +444,14 @@ export class AdminService {
     const updatedAdmin = await this.repository.findByIdAndUpdate(
       id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     // Populate locationId if it exists
     if (updatedAdmin && updatedAdmin[ADMIN_FIELDS.LOCATION_ID]) {
       await updatedAdmin.populate(
         "locationId",
-        "type locationName locationCode locationAddress"
+        "type locationName locationCode locationAddress",
       );
     }
 

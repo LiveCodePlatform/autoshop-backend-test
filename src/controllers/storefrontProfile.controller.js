@@ -50,7 +50,7 @@ class StorefrontProfileController {
     res.status(200).json({
       success: true,
       message: "Storefront profile retrieved successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 
@@ -65,7 +65,7 @@ class StorefrontProfileController {
     res.status(200).json({
       success: true,
       message: "Storefront profile updated successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 }

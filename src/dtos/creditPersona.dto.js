@@ -91,10 +91,11 @@ export class UpdateCreditPersonaDTO {
  */
 export class CreditPersonaResponseDTO {
   constructor(creditPersonaModel) {
-    this.id = creditPersonaModel._id || creditPersonaModel.id;
+    this._id = creditPersonaModel._id
+      ? creditPersonaModel._id.toString()
+      : creditPersonaModel.id;
     this.name = creditPersonaModel[CREDIT_PERSONA_FIELDS.NAME];
-    this.phone =
-      creditPersonaModel[CREDIT_PERSONA_FIELDS.PHONE] || null;
+    this.phone = creditPersonaModel[CREDIT_PERSONA_FIELDS.PHONE] || null;
     this.blacklist =
       creditPersonaModel[CREDIT_PERSONA_FIELDS.BLACKLIST] !== undefined
         ? creditPersonaModel[CREDIT_PERSONA_FIELDS.BLACKLIST]
@@ -115,7 +116,7 @@ export class CreditPersonaResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       name: this.name,
       phone: this.phone,
       blacklist: this.blacklist,
@@ -140,8 +141,8 @@ export class CreditPersonaResponseDTO {
    * @returns {Array}
    */
   static fromArray(creditPersonas) {
-    return creditPersonas.map(
-      (creditPersona) => new CreditPersonaResponseDTO(creditPersona).toJSON()
+    return creditPersonas.map((creditPersona) =>
+      new CreditPersonaResponseDTO(creditPersona).toJSON(),
     );
   }
 }
@@ -150,9 +151,12 @@ export class CreditPersonaResponseDTO {
  * Credit Persona List Response DTO (with pagination)
  */
 export class CreditPersonaListResponseDTO {
-  constructor(creditPersonas, pagination, message = "Credit persons retrieved successfully") {
-    this.creditPersonas =
-      CreditPersonaResponseDTO.fromArray(creditPersonas);
+  constructor(
+    creditPersonas,
+    pagination,
+    message = "Credit persons retrieved successfully",
+  ) {
+    this.creditPersonas = CreditPersonaResponseDTO.fromArray(creditPersonas);
     this.pagination = {
       page: pagination.page,
       limit: pagination.limit,

@@ -33,13 +33,15 @@ export class CreateInventoryDTO {
     this.buyingPrice = data[INVENTORY_FIELDS.BUYING_PRICE];
     this.sellingPrice = data[INVENTORY_FIELDS.SELLING_PRICE];
     this.unitOfMeasure =
-      data[INVENTORY_FIELDS.UNIT_OF_MEASURE] || INVENTORY_DEFAULTS.UNIT_OF_MEASURE;
+      data[INVENTORY_FIELDS.UNIT_OF_MEASURE] ||
+      INVENTORY_DEFAULTS.UNIT_OF_MEASURE;
     this.reorderPoint =
       data[INVENTORY_FIELDS.REORDER_POINT] || INVENTORY_DEFAULTS.REORDER_POINT;
     this.reorderQuantity =
       data[INVENTORY_FIELDS.REORDER_QUANTITY] ||
       INVENTORY_DEFAULTS.REORDER_QUANTITY;
-    this.taxRate = data[INVENTORY_FIELDS.TAX_RATE] || INVENTORY_DEFAULTS.TAX_RATE;
+    this.taxRate =
+      data[INVENTORY_FIELDS.TAX_RATE] || INVENTORY_DEFAULTS.TAX_RATE;
     this.status = data[INVENTORY_FIELDS.STATUS] || INVENTORY_DEFAULTS.STATUS;
     this.tags = data[INVENTORY_FIELDS.TAGS] || INVENTORY_DEFAULTS.TAGS;
     this.images = data[INVENTORY_FIELDS.IMAGES] || [];
@@ -116,7 +118,7 @@ export class UpdateInventoryDTO {
         this.unitOfMeasure = unit;
       } else {
         throw new Error(
-          `Invalid unit of measure. Must be one of: ${Object.values(UNIT_OF_MEASURE).join(", ")}`
+          `Invalid unit of measure. Must be one of: ${Object.values(UNIT_OF_MEASURE).join(", ")}`,
         );
       }
     }
@@ -132,7 +134,7 @@ export class UpdateInventoryDTO {
         this.status = status;
       } else {
         throw new Error(
-          `Invalid status. Must be one of: ${Object.values(INVENTORY_STATUS).join(", ")}`
+          `Invalid status. Must be one of: ${Object.values(INVENTORY_STATUS).join(", ")}`,
         );
       }
     }
@@ -162,7 +164,8 @@ export class UpdateInventoryDTO {
       updateData[INVENTORY_FIELDS.CATEGORY] = this.category;
     if (this.subCategory !== undefined)
       updateData[INVENTORY_FIELDS.SUB_CATEGORY] = this.subCategory;
-    if (this.brand !== undefined) updateData[INVENTORY_FIELDS.BRAND] = this.brand;
+    if (this.brand !== undefined)
+      updateData[INVENTORY_FIELDS.BRAND] = this.brand;
     if (this.description !== undefined)
       updateData[INVENTORY_FIELDS.DESCRIPTION] = this.description;
     if (this.buyingPrice !== undefined)
@@ -180,7 +183,8 @@ export class UpdateInventoryDTO {
     if (this.status !== undefined)
       updateData[INVENTORY_FIELDS.STATUS] = this.status;
     if (this.tags !== undefined) updateData[INVENTORY_FIELDS.TAGS] = this.tags;
-    if (this.images !== undefined) updateData[INVENTORY_FIELDS.IMAGES] = this.images;
+    if (this.images !== undefined)
+      updateData[INVENTORY_FIELDS.IMAGES] = this.images;
 
     return updateData;
   }
@@ -192,7 +196,9 @@ export class UpdateInventoryDTO {
  */
 export class InventoryResponseDTO {
   constructor(inventoryModel) {
-    this.id = inventoryModel._id || inventoryModel.id;
+    this._id = inventoryModel._id
+      ? inventoryModel._id.toString()
+      : inventoryModel.id;
     this.productName = inventoryModel[INVENTORY_FIELDS.PRODUCT_NAME];
     this.productCode = inventoryModel[INVENTORY_FIELDS.PRODUCT_CODE];
     this.saleCode = inventoryModel[INVENTORY_FIELDS.SALE_CODE] || null;
@@ -209,7 +215,8 @@ export class InventoryResponseDTO {
     this.reorderQuantity =
       inventoryModel[INVENTORY_FIELDS.REORDER_QUANTITY] || 0;
     this.taxRate = inventoryModel[INVENTORY_FIELDS.TAX_RATE] || 0;
-    this.status = inventoryModel[INVENTORY_FIELDS.STATUS] || INVENTORY_STATUS.ACTIVE;
+    this.status =
+      inventoryModel[INVENTORY_FIELDS.STATUS] || INVENTORY_STATUS.ACTIVE;
     this.tags = inventoryModel[INVENTORY_FIELDS.TAGS] || [];
     this.images = inventoryModel[INVENTORY_FIELDS.IMAGES] || [];
     this.profitMargin = inventoryModel.profitMargin || null; // virtual
@@ -224,7 +231,7 @@ export class InventoryResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       productName: this.productName,
       productCode: this.productCode,
       saleCode: this.saleCode,
@@ -264,8 +271,8 @@ export class InventoryResponseDTO {
    * @returns {Array}
    */
   static fromArray(inventories) {
-    return inventories.map(
-      (inventory) => new InventoryResponseDTO(inventory).toJSON()
+    return inventories.map((inventory) =>
+      new InventoryResponseDTO(inventory).toJSON(),
     );
   }
 }
@@ -274,7 +281,11 @@ export class InventoryResponseDTO {
  * Inventory List Response DTO (with pagination)
  */
 export class InventoryListResponseDTO {
-  constructor(inventories, pagination, message = "Inventories retrieved successfully") {
+  constructor(
+    inventories,
+    pagination,
+    message = "Inventories retrieved successfully",
+  ) {
     this.inventories = InventoryResponseDTO.fromArray(inventories);
     this.pagination = {
       page: pagination.page,

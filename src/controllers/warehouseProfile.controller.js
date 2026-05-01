@@ -24,7 +24,7 @@ class WarehouseProfileController {
     res.status(201).json({
       success: true,
       message: "Warehouse profile created successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 
@@ -50,7 +50,7 @@ class WarehouseProfileController {
     res.status(200).json({
       success: true,
       message: "Warehouse profile retrieved successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 
@@ -65,7 +65,7 @@ class WarehouseProfileController {
     res.status(200).json({
       success: true,
       message: "Warehouse profile updated successfully",
-      data: result,
+      data: result.toJSON(),
     });
   });
 }

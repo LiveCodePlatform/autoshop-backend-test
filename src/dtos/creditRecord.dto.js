@@ -15,15 +15,14 @@ import {
 export class CreateCreditRecordDTO {
   constructor(data) {
     this.orderId = data[CREDIT_RECORD_FIELDS.ORDER_ID];
-    this.creditPersonId =
-      data[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] || null;
+    this.creditPersonId = data[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] || null;
     this.paidAmount = data[CREDIT_RECORD_FIELDS.PAID_AMOUNT];
-    this.paymentDate =
-      data[CREDIT_RECORD_FIELDS.PAYMENT_DATE] || new Date();
+    this.paymentDate = data[CREDIT_RECORD_FIELDS.PAYMENT_DATE] || new Date();
     this.paymentMethod =
       data[CREDIT_RECORD_FIELDS.PAYMENT_METHOD] ||
       CREDIT_RECORD_DEFAULTS.PAYMENT_METHOD;
-    this.notes = data[CREDIT_RECORD_FIELDS.NOTES] || CREDIT_RECORD_DEFAULTS.NOTES;
+    this.notes =
+      data[CREDIT_RECORD_FIELDS.NOTES] || CREDIT_RECORD_DEFAULTS.NOTES;
     this.addedBy = data[CREDIT_RECORD_FIELDS.ADDED_BY];
   }
 
@@ -64,8 +63,7 @@ export class UpdateCreditRecordDTO {
     if (data[CREDIT_RECORD_FIELDS.ORDER_ID] !== undefined)
       this.orderId = data[CREDIT_RECORD_FIELDS.ORDER_ID];
     if (data[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] !== undefined)
-      this.creditPersonId =
-        data[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] || null;
+      this.creditPersonId = data[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] || null;
     if (data[CREDIT_RECORD_FIELDS.PAID_AMOUNT] !== undefined)
       this.paidAmount = data[CREDIT_RECORD_FIELDS.PAID_AMOUNT];
     if (data[CREDIT_RECORD_FIELDS.PAYMENT_DATE] !== undefined)
@@ -110,7 +108,9 @@ export class UpdateCreditRecordDTO {
  */
 export class CreditRecordResponseDTO {
   constructor(creditRecordModel) {
-    this.id = creditRecordModel._id || creditRecordModel.id;
+    this._id = creditRecordModel._id
+      ? creditRecordModel._id.toString()
+      : creditRecordModel.id;
     this.orderId = creditRecordModel[CREDIT_RECORD_FIELDS.ORDER_ID];
     this.creditPersonId =
       creditRecordModel[CREDIT_RECORD_FIELDS.CREDIT_PERSON_ID] || null;
@@ -140,7 +140,7 @@ export class CreditRecordResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       orderId: this.orderId,
       creditPersonId: this.creditPersonId,
       paidAmount: this.paidAmount,
@@ -169,8 +169,8 @@ export class CreditRecordResponseDTO {
    * @returns {Array}
    */
   static fromArray(creditRecords) {
-    return creditRecords.map(
-      (creditRecord) => new CreditRecordResponseDTO(creditRecord).toJSON()
+    return creditRecords.map((creditRecord) =>
+      new CreditRecordResponseDTO(creditRecord).toJSON(),
     );
   }
 }
@@ -179,7 +179,11 @@ export class CreditRecordResponseDTO {
  * Credit Record List Response DTO (with pagination)
  */
 export class CreditRecordListResponseDTO {
-  constructor(creditRecords, pagination, message = "Credit records retrieved successfully") {
+  constructor(
+    creditRecords,
+    pagination,
+    message = "Credit records retrieved successfully",
+  ) {
     this.creditRecords = CreditRecordResponseDTO.fromArray(creditRecords);
     this.pagination = {
       page: pagination.page,

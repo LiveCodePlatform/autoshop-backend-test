@@ -55,7 +55,7 @@ export class StorefrontInventoryService {
     // Validate inventoryIds - should be an array (matches legacy exactly)
     if (!Array.isArray(inventoryIds) || inventoryIds.length === 0) {
       throw new ValidationError(
-        "inventoryIds must be a non-empty array of inventory IDs"
+        "inventoryIds must be a non-empty array of inventory IDs",
       );
     }
 
@@ -66,11 +66,11 @@ export class StorefrontInventoryService {
 
     // Validate all inventoryIds are valid MongoDB ObjectIds (matches legacy exactly)
     const invalidIds = inventoryIds.filter(
-      (id) => !mongoose.Types.ObjectId.isValid(id)
+      (id) => !mongoose.Types.ObjectId.isValid(id),
     );
     if (invalidIds.length > 0) {
       throw new ValidationError(
-        `Invalid inventory ID format(s): ${invalidIds.join(", ")}`
+        `Invalid inventory ID format(s): ${invalidIds.join(", ")}`,
       );
     }
 
@@ -94,11 +94,11 @@ export class StorefrontInventoryService {
     });
     const foundInventoryIds = inventories.map((inv) => inv._id.toString());
     const missingInventoryIds = inventoryIds.filter(
-      (id) => !foundInventoryIds.includes(id.toString())
+      (id) => !foundInventoryIds.includes(id.toString()),
     );
     if (missingInventoryIds.length > 0) {
       throw new NotFoundError(
-        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`
+        `Inventory not found for ID(s): ${missingInventoryIds.join(", ")}`,
       );
     }
 
@@ -109,10 +109,10 @@ export class StorefrontInventoryService {
     });
 
     const existingInventoryIds = existingRecords.map((record) =>
-      record.inventoryId.toString()
+      record.inventoryId.toString(),
     );
     const newInventoryIds = inventoryIds.filter(
-      (id) => !existingInventoryIds.includes(id.toString())
+      (id) => !existingInventoryIds.includes(id.toString()),
     );
 
     // Create new records for inventoryIds that don't exist (matches legacy exactly)
@@ -142,11 +142,11 @@ export class StorefrontInventoryService {
             if (existingRecord) {
               await existingRecord.populate(
                 "inventoryId",
-                "productName productCode"
+                "productName productCode",
               );
               await existingRecord.populate(
                 "storefrontId",
-                "locationName locationCode"
+                "locationName locationCode",
               );
               return { status: "duplicate", record: existingRecord };
             }
@@ -186,8 +186,12 @@ export class StorefrontInventoryService {
     }
 
     return {
-      created: createdRecords.map((record) => new StorefrontInventoryResponseDTO(record)),
-      alreadyExists: allExistingRecords.map((record) => new StorefrontInventoryResponseDTO(record)),
+      created: createdRecords.map(
+        (record) => new StorefrontInventoryResponseDTO(record),
+      ),
+      alreadyExists: allExistingRecords.map(
+        (record) => new StorefrontInventoryResponseDTO(record),
+      ),
       summary: {
         total: inventoryIds.length,
         created: createdRecords.length,
@@ -365,14 +369,14 @@ export class StorefrontInventoryService {
       !Number.isFinite(quantityChange)
     ) {
       throw new ValidationError(
-        "A valid non-zero numeric 'quantityChange' is required. Use positive number to add, negative number to subtract."
+        "A valid non-zero numeric 'quantityChange' is required. Use positive number to add, negative number to subtract.",
       );
     }
 
     // Get admin ID from authenticated user (matches legacy exactly)
     if (!adminId) {
       throw new UnauthorizedError(
-        "Authentication required. Admin ID not found."
+        "Authentication required. Admin ID not found.",
       );
     }
 
@@ -403,7 +407,7 @@ export class StorefrontInventoryService {
         session.endSession();
         throw new NotFoundError(
           "Storefront is deleted",
-          stockToUpdate.storefrontId._id
+          stockToUpdate.storefrontId._id,
         );
       }
 
@@ -422,7 +426,7 @@ export class StorefrontInventoryService {
         await session.abortTransaction();
         session.endSession();
         throw new ValidationError(
-          `Cannot update storefront inventory quantity. Current quantity: ${beforeQuantity}, requested change: ${quantityChange}. This would result in a negative quantity (${afterQuantity}).`
+          `Cannot update storefront inventory quantity. Current quantity: ${beforeQuantity}, requested change: ${quantityChange}. This would result in a negative quantity (${afterQuantity}).`,
         );
       }
 
@@ -430,7 +434,7 @@ export class StorefrontInventoryService {
       const updatedStock = await this.repository.updateQuantity(
         id,
         quantityChange,
-        { session }
+        { session },
       );
 
       // Create audit log entry (matches legacy exactly - uses legacy service functions)

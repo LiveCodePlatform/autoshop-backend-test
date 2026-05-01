@@ -107,10 +107,9 @@ export class CreatePurchasingDTO {
     this.poNumber = data[PURCHASING_FIELDS.PO_NUMBER]; // Optional, can be auto-generated
     this.supplierId = data[PURCHASING_FIELDS.SUPPLIER_ID];
     this.products = (data[PURCHASING_FIELDS.PRODUCTS] || []).map(
-      (product) => new ProductDTO(product)
+      (product) => new ProductDTO(product),
     );
-    this.status =
-      data[PURCHASING_FIELDS.STATUS] || PURCHASING_DEFAULTS.STATUS;
+    this.status = data[PURCHASING_FIELDS.STATUS] || PURCHASING_DEFAULTS.STATUS;
     this.note = data[PURCHASING_FIELDS.NOTE] || PURCHASING_DEFAULTS.NOTE;
     this.totalAmount = data[PURCHASING_FIELDS.TOTAL_AMOUNT];
     this.purchasedBy = data[PURCHASING_FIELDS.PURCHASED_BY];
@@ -125,7 +124,7 @@ export class CreatePurchasingDTO {
       ...(this.poNumber && { [PURCHASING_FIELDS.PO_NUMBER]: this.poNumber }),
       [PURCHASING_FIELDS.SUPPLIER_ID]: this.supplierId,
       [PURCHASING_FIELDS.PRODUCTS]: this.products.map((product) =>
-        product.toModel()
+        product.toModel(),
       ),
       [PURCHASING_FIELDS.STATUS]: this.status,
       [PURCHASING_FIELDS.NOTE]: this.note,
@@ -158,7 +157,7 @@ export class UpdatePurchasingDTO {
       this.supplierId = data[PURCHASING_FIELDS.SUPPLIER_ID];
     if (data[PURCHASING_FIELDS.PRODUCTS] !== undefined)
       this.products = data[PURCHASING_FIELDS.PRODUCTS].map(
-        (product) => new ProductDTO(product)
+        (product) => new ProductDTO(product),
       );
     if (data[PURCHASING_FIELDS.STATUS] !== undefined)
       this.status = data[PURCHASING_FIELDS.STATUS];
@@ -183,12 +182,11 @@ export class UpdatePurchasingDTO {
       updateData[PURCHASING_FIELDS.SUPPLIER_ID] = this.supplierId;
     if (this.products !== undefined)
       updateData[PURCHASING_FIELDS.PRODUCTS] = this.products.map((product) =>
-        product.toModel()
+        product.toModel(),
       );
     if (this.status !== undefined)
       updateData[PURCHASING_FIELDS.STATUS] = this.status;
-    if (this.note !== undefined)
-      updateData[PURCHASING_FIELDS.NOTE] = this.note;
+    if (this.note !== undefined) updateData[PURCHASING_FIELDS.NOTE] = this.note;
     if (this.totalAmount !== undefined)
       updateData[PURCHASING_FIELDS.TOTAL_AMOUNT] = this.totalAmount;
     if (this.purchasedBy !== undefined)
@@ -204,15 +202,16 @@ export class UpdatePurchasingDTO {
  */
 export class PurchasingResponseDTO {
   constructor(purchasingModel) {
-    this.id = purchasingModel._id || purchasingModel.id;
+    this._id = purchasingModel._id
+      ? purchasingModel._id.toString()
+      : purchasingModel.id;
     this.poNumber = purchasingModel[PURCHASING_FIELDS.PO_NUMBER];
     this.supplierId = purchasingModel[PURCHASING_FIELDS.SUPPLIER_ID];
     this.products = (purchasingModel[PURCHASING_FIELDS.PRODUCTS] || []).map(
-      (product) => new ProductResponseDTO(product).toJSON()
+      (product) => new ProductResponseDTO(product).toJSON(),
     );
     this.status =
-      purchasingModel[PURCHASING_FIELDS.STATUS] ||
-      PURCHASING_DEFAULTS.STATUS;
+      purchasingModel[PURCHASING_FIELDS.STATUS] || PURCHASING_DEFAULTS.STATUS;
     this.note =
       purchasingModel[PURCHASING_FIELDS.NOTE] || PURCHASING_DEFAULTS.NOTE;
     this.totalAmount = purchasingModel[PURCHASING_FIELDS.TOTAL_AMOUNT];
@@ -232,7 +231,7 @@ export class PurchasingResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       poNumber: this.poNumber,
       supplierId: this.supplierId,
       products: this.products,
@@ -261,8 +260,8 @@ export class PurchasingResponseDTO {
    * @returns {Array}
    */
   static fromArray(purchasings) {
-    return purchasings.map(
-      (purchasing) => new PurchasingResponseDTO(purchasing).toJSON()
+    return purchasings.map((purchasing) =>
+      new PurchasingResponseDTO(purchasing).toJSON(),
     );
   }
 }
@@ -271,7 +270,11 @@ export class PurchasingResponseDTO {
  * Purchasing List Response DTO (with pagination)
  */
 export class PurchasingListResponseDTO {
-  constructor(purchasings, pagination, message = "Purchasing records retrieved successfully") {
+  constructor(
+    purchasings,
+    pagination,
+    message = "Purchasing records retrieved successfully",
+  ) {
     this.purchasings = PurchasingResponseDTO.fromArray(purchasings);
     this.pagination = {
       page: pagination.page,

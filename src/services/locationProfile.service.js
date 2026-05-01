@@ -4,7 +4,11 @@
  * Uses repositories for data access and DTOs for data transformation
  */
 
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+import {
+  ValidationError,
+  NotFoundError,
+  CastError,
+} from "../errors/errorTypes.js";
 import mongoose from "mongoose";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
 import {
@@ -44,7 +48,9 @@ export class LocationProfileService {
     // Filter by type if provided (warehouse or storefront)
     if (type) {
       if (!["warehouse", "storefront"].includes(type)) {
-        throw new ValidationError("Type must be either 'warehouse' or 'storefront'");
+        throw new ValidationError(
+          "Type must be either 'warehouse' or 'storefront'",
+        );
       }
       query.type = type;
     }
@@ -57,7 +63,9 @@ export class LocationProfileService {
     // Filter by status if provided
     if (status) {
       if (!["active", "inactive"].includes(status)) {
-        throw new ValidationError("Status must be either 'active' or 'inactive'");
+        throw new ValidationError(
+          "Status must be either 'active' or 'inactive'",
+        );
       }
       query.status = status;
     }
@@ -92,10 +100,9 @@ export class LocationProfileService {
     const total = await this.repository.countDocuments(query);
 
     return new LocationProfileListResponseDTO(locations, {
-      currentPage: pageNum,
-      totalPages: Math.ceil(total / limitNum),
-      totalItems: total,
-      itemsPerPage: limitNum,
+      page: pageNum,
+      limit: limitNum,
+      total: total,
     });
   }
 

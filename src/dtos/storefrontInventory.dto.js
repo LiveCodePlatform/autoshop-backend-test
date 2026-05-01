@@ -93,7 +93,9 @@ export class UpdateStorefrontInventoryDTO {
  */
 export class StorefrontInventoryResponseDTO {
   constructor(storefrontInventoryModel) {
-    this.id = storefrontInventoryModel._id || storefrontInventoryModel.id;
+    this._id = storefrontInventoryModel._id
+      ? storefrontInventoryModel._id.toString()
+      : storefrontInventoryModel.id;
     this.storefrontId =
       storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.STOREFRONT_ID];
     this.inventoryId =
@@ -101,9 +103,12 @@ export class StorefrontInventoryResponseDTO {
     this.quantity =
       storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.QUANTITY] || 0;
     this.isLowStock =
-      storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.IS_LOW_STOCK] || false;
+      storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.IS_LOW_STOCK] ||
+      false;
     this.availableQuantity =
-      storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.AVAILABLE_QUANTITY] ||
+      storefrontInventoryModel[
+        STOREFRONT_INVENTORY_FIELDS.AVAILABLE_QUANTITY
+      ] ||
       storefrontInventoryModel[STOREFRONT_INVENTORY_FIELDS.QUANTITY] ||
       0; // virtual
     this.lastUpdated =
@@ -121,7 +126,7 @@ export class StorefrontInventoryResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       storefrontId: this.storefrontId,
       inventoryId: this.inventoryId,
       quantity: this.quantity,
@@ -147,8 +152,8 @@ export class StorefrontInventoryResponseDTO {
    * @returns {Array}
    */
   static fromArray(storefrontInventories) {
-    return storefrontInventories.map(
-      (inventory) => new StorefrontInventoryResponseDTO(inventory).toJSON()
+    return storefrontInventories.map((inventory) =>
+      new StorefrontInventoryResponseDTO(inventory).toJSON(),
     );
   }
 }
@@ -157,9 +162,14 @@ export class StorefrontInventoryResponseDTO {
  * Storefront Inventory List Response DTO (with pagination)
  */
 export class StorefrontInventoryListResponseDTO {
-  constructor(storefrontInventories, pagination, message = "Storefront inventory retrieved successfully") {
-    this.storefrontInventories =
-      StorefrontInventoryResponseDTO.fromArray(storefrontInventories);
+  constructor(
+    storefrontInventories,
+    pagination,
+    message = "Storefront inventory retrieved successfully",
+  ) {
+    this.storefrontInventories = StorefrontInventoryResponseDTO.fromArray(
+      storefrontInventories,
+    );
     this.pagination = {
       page: pagination.page,
       limit: pagination.limit,

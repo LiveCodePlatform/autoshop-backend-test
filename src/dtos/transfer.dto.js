@@ -47,7 +47,9 @@ export class TransferLineItemDTO {
  */
 export class TransferLineItemResponseDTO {
   constructor(lineItemModel) {
-    this.id = lineItemModel._id || lineItemModel.id;
+    this._id = lineItemModel._id
+      ? lineItemModel._id.toString()
+      : lineItemModel.id;
     this.inventoryId = lineItemModel[TRANSFER_LINE_ITEM_FIELDS.INVENTORY_ID];
     this.quantity = lineItemModel[TRANSFER_LINE_ITEM_FIELDS.QUANTITY];
     this.grnLineItemId =
@@ -61,7 +63,7 @@ export class TransferLineItemResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       inventoryId: this.inventoryId,
       quantity: this.quantity,
       grnLineItemId: this.grnLineItemId,
@@ -84,11 +86,10 @@ export class CreateTransferDTO {
     this.destinationStorefrontId =
       data[TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID] || null;
     this.lineItems = (data[TRANSFER_FIELDS.LINE_ITEMS] || []).map(
-      (lineItem) => new TransferLineItemDTO(lineItem)
+      (lineItem) => new TransferLineItemDTO(lineItem),
     );
     this.status = data[TRANSFER_FIELDS.STATUS] || TRANSFER_DEFAULTS.STATUS;
-    this.transferDate =
-      data[TRANSFER_FIELDS.TRANSFER_DATE] || new Date();
+    this.transferDate = data[TRANSFER_FIELDS.TRANSFER_DATE] || new Date();
     this.notes = data[TRANSFER_FIELDS.NOTES] || TRANSFER_DEFAULTS.NOTES;
     this.transferredBy = data[TRANSFER_FIELDS.TRANSFERRED_BY];
   }
@@ -112,7 +113,7 @@ export class CreateTransferDTO {
           this.destinationStorefrontId,
       }),
       [TRANSFER_FIELDS.LINE_ITEMS]: this.lineItems.map((lineItem) =>
-        lineItem.toModel()
+        lineItem.toModel(),
       ),
       [TRANSFER_FIELDS.STATUS]: this.status,
       [TRANSFER_FIELDS.TRANSFER_DATE]: this.transferDate,
@@ -151,7 +152,7 @@ export class UpdateTransferDTO {
         data[TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID] || null;
     if (data[TRANSFER_FIELDS.LINE_ITEMS] !== undefined)
       this.lineItems = data[TRANSFER_FIELDS.LINE_ITEMS].map(
-        (lineItem) => new TransferLineItemDTO(lineItem)
+        (lineItem) => new TransferLineItemDTO(lineItem),
       );
     if (data[TRANSFER_FIELDS.STATUS] !== undefined)
       this.status = data[TRANSFER_FIELDS.STATUS];
@@ -181,8 +182,8 @@ export class UpdateTransferDTO {
       updateData[TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID] =
         this.destinationStorefrontId;
     if (this.lineItems !== undefined)
-      updateData[TRANSFER_FIELDS.LINE_ITEMS] = this.lineItems.map(
-        (lineItem) => lineItem.toModel()
+      updateData[TRANSFER_FIELDS.LINE_ITEMS] = this.lineItems.map((lineItem) =>
+        lineItem.toModel(),
       );
     if (this.status !== undefined)
       updateData[TRANSFER_FIELDS.STATUS] = this.status;
@@ -203,7 +204,9 @@ export class UpdateTransferDTO {
  */
 export class TransferResponseDTO {
   constructor(transferModel) {
-    this.id = transferModel._id || transferModel.id;
+    this._id = transferModel._id
+      ? transferModel._id.toString()
+      : transferModel.id;
     this.transferNumber = transferModel[TRANSFER_FIELDS.TRANSFER_NUMBER];
     this.sourceType = transferModel[TRANSFER_FIELDS.SOURCE_TYPE];
     this.sourceId = transferModel[TRANSFER_FIELDS.SOURCE_ID];
@@ -212,7 +215,7 @@ export class TransferResponseDTO {
     this.destinationStorefrontId =
       transferModel[TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID] || null;
     this.lineItems = (transferModel[TRANSFER_FIELDS.LINE_ITEMS] || []).map(
-      (lineItem) => new TransferLineItemResponseDTO(lineItem).toJSON()
+      (lineItem) => new TransferLineItemResponseDTO(lineItem).toJSON(),
     );
     this.status =
       transferModel[TRANSFER_FIELDS.STATUS] || TRANSFER_DEFAULTS.STATUS;
@@ -227,8 +230,7 @@ export class TransferResponseDTO {
         ? transferModel[TRANSFER_FIELDS.IS_DELETED]
         : TRANSFER_DEFAULTS.IS_DELETED;
     this.deletedAt =
-      transferModel[TRANSFER_FIELDS.DELETED_AT] ||
-      TRANSFER_DEFAULTS.DELETED_AT;
+      transferModel[TRANSFER_FIELDS.DELETED_AT] || TRANSFER_DEFAULTS.DELETED_AT;
     this.transferredBy = transferModel[TRANSFER_FIELDS.TRANSFERRED_BY];
     this.createdAt = transferModel[TRANSFER_FIELDS.CREATED_AT];
     this.updatedAt = transferModel[TRANSFER_FIELDS.UPDATED_AT];
@@ -240,7 +242,7 @@ export class TransferResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       transferNumber: this.transferNumber,
       sourceType: this.sourceType,
       sourceId: this.sourceId,
@@ -274,8 +276,8 @@ export class TransferResponseDTO {
    * @returns {Array}
    */
   static fromArray(transfers) {
-    return transfers.map(
-      (transfer) => new TransferResponseDTO(transfer).toJSON()
+    return transfers.map((transfer) =>
+      new TransferResponseDTO(transfer).toJSON(),
     );
   }
 }
@@ -284,7 +286,11 @@ export class TransferResponseDTO {
  * Transfer List Response DTO (with pagination)
  */
 export class TransferListResponseDTO {
-  constructor(transfers, pagination, message = "Transfers retrieved successfully") {
+  constructor(
+    transfers,
+    pagination,
+    message = "Transfers retrieved successfully",
+  ) {
     this.transfers = TransferResponseDTO.fromArray(transfers);
     this.pagination = {
       page: pagination.page,

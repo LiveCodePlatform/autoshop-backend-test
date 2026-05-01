@@ -1,7 +1,7 @@
 /**
  * Location Profile DTOs (Data Transfer Objects)
  * Transforms data between layers using types from types/locationProfile.types.js
- * 
+ *
  * Note: Handles both unified field names (locationCode) and legacy field names
  * (storefrontCode, warehouseCode) for backward compatibility
  */
@@ -24,9 +24,12 @@ import {
 export class CreateLocationProfileDTO {
   constructor(data) {
     this.type = data[LOCATION_PROFILE_FIELDS.TYPE];
-    this.locationCode = data[LOCATION_PROFILE_FIELDS.LOCATION_CODE]?.toUpperCase().trim();
+    this.locationCode = data[LOCATION_PROFILE_FIELDS.LOCATION_CODE]
+      ?.toUpperCase()
+      .trim();
     this.locationName = data[LOCATION_PROFILE_FIELDS.LOCATION_NAME]?.trim();
-    this.locationAddress = data[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]?.trim();
+    this.locationAddress =
+      data[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]?.trim();
     this.locationPhone = data[LOCATION_PROFILE_FIELDS.LOCATION_PHONE]?.trim();
     this.locationEmail =
       data[LOCATION_PROFILE_FIELDS.LOCATION_EMAIL]?.toLowerCase().trim() ||
@@ -80,10 +83,14 @@ export class CreateLocationProfileDTO {
 export class CreateStorefrontProfileDTO {
   constructor(data) {
     this.type = LOCATION_TYPE.STOREFRONT; // Always set to storefront
-    this.locationCode = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_CODE]?.toUpperCase().trim();
+    this.locationCode = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_CODE]
+      ?.toUpperCase()
+      .trim();
     this.locationName = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_NAME]?.trim();
-    this.locationAddress = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_ADDRESS]?.trim();
-    this.locationPhone = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_PHONE]?.trim();
+    this.locationAddress =
+      data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_ADDRESS]?.trim();
+    this.locationPhone =
+      data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_PHONE]?.trim();
     this.locationEmail =
       data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_EMAIL]?.toLowerCase().trim() ||
       LOCATION_PROFILE_DEFAULTS.LOCATION_EMAIL;
@@ -91,7 +98,8 @@ export class CreateStorefrontProfileDTO {
       data[STOREFRONT_PROFILE_FIELDS.MANAGER_NAME]?.trim() ||
       LOCATION_PROFILE_DEFAULTS.MANAGER_NAME;
     this.status =
-      data[STOREFRONT_PROFILE_FIELDS.STATUS] || LOCATION_PROFILE_DEFAULTS.STATUS;
+      data[STOREFRONT_PROFILE_FIELDS.STATUS] ||
+      LOCATION_PROFILE_DEFAULTS.STATUS;
     this.description =
       data[STOREFRONT_PROFILE_FIELDS.DESCRIPTION]?.trim() ||
       LOCATION_PROFILE_DEFAULTS.DESCRIPTION;
@@ -136,9 +144,12 @@ export class CreateStorefrontProfileDTO {
 export class CreateWarehouseProfileDTO {
   constructor(data) {
     this.type = LOCATION_TYPE.WAREHOUSE; // Always set to warehouse
-    this.locationCode = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_CODE]?.toUpperCase().trim();
+    this.locationCode = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_CODE]
+      ?.toUpperCase()
+      .trim();
     this.locationName = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_NAME]?.trim();
-    this.locationAddress = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_ADDRESS]?.trim();
+    this.locationAddress =
+      data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_ADDRESS]?.trim();
     this.locationPhone = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_PHONE]?.trim();
     this.locationEmail =
       data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_EMAIL]?.toLowerCase().trim() ||
@@ -197,35 +208,41 @@ export class UpdateLocationProfileDTO {
         this.type = type;
       } else {
         throw new Error(
-          `Invalid location type. Must be one of: ${Object.values(LOCATION_TYPE).join(", ")}`
+          `Invalid location type. Must be one of: ${Object.values(LOCATION_TYPE).join(", ")}`,
         );
       }
     }
     if (data[LOCATION_PROFILE_FIELDS.LOCATION_CODE] !== undefined)
-      this.locationCode = data[LOCATION_PROFILE_FIELDS.LOCATION_CODE]?.toUpperCase().trim();
+      this.locationCode = data[LOCATION_PROFILE_FIELDS.LOCATION_CODE]
+        ?.toUpperCase()
+        .trim();
     if (data[LOCATION_PROFILE_FIELDS.LOCATION_NAME] !== undefined)
       this.locationName = data[LOCATION_PROFILE_FIELDS.LOCATION_NAME]?.trim();
     if (data[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] !== undefined)
-      this.locationAddress = data[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]?.trim();
+      this.locationAddress =
+        data[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS]?.trim();
     if (data[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] !== undefined)
       this.locationPhone = data[LOCATION_PROFILE_FIELDS.LOCATION_PHONE]?.trim();
     if (data[LOCATION_PROFILE_FIELDS.LOCATION_EMAIL] !== undefined)
       this.locationEmail =
-        data[LOCATION_PROFILE_FIELDS.LOCATION_EMAIL]?.toLowerCase().trim() || null;
+        data[LOCATION_PROFILE_FIELDS.LOCATION_EMAIL]?.toLowerCase().trim() ||
+        null;
     if (data[LOCATION_PROFILE_FIELDS.MANAGER_NAME] !== undefined)
-      this.managerName = data[LOCATION_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
+      this.managerName =
+        data[LOCATION_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
     if (data[LOCATION_PROFILE_FIELDS.STATUS] !== undefined) {
       const status = data[LOCATION_PROFILE_FIELDS.STATUS];
       if (isValidStatus(status)) {
         this.status = status;
       } else {
         throw new Error(
-          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`
+          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`,
         );
       }
     }
     if (data[LOCATION_PROFILE_FIELDS.DESCRIPTION] !== undefined)
-      this.description = data[LOCATION_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
+      this.description =
+        data[LOCATION_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
     if (data[LOCATION_PROFILE_FIELDS.NOTES] !== undefined)
       this.notes = data[LOCATION_PROFILE_FIELDS.NOTES]?.trim() || null;
   }
@@ -244,7 +261,8 @@ export class UpdateLocationProfileDTO {
     if (this.locationName !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME] = this.locationName;
     if (this.locationAddress !== undefined)
-      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] = this.locationAddress;
+      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] =
+        this.locationAddress;
     if (this.locationPhone !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] = this.locationPhone;
     if (this.locationEmail !== undefined)
@@ -271,30 +289,39 @@ export class UpdateStorefrontProfileDTO {
   constructor(data) {
     // Only set properties that are provided
     if (data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_CODE] !== undefined)
-      this.locationCode = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_CODE]?.toUpperCase().trim();
+      this.locationCode = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_CODE]
+        ?.toUpperCase()
+        .trim();
     if (data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_NAME] !== undefined)
-      this.locationName = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_NAME]?.trim();
+      this.locationName =
+        data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_NAME]?.trim();
     if (data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_ADDRESS] !== undefined)
-      this.locationAddress = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_ADDRESS]?.trim();
+      this.locationAddress =
+        data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_ADDRESS]?.trim();
     if (data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_PHONE] !== undefined)
-      this.locationPhone = data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_PHONE]?.trim();
+      this.locationPhone =
+        data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_PHONE]?.trim();
     if (data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_EMAIL] !== undefined)
       this.locationEmail =
-        data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_EMAIL]?.toLowerCase().trim() || null;
+        data[STOREFRONT_PROFILE_FIELDS.STOREFRONT_EMAIL]
+          ?.toLowerCase()
+          .trim() || null;
     if (data[STOREFRONT_PROFILE_FIELDS.MANAGER_NAME] !== undefined)
-      this.managerName = data[STOREFRONT_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
+      this.managerName =
+        data[STOREFRONT_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
     if (data[STOREFRONT_PROFILE_FIELDS.STATUS] !== undefined) {
       const status = data[STOREFRONT_PROFILE_FIELDS.STATUS];
       if (isValidStatus(status)) {
         this.status = status;
       } else {
         throw new Error(
-          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`
+          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`,
         );
       }
     }
     if (data[STOREFRONT_PROFILE_FIELDS.DESCRIPTION] !== undefined)
-      this.description = data[STOREFRONT_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
+      this.description =
+        data[STOREFRONT_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
     if (data[STOREFRONT_PROFILE_FIELDS.NOTES] !== undefined)
       this.notes = data[STOREFRONT_PROFILE_FIELDS.NOTES]?.trim() || null;
   }
@@ -311,7 +338,8 @@ export class UpdateStorefrontProfileDTO {
     if (this.locationName !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME] = this.locationName;
     if (this.locationAddress !== undefined)
-      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] = this.locationAddress;
+      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] =
+        this.locationAddress;
     if (this.locationPhone !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] = this.locationPhone;
     if (this.locationEmail !== undefined)
@@ -338,30 +366,37 @@ export class UpdateWarehouseProfileDTO {
   constructor(data) {
     // Only set properties that are provided
     if (data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_CODE] !== undefined)
-      this.locationCode = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_CODE]?.toUpperCase().trim();
+      this.locationCode = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_CODE]
+        ?.toUpperCase()
+        .trim();
     if (data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_NAME] !== undefined)
       this.locationName = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_NAME]?.trim();
     if (data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_ADDRESS] !== undefined)
-      this.locationAddress = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_ADDRESS]?.trim();
+      this.locationAddress =
+        data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_ADDRESS]?.trim();
     if (data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_PHONE] !== undefined)
-      this.locationPhone = data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_PHONE]?.trim();
+      this.locationPhone =
+        data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_PHONE]?.trim();
     if (data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_EMAIL] !== undefined)
       this.locationEmail =
-        data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_EMAIL]?.toLowerCase().trim() || null;
+        data[WAREHOUSE_PROFILE_FIELDS.WAREHOUSE_EMAIL]?.toLowerCase().trim() ||
+        null;
     if (data[WAREHOUSE_PROFILE_FIELDS.MANAGER_NAME] !== undefined)
-      this.managerName = data[WAREHOUSE_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
+      this.managerName =
+        data[WAREHOUSE_PROFILE_FIELDS.MANAGER_NAME]?.trim() || null;
     if (data[WAREHOUSE_PROFILE_FIELDS.STATUS] !== undefined) {
       const status = data[WAREHOUSE_PROFILE_FIELDS.STATUS];
       if (isValidStatus(status)) {
         this.status = status;
       } else {
         throw new Error(
-          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`
+          `Invalid status. Must be one of: ${Object.values(LOCATION_STATUS).join(", ")}`,
         );
       }
     }
     if (data[WAREHOUSE_PROFILE_FIELDS.DESCRIPTION] !== undefined)
-      this.description = data[WAREHOUSE_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
+      this.description =
+        data[WAREHOUSE_PROFILE_FIELDS.DESCRIPTION]?.trim() || null;
     if (data[WAREHOUSE_PROFILE_FIELDS.NOTES] !== undefined)
       this.notes = data[WAREHOUSE_PROFILE_FIELDS.NOTES]?.trim() || null;
   }
@@ -378,7 +413,8 @@ export class UpdateWarehouseProfileDTO {
     if (this.locationName !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_NAME] = this.locationName;
     if (this.locationAddress !== undefined)
-      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] = this.locationAddress;
+      updateData[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS] =
+        this.locationAddress;
     if (this.locationPhone !== undefined)
       updateData[LOCATION_PROFILE_FIELDS.LOCATION_PHONE] = this.locationPhone;
     if (this.locationEmail !== undefined)
@@ -403,12 +439,18 @@ export class UpdateWarehouseProfileDTO {
  */
 export class LocationProfileResponseDTO {
   constructor(locationProfileModel) {
-    this.id = locationProfileModel._id || locationProfileModel.id;
+    this._id = locationProfileModel._id
+      ? locationProfileModel._id.toString()
+      : locationProfileModel.id;
     this.type = locationProfileModel[LOCATION_PROFILE_FIELDS.TYPE];
-    this.locationCode = locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_CODE];
-    this.locationName = locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_NAME];
-    this.locationAddress = locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS];
-    this.locationPhone = locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_PHONE];
+    this.locationCode =
+      locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_CODE];
+    this.locationName =
+      locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_NAME];
+    this.locationAddress =
+      locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_ADDRESS];
+    this.locationPhone =
+      locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_PHONE];
     this.locationEmail =
       locationProfileModel[LOCATION_PROFILE_FIELDS.LOCATION_EMAIL] || null;
     this.managerName =
@@ -436,7 +478,7 @@ export class LocationProfileResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       type: this.type,
       locationCode: this.locationCode,
       locationName: this.locationName,
@@ -472,8 +514,8 @@ export class LocationProfileResponseDTO {
    * @returns {Array}
    */
   static fromArray(locationProfiles) {
-    return locationProfiles.map(
-      (profile) => new LocationProfileResponseDTO(profile).toJSON()
+    return locationProfiles.map((profile) =>
+      new LocationProfileResponseDTO(profile).toJSON(),
     );
   }
 }
@@ -482,8 +524,13 @@ export class LocationProfileResponseDTO {
  * Location Profile List Response DTO (with pagination)
  */
 export class LocationProfileListResponseDTO {
-  constructor(locationProfiles, pagination, message = "Location profiles retrieved successfully") {
-    this.locationProfiles = LocationProfileResponseDTO.fromArray(locationProfiles);
+  constructor(
+    locationProfiles,
+    pagination,
+    message = "Location profiles retrieved successfully",
+  ) {
+    this.locationProfiles =
+      LocationProfileResponseDTO.fromArray(locationProfiles);
     this.pagination = {
       page: pagination.page,
       limit: pagination.limit,

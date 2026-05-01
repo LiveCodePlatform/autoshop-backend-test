@@ -85,7 +85,7 @@ export class UpdateOrderDTO {
         this.orderStatus = status;
       } else {
         throw new Error(
-          `Invalid order status. Must be one of: ${Object.values(ORDER_STATUS).join(", ")}`
+          `Invalid order status. Must be one of: ${Object.values(ORDER_STATUS).join(", ")}`,
         );
       }
     }
@@ -121,7 +121,7 @@ export class UpdateOrderDTO {
         this.paymentType = type;
       } else {
         throw new Error(
-          `Invalid payment type. Must be one of: ${Object.values(PAYMENT_TYPE).join(", ")}`
+          `Invalid payment type. Must be one of: ${Object.values(PAYMENT_TYPE).join(", ")}`,
         );
       }
     }
@@ -132,7 +132,7 @@ export class UpdateOrderDTO {
         this.paymentMethod = method;
       } else {
         throw new Error(
-          `Invalid payment method. Must be one of: ${Object.values(PAYMENT_METHOD).join(", ")}`
+          `Invalid payment method. Must be one of: ${Object.values(PAYMENT_METHOD).join(", ")}`,
         );
       }
     }
@@ -173,15 +173,15 @@ export class UpdateOrderDTO {
  */
 export class OrderResponseDTO {
   constructor(orderModel) {
-    this.id = orderModel._id || orderModel.id;
+    this._id = orderModel._id ? orderModel._id.toString() : orderModel.id;
     this.orderNumber = orderModel[ORDER_FIELDS.ORDER_NUMBER] || null;
     this.storefrontId = orderModel[ORDER_FIELDS.STOREFRONT_ID];
     this.ordersProducts = orderModel[ORDER_FIELDS.ORDERS_PRODUCTS] || [];
-    this.creditPersonId =
-      orderModel[ORDER_FIELDS.CREDIT_PERSON_ID] || null;
+    this.creditPersonId = orderModel[ORDER_FIELDS.CREDIT_PERSON_ID] || null;
     this.subTotal = orderModel[ORDER_FIELDS.SUB_TOTAL] || null;
     this.tax = orderModel[ORDER_FIELDS.TAX] || ORDER_DEFAULTS.TAX;
-    this.discount = orderModel[ORDER_FIELDS.DISCOUNT] || ORDER_DEFAULTS.DISCOUNT;
+    this.discount =
+      orderModel[ORDER_FIELDS.DISCOUNT] || ORDER_DEFAULTS.DISCOUNT;
     this.finalAmount = orderModel[ORDER_FIELDS.FINAL_AMOUNT];
     this.paidAmount = orderModel[ORDER_FIELDS.PAID_AMOUNT];
     this.extraChange =
@@ -189,7 +189,8 @@ export class OrderResponseDTO {
     this.orderStatus =
       orderModel[ORDER_FIELDS.ORDER_STATUS] || ORDER_DEFAULTS.ORDER_STATUS;
     this.soldBy = orderModel[ORDER_FIELDS.SOLD_BY];
-    this.isDeleted = orderModel[ORDER_FIELDS.IS_DELETED] || ORDER_DEFAULTS.IS_DELETED;
+    this.isDeleted =
+      orderModel[ORDER_FIELDS.IS_DELETED] || ORDER_DEFAULTS.IS_DELETED;
     this.deletedAt = orderModel[ORDER_FIELDS.DELETED_AT] || null;
     this.paymentType =
       orderModel[ORDER_FIELDS.PAYMENT_TYPE] || ORDER_DEFAULTS.PAYMENT_TYPE;
@@ -207,7 +208,7 @@ export class OrderResponseDTO {
    */
   toJSON() {
     return {
-      id: this.id,
+      _id: this._id,
       orderNumber: this.orderNumber,
       storefrontId: this.storefrontId,
       ordersProducts: this.ordersProducts,

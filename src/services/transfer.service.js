@@ -16,7 +16,11 @@ import {
   NotFoundError,
   CastError,
 } from "../errors/errorTypes.js";
-import { TRANSFER_FIELDS, TRANSFER_STATUS, TRANSFER_SOURCE_TYPE } from "../types/transfer.types.js";
+import {
+  TRANSFER_FIELDS,
+  TRANSFER_STATUS,
+  TRANSFER_SOURCE_TYPE,
+} from "../types/transfer.types.js";
 import {
   TransferResponseDTO,
   UpdateTransferDTO,
@@ -38,14 +42,18 @@ export class TransferService {
     inventoryRepository,
     warehouseInventoryRepository,
     storefrontInventoryRepository,
-    goodsRecievedNoteRepository
+    goodsRecievedNoteRepository,
   ) {
     this.repository = repository || new TransferRepository();
-    this.locationRepository = locationRepository || new LocationProfileRepository();
+    this.locationRepository =
+      locationRepository || new LocationProfileRepository();
     this.inventoryRepository = inventoryRepository || new InventoryRepository();
-    this.warehouseInventoryRepository = warehouseInventoryRepository || new WarehouseInventoryRepository();
-    this.storefrontInventoryRepository = storefrontInventoryRepository || new StorefrontInventoryRepository();
-    this.goodsRecievedNoteRepository = goodsRecievedNoteRepository || new GoodsRecievedNoteRepository();
+    this.warehouseInventoryRepository =
+      warehouseInventoryRepository || new WarehouseInventoryRepository();
+    this.storefrontInventoryRepository =
+      storefrontInventoryRepository || new StorefrontInventoryRepository();
+    this.goodsRecievedNoteRepository =
+      goodsRecievedNoteRepository || new GoodsRecievedNoteRepository();
   }
 
   /**
@@ -96,7 +104,8 @@ export class TransferService {
     const transferLineItems = lineItems || lineitems;
 
     // Determine sourceType if not provided (backward compatibility: default to GRN)
-    const transferSourceType = sourceType || (grnId ? TRANSFER_SOURCE_TYPE.GRN : null);
+    const transferSourceType =
+      sourceType || (grnId ? TRANSFER_SOURCE_TYPE.GRN : null);
 
     // Validate sourceType
     if (
@@ -105,7 +114,7 @@ export class TransferService {
     ) {
       throw new ValidationError(
         "sourceType is required and must be 'GRN' or 'Warehouse'",
-        TRANSFER_FIELDS.SOURCE_TYPE
+        TRANSFER_FIELDS.SOURCE_TYPE,
       );
     }
 
@@ -117,7 +126,7 @@ export class TransferService {
       if (!grnId) {
         throw new ValidationError(
           "grnId is required for GRN transfers",
-          "grnId"
+          "grnId",
         );
       }
       if (!mongoose.Types.ObjectId.isValid(grnId)) {
@@ -126,31 +135,42 @@ export class TransferService {
       if (!destinationWarehouseId) {
         throw new ValidationError(
           "destinationWarehouseId is required for GRN → Warehouse transfers",
-          TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID
+          TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID,
         );
       }
       if (!mongoose.Types.ObjectId.isValid(destinationWarehouseId)) {
-        throw new CastError("Invalid destination warehouse ID format", TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID);
+        throw new CastError(
+          "Invalid destination warehouse ID format",
+          TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID,
+        );
       }
       sourceId = grnId;
       destinationId = destinationWarehouseId;
 
       // Validate GRN exists and is valid (uses repository)
-      const grn = await this.goodsRecievedNoteRepository.findById(sourceId, { lean: true });
+      const grn = await this.goodsRecievedNoteRepository.findById(sourceId, {
+        lean: true,
+      });
       if (!grn) {
         throw new NotFoundError("GRN", sourceId);
       }
       if (grn.isDeleted) {
-        throw new ValidationError("Cannot create transfer from deleted GRN", TRANSFER_FIELDS.SOURCE_ID);
+        throw new ValidationError(
+          "Cannot create transfer from deleted GRN",
+          TRANSFER_FIELDS.SOURCE_ID,
+        );
       }
       if (grn.status !== "partial" && grn.status !== "verified") {
         throw new ValidationError(
           `Cannot create transfer from GRN with status '${grn.status}'. Only GRNs with status 'partial' or 'verified' can have transfers created.`,
-          TRANSFER_FIELDS.SOURCE_ID
+          TRANSFER_FIELDS.SOURCE_ID,
         );
       }
       if (!grn.lineItems || grn.lineItems.length === 0) {
-        throw new ValidationError("GRN has no line items", TRANSFER_FIELDS.SOURCE_ID);
+        throw new ValidationError(
+          "GRN has no line items",
+          TRANSFER_FIELDS.SOURCE_ID,
+        );
       }
 
       // Validate destination warehouse exists (uses repository)
@@ -162,7 +182,10 @@ export class TransferService {
         throw new NotFoundError("Destination warehouse", destinationId);
       }
       if (warehouse.isDeleted) {
-        throw new ValidationError("Cannot transfer to deleted warehouse", TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID);
+        throw new ValidationError(
+          "Cannot transfer to deleted warehouse",
+          TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID,
+        );
       }
     }
     // Handle Warehouse → Storefront transfer
@@ -170,20 +193,26 @@ export class TransferService {
       if (!sourceWarehouseId) {
         throw new ValidationError(
           "sourceWarehouseId is required for Warehouse → Storefront transfers",
-          "sourceWarehouseId"
+          "sourceWarehouseId",
         );
       }
       if (!mongoose.Types.ObjectId.isValid(sourceWarehouseId)) {
-        throw new CastError("Invalid source warehouse ID format", "sourceWarehouseId");
+        throw new CastError(
+          "Invalid source warehouse ID format",
+          "sourceWarehouseId",
+        );
       }
       if (!destinationStorefrontId) {
         throw new ValidationError(
           "destinationStorefrontId is required for Warehouse → Storefront transfers",
-          TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID
+          TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID,
         );
       }
       if (!mongoose.Types.ObjectId.isValid(destinationStorefrontId)) {
-        throw new CastError("Invalid destination storefront ID format", TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID);
+        throw new CastError(
+          "Invalid destination storefront ID format",
+          TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID,
+        );
       }
       sourceId = sourceWarehouseId;
       destinationId = destinationStorefrontId;
@@ -197,7 +226,10 @@ export class TransferService {
         throw new NotFoundError("Source warehouse", sourceId);
       }
       if (sourceWarehouse.isDeleted) {
-        throw new ValidationError("Cannot create transfer from deleted warehouse", TRANSFER_FIELDS.SOURCE_ID);
+        throw new ValidationError(
+          "Cannot create transfer from deleted warehouse",
+          TRANSFER_FIELDS.SOURCE_ID,
+        );
       }
 
       // Validate destination storefront exists (uses repository)
@@ -209,7 +241,10 @@ export class TransferService {
         throw new NotFoundError("Destination storefront", destinationId);
       }
       if (storefront.isDeleted) {
-        throw new ValidationError("Cannot transfer to deleted storefront", TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID);
+        throw new ValidationError(
+          "Cannot transfer to deleted storefront",
+          TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID,
+        );
       }
     }
 
@@ -221,7 +256,7 @@ export class TransferService {
     ) {
       throw new ValidationError(
         "Line items are required and must be a non-empty array",
-        TRANSFER_FIELDS.LINE_ITEMS
+        TRANSFER_FIELDS.LINE_ITEMS,
       );
     }
 
@@ -233,21 +268,21 @@ export class TransferService {
       if (!userItem.productCode && !userItem.inventoryId) {
         throw new ValidationError(
           "Each line item must have productCode or inventoryId",
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
       if (userItem.quantity === undefined || userItem.quantity === null) {
         throw new ValidationError(
           "Transfer quantity is required for all line items",
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
       if (typeof userItem.quantity !== "number" || userItem.quantity <= 0) {
         throw new ValidationError(
           "Transfer quantity must be a positive number greater than 0",
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
@@ -255,19 +290,28 @@ export class TransferService {
       let inventory;
       if (userItem.inventoryId) {
         if (!mongoose.Types.ObjectId.isValid(userItem.inventoryId)) {
-          throw new CastError("Invalid inventory ID format", TRANSFER_FIELDS.LINE_ITEMS);
+          throw new CastError(
+            "Invalid inventory ID format",
+            TRANSFER_FIELDS.LINE_ITEMS,
+          );
         }
-        inventory = await this.inventoryRepository.findById(userItem.inventoryId, { lean: true });
+        inventory = await this.inventoryRepository.findById(
+          userItem.inventoryId,
+          { lean: true },
+        );
       } else {
-        inventory = await this.inventoryRepository.findOne({
-          productCode: userItem.productCode.toUpperCase(),
-        }, { lean: true });
+        inventory = await this.inventoryRepository.findOne(
+          {
+            productCode: userItem.productCode.toUpperCase(),
+          },
+          { lean: true },
+        );
       }
 
       if (!inventory) {
         throw new NotFoundError(
           `Product with code '${userItem.productCode || userItem.inventoryId}'`,
-          userItem.productCode || userItem.inventoryId
+          userItem.productCode || userItem.inventoryId,
         );
       }
 
@@ -276,17 +320,19 @@ export class TransferService {
       // Validate based on transfer type
       if (transferSourceType === TRANSFER_SOURCE_TYPE.GRN) {
         // Fetch GRN again for line item validation (uses repository)
-        const grn = await this.goodsRecievedNoteRepository.findById(sourceId, { lean: true });
+        const grn = await this.goodsRecievedNoteRepository.findById(sourceId, {
+          lean: true,
+        });
 
         // Find corresponding GRN line item by inventoryId
         const grnLineItem = grn.lineItems.find(
-          (item) => item.inventoryId.toString() === inventoryIdValue.toString()
+          (item) => item.inventoryId.toString() === inventoryIdValue.toString(),
         );
 
         if (!grnLineItem) {
           throw new ValidationError(
             `GRN does not contain product with code '${userItem.productCode || inventoryIdValue}'. Please ensure the product exists in the GRN line items.`,
-            TRANSFER_FIELDS.LINE_ITEMS
+            TRANSFER_FIELDS.LINE_ITEMS,
           );
         }
 
@@ -299,7 +345,7 @@ export class TransferService {
         if (userItem.quantity > availableQuantity) {
           throw new ValidationError(
             `Transfer quantity (${userItem.quantity}) exceeds available quantity (${availableQuantity}) for product '${userItem.productCode || inventoryIdValue}'. Available quantity = goodQuantity (${goodQuantity}) - transferredQuantity (${transferredQuantity})`,
-            TRANSFER_FIELDS.LINE_ITEMS
+            TRANSFER_FIELDS.LINE_ITEMS,
           );
         }
 
@@ -312,15 +358,18 @@ export class TransferService {
         });
       } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
         // Validate warehouse has sufficient stock (uses repository)
-        const warehouseStock = await this.warehouseInventoryRepository.findOne({
-          inventoryId: inventoryIdValue,
-          warehouseId: sourceId,
-        }, { lean: true });
+        const warehouseStock = await this.warehouseInventoryRepository.findOne(
+          {
+            inventoryId: inventoryIdValue,
+            warehouseId: sourceId,
+          },
+          { lean: true },
+        );
 
         if (!warehouseStock) {
           throw new NotFoundError(
             `Warehouse stock for product '${userItem.productCode || inventoryIdValue}' in source warehouse`,
-            inventoryIdValue
+            inventoryIdValue,
           );
         }
 
@@ -328,7 +377,7 @@ export class TransferService {
         if (userItem.quantity > availableQuantity) {
           throw new ValidationError(
             `Transfer quantity (${userItem.quantity}) exceeds available warehouse stock (${availableQuantity}) for product '${userItem.productCode || inventoryIdValue}'`,
-            TRANSFER_FIELDS.LINE_ITEMS
+            TRANSFER_FIELDS.LINE_ITEMS,
           );
         }
 
@@ -348,10 +397,11 @@ export class TransferService {
       if (transferSourceType === TRANSFER_SOURCE_TYPE.GRN) {
         // For GRN → Warehouse: Ensure inventory items exist in destination warehouse
         for (const lineItem of validatedLineItems) {
-          const existingWarehouseStock = await this.warehouseInventoryRepository.findOne({
-            inventoryId: lineItem.inventoryId,
-            warehouseId: destinationId,
-          });
+          const existingWarehouseStock =
+            await this.warehouseInventoryRepository.findOne({
+              inventoryId: lineItem.inventoryId,
+              warehouseId: destinationId,
+            });
 
           if (!existingWarehouseStock) {
             // Create warehouse stock record with quantity 0 if it doesn't exist (uses repository)
@@ -363,11 +413,14 @@ export class TransferService {
               });
             } catch (error) {
               // If creation fails, return detailed error
-              const inventory = await this.inventoryRepository.findById(lineItem.inventoryId);
-              const productCode = inventory?.productCode || lineItem.inventoryId;
+              const inventory = await this.inventoryRepository.findById(
+                lineItem.inventoryId,
+              );
+              const productCode =
+                inventory?.productCode || lineItem.inventoryId;
               throw new ValidationError(
                 `Failed to create inventory record for product '${productCode}' in destination warehouse. ${error.message}`,
-                TRANSFER_FIELDS.LINE_ITEMS
+                TRANSFER_FIELDS.LINE_ITEMS,
               );
             }
           }
@@ -375,10 +428,11 @@ export class TransferService {
       } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
         // For Warehouse → Storefront: Ensure inventory items exist in destination storefront
         for (const lineItem of validatedLineItems) {
-          const existingStorefrontInventory = await this.storefrontInventoryRepository.findOne({
-            inventoryId: lineItem.inventoryId,
-            storefrontId: destinationId,
-          });
+          const existingStorefrontInventory =
+            await this.storefrontInventoryRepository.findOne({
+              inventoryId: lineItem.inventoryId,
+              storefrontId: destinationId,
+            });
 
           if (!existingStorefrontInventory) {
             // Create storefront inventory record with quantity 0 if it doesn't exist (uses repository)
@@ -390,11 +444,14 @@ export class TransferService {
               });
             } catch (error) {
               // If creation fails, return detailed error
-              const inventory = await this.inventoryRepository.findById(lineItem.inventoryId);
-              const productCode = inventory?.productCode || lineItem.inventoryId;
+              const inventory = await this.inventoryRepository.findById(
+                lineItem.inventoryId,
+              );
+              const productCode =
+                inventory?.productCode || lineItem.inventoryId;
               throw new ValidationError(
                 `Failed to create inventory record for product '${productCode}' in destination storefront. ${error.message}`,
-                TRANSFER_FIELDS.LINE_ITEMS
+                TRANSFER_FIELDS.LINE_ITEMS,
               );
             }
           }
@@ -408,7 +465,7 @@ export class TransferService {
       // Catch any unexpected errors during validation
       throw new ValidationError(
         `Error validating destination inventory: ${error.message}`,
-        TRANSFER_FIELDS.LINE_ITEMS
+        TRANSFER_FIELDS.LINE_ITEMS,
       );
     }
 
@@ -434,14 +491,16 @@ export class TransferService {
     transferData.transferNumber = await this.generateTransferNumber();
 
     // Use MongoDB transaction to ensure ACID properties
-    const transactionSession = session || await mongoose.startSession();
+    const transactionSession = session || (await mongoose.startSession());
     if (!session) {
       transactionSession.startTransaction();
     }
 
     try {
       // Create transfer document within transaction (matches legacy exactly - uses repository)
-      const newTransferArray = await this.repository.create([transferData], { session: transactionSession });
+      const newTransferArray = await this.repository.create([transferData], {
+        session: transactionSession,
+      });
       const transfer = newTransferArray[0];
 
       // Immediately transfer stock atomically (uses service method)
@@ -462,18 +521,18 @@ export class TransferService {
         await transfer.populate("sourceId", "grnNumber status");
         await transfer.populate(
           "destinationWarehouseId",
-          "locationName locationCode"
+          "locationName locationCode",
         );
       } else if (transferSourceType === TRANSFER_SOURCE_TYPE.WAREHOUSE) {
         await transfer.populate("sourceId", "locationName locationCode");
         await transfer.populate(
           "destinationStorefrontId",
-          "locationName locationCode"
+          "locationName locationCode",
         );
       }
       await transfer.populate(
         "lineItems.inventoryId",
-        "productName productCode SKU"
+        "productName productCode SKU",
       );
       await transfer.populate("transferredBy", "name role");
 
@@ -496,13 +555,16 @@ export class TransferService {
    */
   async getTransfers(queryParams = {}) {
     // Execute query - fetch all transfers (matches legacy exactly - uses repository)
-    const transfers = await this.repository.find({}, {
-      populate: {
-        transferredBy: "name role",
-        lineItems: "productName productCode SKU",
+    const transfers = await this.repository.find(
+      {},
+      {
+        populate: {
+          transferredBy: "name role",
+          lineItems: "productName productCode SKU",
+        },
+        lean: true,
       },
-      lean: true,
-    });
+    );
 
     // Return array of DTOs
     return transfers.map((transfer) => new TransferResponseDTO(transfer));
@@ -532,13 +594,13 @@ export class TransferService {
       await transfer.populate("sourceId", "grnNumber status");
       await transfer.populate(
         "destinationWarehouseId",
-        "locationName locationCode"
+        "locationName locationCode",
       );
     } else if (transfer.sourceType === "Warehouse") {
       await transfer.populate("sourceId", "locationName locationCode");
       await transfer.populate(
         "destinationStorefrontId",
-        "locationName locationCode"
+        "locationName locationCode",
       );
     }
 
@@ -605,12 +667,12 @@ export class TransferService {
     const validStatuses = ["pending", "in-transit", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       throw new ValidationError(
-        `Invalid status. Allowed values: ${validStatuses.join(", ")}`
+        `Invalid status. Allowed values: ${validStatuses.join(", ")}`,
       );
     }
 
     // Use MongoDB transaction to ensure ACID properties when completing transfer (matches legacy exactly)
-    const transactionSession = session || await mongoose.startSession();
+    const transactionSession = session || (await mongoose.startSession());
     if (!session) {
       transactionSession.startTransaction();
     }
@@ -620,7 +682,7 @@ export class TransferService {
       const updatedTransfer = await this.repository.findByIdAndUpdate(
         id,
         { status },
-        { new: true, session: transactionSession }
+        { new: true, session: transactionSession },
       );
 
       if (!updatedTransfer) {
@@ -648,18 +710,18 @@ export class TransferService {
         await updatedTransfer.populate("sourceId", "grnNumber status");
         await updatedTransfer.populate(
           "destinationWarehouseId",
-          "locationName locationCode"
+          "locationName locationCode",
         );
       } else if (updatedTransfer.sourceType === "Warehouse") {
         await updatedTransfer.populate("sourceId", "locationName locationCode");
         await updatedTransfer.populate(
           "destinationStorefrontId",
-          "locationName locationCode"
+          "locationName locationCode",
         );
       }
       await updatedTransfer.populate(
         "lineItems.inventoryId",
-        "productName productCode SKU"
+        "productName productCode SKU",
       );
       await updatedTransfer.populate("transferredBy", "name role");
 
@@ -703,7 +765,7 @@ export class TransferService {
     if (transfer.status !== TRANSFER_STATUS.COMPLETED) {
       throw new ValidationError(
         "Transfer must be completed before updating stock",
-        TRANSFER_FIELDS.STATUS
+        TRANSFER_FIELDS.STATUS,
       );
     }
 
@@ -714,7 +776,7 @@ export class TransferService {
     ) {
       throw new ValidationError(
         "GRN transfers require destinationWarehouseId",
-        TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID
+        TRANSFER_FIELDS.DESTINATION_WAREHOUSE_ID,
       );
     }
 
@@ -724,7 +786,7 @@ export class TransferService {
     ) {
       throw new ValidationError(
         "Warehouse transfers require destinationStorefrontId",
-        TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID
+        TRANSFER_FIELDS.DESTINATION_STOREFRONT_ID,
       );
     }
 
@@ -750,9 +812,12 @@ export class TransferService {
    */
   async _updateGRNToWarehouseStock(transfer, session = null) {
     // Fetch GRN to validate and update (uses repository)
-    const grn = await this.goodsRecievedNoteRepository.findById(transfer.sourceId, {
-      session: session || null,
-    });
+    const grn = await this.goodsRecievedNoteRepository.findById(
+      transfer.sourceId,
+      {
+        session: session || null,
+      },
+    );
 
     if (!grn) {
       throw new NotFoundError("GRN", transfer.sourceId);
@@ -771,14 +836,14 @@ export class TransferService {
         if (grnLineItem) {
           grnLineItemIndex = grn.lineItems.findIndex(
             (item) =>
-              item._id.toString() === transferItem.grnLineItemId.toString()
+              item._id.toString() === transferItem.grnLineItemId.toString(),
           );
         }
       } else {
         // Otherwise, find by inventoryId
         grnLineItemIndex = grn.lineItems.findIndex(
           (item) =>
-            item.inventoryId.toString() === transferItem.inventoryId.toString()
+            item.inventoryId.toString() === transferItem.inventoryId.toString(),
         );
         if (grnLineItemIndex !== -1) {
           grnLineItem = grn.lineItems[grnLineItemIndex];
@@ -788,7 +853,7 @@ export class TransferService {
       if (!grnLineItem || grnLineItemIndex === -1) {
         throw new ValidationError(
           `GRN line item not found for inventory ${transferItem.inventoryId}`,
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
@@ -798,26 +863,27 @@ export class TransferService {
       if (transferItem.quantity > availableQty) {
         throw new ValidationError(
           `Transfer quantity (${transferItem.quantity}) exceeds available quantity (${availableQty}) for inventory ${transferItem.inventoryId}`,
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
       // Update GRN line item's transferredQuantity atomically using $inc
       // Uses positional operator $ to update the specific line item (uses repository)
-      const grnUpdateResult = await this.goodsRecievedNoteRepository.findOneAndUpdate(
-        { _id: transfer.sourceId, "lineItems._id": grnLineItem._id },
-        {
-          $inc: {
-            [`lineItems.$.transferredQuantity`]: transferItem.quantity,
+      const grnUpdateResult =
+        await this.goodsRecievedNoteRepository.findOneAndUpdate(
+          { _id: transfer.sourceId, "lineItems._id": grnLineItem._id },
+          {
+            $inc: {
+              [`lineItems.$.transferredQuantity`]: transferItem.quantity,
+            },
           },
-        },
-        { new: true, session }
-      );
+          { new: true, session },
+        );
 
       if (!grnUpdateResult) {
         throw new ValidationError(
           `GRN line item with ID ${grnLineItem._id} not found or GRN not found`,
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
@@ -841,7 +907,7 @@ export class TransferService {
           session,
           new: true,
           runValidators: true,
-        }
+        },
       );
     }
   }
@@ -854,10 +920,13 @@ export class TransferService {
    */
   async _updateWarehouseToStorefrontStock(transfer, session = null) {
     // Validate source warehouse exists (uses repository)
-    const sourceWarehouse = await this.locationRepository.findOne({
-      _id: transfer.sourceId,
-      type: "warehouse",
-    }, { session: session || null });
+    const sourceWarehouse = await this.locationRepository.findOne(
+      {
+        _id: transfer.sourceId,
+        type: "warehouse",
+      },
+      { session: session || null },
+    );
 
     if (!sourceWarehouse) {
       throw new NotFoundError("Source warehouse", transfer.sourceId);
@@ -868,15 +937,18 @@ export class TransferService {
       if (transferItem.quantity <= 0) continue;
 
       // Validate warehouse has sufficient stock (uses repository)
-      const warehouseStock = await this.warehouseInventoryRepository.findOne({
-        inventoryId: transferItem.inventoryId,
-        warehouseId: transfer.sourceId,
-      }, { session: session || null });
+      const warehouseStock = await this.warehouseInventoryRepository.findOne(
+        {
+          inventoryId: transferItem.inventoryId,
+          warehouseId: transfer.sourceId,
+        },
+        { session: session || null },
+      );
 
       if (!warehouseStock) {
         throw new ValidationError(
           `Warehouse stock not found for inventory ${transferItem.inventoryId} in warehouse ${transfer.sourceId}`,
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
@@ -884,7 +956,7 @@ export class TransferService {
       if (transferItem.quantity > availableQty) {
         throw new ValidationError(
           `Transfer quantity (${transferItem.quantity}) exceeds available warehouse stock (${availableQty}) for inventory ${transferItem.inventoryId}`,
-          TRANSFER_FIELDS.LINE_ITEMS
+          TRANSFER_FIELDS.LINE_ITEMS,
         );
       }
 
@@ -902,7 +974,7 @@ export class TransferService {
           session,
           new: true,
           runValidators: true,
-        }
+        },
       );
 
       // Add to storefront inventory atomically using $inc (uses repository)
@@ -924,7 +996,7 @@ export class TransferService {
           session,
           new: true,
           runValidators: true,
-        }
+        },
       );
     }
   }

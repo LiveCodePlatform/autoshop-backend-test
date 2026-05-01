@@ -9,11 +9,12 @@ import { StorefrontInventoryRepository } from "../repositories/storefrontInvento
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
 import { InventoryRepository } from "../repositories/inventory.repository.js";
 import { CreditPersonaRepository } from "../repositories/creditPersona.repository.js";
+import { CreateOrderDTO, OrderResponseDTO } from "../dtos/order.dto.js";
 import {
-  CreateOrderDTO,
-  OrderResponseDTO,
-} from "../dtos/order.dto.js";
-import { ValidationError, NotFoundError, CastError } from "../errors/errorTypes.js";
+  ValidationError,
+  NotFoundError,
+  CastError,
+} from "../errors/errorTypes.js";
 import { ORDER_FIELDS } from "../types/order.types.js";
 import mongoose from "mongoose";
 import { createDateFilter } from "../shared/utils/dateFilter.utils.js";
@@ -33,7 +34,7 @@ export class OrderService {
     storefrontInventoryRepository,
     locationProfileRepository,
     inventoryRepository,
-    creditPersonaRepository
+    creditPersonaRepository,
   ) {
     this.repository = repository || new OrderRepository();
     this.storefrontInventoryRepository =
@@ -84,7 +85,7 @@ export class OrderService {
     ) {
       throw new ValidationError(
         "Order must have at least one product",
-        "ordersProducts"
+        "ordersProducts",
       );
     }
 
@@ -93,20 +94,23 @@ export class OrderService {
     if (paymentType && !validPaymentTypes.includes(paymentType)) {
       throw new ValidationError(
         `Invalid payment type. Allowed values: ${validPaymentTypes.join(", ")}`,
-        "paymentType"
+        "paymentType",
       );
     }
 
     // Validate creditPersonId - only allowed when paymentType is "credit"
     if (creditPersonId) {
       if (!mongoose.Types.ObjectId.isValid(creditPersonId)) {
-        throw new CastError("Invalid credit person ID format", "creditPersonId");
+        throw new CastError(
+          "Invalid credit person ID format",
+          "creditPersonId",
+        );
       }
 
       if (paymentType !== "credit") {
         throw new ValidationError(
           "Credit person ID can only be provided when payment type is 'credit'",
-          "creditPersonId"
+          "creditPersonId",
         );
       }
     }
@@ -118,21 +122,21 @@ export class OrderService {
       if (!product.inventoryId) {
         throw new ValidationError(
           `Product at index ${i}: Inventory ID is required`,
-          `ordersProducts[${i}].inventoryId`
+          `ordersProducts[${i}].inventoryId`,
         );
       }
 
       if (!mongoose.Types.ObjectId.isValid(product.inventoryId)) {
         throw new CastError(
           `Product at index ${i}: Invalid inventory ID format`,
-          `ordersProducts[${i}].inventoryId`
+          `ordersProducts[${i}].inventoryId`,
         );
       }
 
       if (!product.quantity || product.quantity < 1) {
         throw new ValidationError(
           `Product at index ${i}: Quantity must be at least 1`,
-          `ordersProducts[${i}].quantity`
+          `ordersProducts[${i}].quantity`,
         );
       }
     }
@@ -185,7 +189,7 @@ export class OrderService {
 
             if (storefront.isDeleted) {
               throw new ValidationError(
-                "Cannot create order for deleted storefront"
+                "Cannot create order for deleted storefront",
               );
             }
 
@@ -193,7 +197,10 @@ export class OrderService {
             let creditPerson = null;
             if (creditPersonId) {
               // Validate credit person exists (uses repository with session support)
-              creditPerson = await this.creditPersonaRepository.findById(creditPersonId, { session });
+              creditPerson = await this.creditPersonaRepository.findById(
+                creditPersonId,
+                { session },
+              );
 
               if (!creditPerson) {
                 throw new NotFoundError("Credit person");
@@ -204,28 +211,32 @@ export class OrderService {
                 throw new ValidationError(
                   `Cannot create order for blacklisted credit person: ${
                     creditPerson.blacklistReason || "No reason provided"
-                  }`
+                  }`,
                 );
               }
             }
 
             // 2. Validate all inventory items exist and get their selling prices
             const inventoryIds = ordersProducts.map(
-              (p) => new mongoose.Types.ObjectId(p.inventoryId)
+              (p) => new mongoose.Types.ObjectId(p.inventoryId),
             );
 
             // Use model directly for transaction support
-            const inventoryItems = await this.inventoryRepository.find({
-              _id: { $in: inventoryIds },
-            }).session(session);
+            const inventoryItems = await this.inventoryRepository
+              .find({
+                _id: { $in: inventoryIds },
+              })
+              .session(session);
 
             if (inventoryItems.length !== inventoryIds.length) {
-              const foundIds = inventoryItems.map((item) => item._id.toString());
+              const foundIds = inventoryItems.map((item) =>
+                item._id.toString(),
+              );
               const missingIds = inventoryIds.filter(
-                (id) => !foundIds.includes(id.toString())
+                (id) => !foundIds.includes(id.toString()),
               );
               throw new NotFoundError(
-                `Inventory items not found: ${missingIds.join(", ")}`
+                `Inventory items not found: ${missingIds.join(", ")}`,
               );
             }
 
@@ -241,13 +252,13 @@ export class OrderService {
 
             for (const product of ordersProducts) {
               const inventoryId = new mongoose.Types.ObjectId(
-                product.inventoryId
+                product.inventoryId,
               );
               const inventoryItem = inventoryMap.get(inventoryId.toString());
 
               if (!inventoryItem) {
                 throw new NotFoundError(
-                  `Inventory item not found: ${product.inventoryId}`
+                  `Inventory item not found: ${product.inventoryId}`,
                 );
               }
 
@@ -256,13 +267,13 @@ export class OrderService {
                 inventoryItem.sellingPrice === null
               ) {
                 throw new ValidationError(
-                  `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) does not have a selling price set`
+                  `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) does not have a selling price set`,
                 );
               }
 
               if (inventoryItem.sellingPrice < 0) {
                 throw new ValidationError(
-                  `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) has an invalid selling price: ${inventoryItem.sellingPrice}`
+                  `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) has an invalid selling price: ${inventoryItem.sellingPrice}`,
                 );
               }
 
@@ -297,23 +308,24 @@ export class OrderService {
             // 4. Validate stock availability and deduct stock
             for (const product of validatedProducts) {
               // Use model directly for transaction support
-              const stockRecord = await this.storefrontInventoryRepository.findOne(
-                {
-                  inventoryId: product.inventoryId,
-                  storefrontId: storefrontId,
-                },
-                null,
-                { session }
-              );
+              const stockRecord =
+                await this.storefrontInventoryRepository.findOne(
+                  {
+                    inventoryId: product.inventoryId,
+                    storefrontId: storefrontId,
+                  },
+                  null,
+                  { session },
+                );
 
               if (!stockRecord) {
                 const inventoryItem = inventoryMap.get(
-                  product.inventoryId.toString()
+                  product.inventoryId.toString(),
                 );
                 throw new NotFoundError(
                   `Stock record not found for product '${
                     inventoryItem?.productCode || product.inventoryId
-                  }' in storefront`
+                  }' in storefront`,
                 );
               }
 
@@ -321,7 +333,7 @@ export class OrderService {
               const availableQuantity = stockRecord.quantity || 0;
               if (availableQuantity < product.quantity) {
                 const inventoryItem = inventoryMap.get(
-                  product.inventoryId.toString()
+                  product.inventoryId.toString(),
                 );
                 throw new ValidationError(
                   `Insufficient stock for product '${
@@ -330,14 +342,16 @@ export class OrderService {
                     inventoryItem?.productName || "Unknown"
                   }). Available: ${availableQuantity}, Requested: ${
                     product.quantity
-                  }`
+                  }`,
                 );
               }
 
               // Deduct stock - modify document directly and save with session (uses repository)
               stockRecord.quantity -= product.quantity;
               stockRecord.lastUpdated = new Date();
-              await this.storefrontInventoryRepository.save(stockRecord, { session });
+              await this.storefrontInventoryRepository.save(stockRecord, {
+                session,
+              });
             }
 
             // 5. Create order with calculated values
@@ -365,10 +379,13 @@ export class OrderService {
             newOrder = newOrderArray[0];
 
             // 7. Populate references for response (inside transaction for consistency)
-            await newOrder.populate("storefrontId", "locationName locationCode");
+            await newOrder.populate(
+              "storefrontId",
+              "locationName locationCode",
+            );
             await newOrder.populate(
               "ordersProducts.inventoryId",
-              "productName productCode SKU"
+              "productName productCode SKU",
             );
 
             // Mark as created successfully
@@ -396,7 +413,7 @@ export class OrderService {
             if (retryCount < maxRetries) {
               // Wait a bit before retrying (exponential backoff)
               await new Promise((resolve) =>
-                setTimeout(resolve, 100 * retryCount)
+                setTimeout(resolve, 100 * retryCount),
               );
               // Continue to next iteration of retry loop
               continue;
@@ -404,7 +421,7 @@ export class OrderService {
               // Max retries reached
               throw new CustomError(
                 500,
-                "Failed to generate unique order number after multiple attempts. Please try again."
+                "Failed to generate unique order number after multiple attempts. Please try again.",
               );
             }
           }
@@ -423,11 +440,9 @@ export class OrderService {
         }
         if (lastError.name === "ValidationError") {
           const errors = Object.values(lastError.errors).map(
-            (val) => val.message
+            (val) => val.message,
           );
-          throw new ValidationError(
-            `Validation error: ${errors.join(". ")}`
-          );
+          throw new ValidationError(`Validation error: ${errors.join(". ")}`);
         }
 
         // For other errors, log and return with actual error message
@@ -457,7 +472,7 @@ export class OrderService {
       // Handle MongoDB duplicate key errors (shouldn't reach here with retry logic, but just in case)
       if (error.code === 11000) {
         throw new ValidationError(
-          "Order number already exists. Please try again."
+          "Order number already exists. Please try again.",
         );
       }
 
@@ -535,7 +550,7 @@ export class OrderService {
           { path: "creditPersonId", select: "name phone" },
           { path: "soldBy", select: "name role" },
         ],
-      }
+      },
     );
 
     if (!order) {
@@ -590,7 +605,10 @@ export class OrderService {
 
     // Validate creditPersonId is provided
     if (!creditPersonId) {
-      throw new ValidationError("Credit person ID is required", "creditPersonId");
+      throw new ValidationError(
+        "Credit person ID is required",
+        "creditPersonId",
+      );
     }
 
     if (!mongoose.Types.ObjectId.isValid(creditPersonId)) {
@@ -617,12 +635,15 @@ export class OrderService {
         // 2. Validate order is a credit order
         if (order.paymentType !== "credit") {
           throw new ValidationError(
-            "Can only add credit person to credit orders. This order is not a credit order."
+            "Can only add credit person to credit orders. This order is not a credit order.",
           );
         }
 
         // 3. Validate credit person exists (uses repository with session support)
-        const creditPerson = await this.creditPersonaRepository.findById(creditPersonId, { session });
+        const creditPerson = await this.creditPersonaRepository.findById(
+          creditPersonId,
+          { session },
+        );
 
         if (!creditPerson) {
           throw new NotFoundError("Credit person");
@@ -633,7 +654,7 @@ export class OrderService {
           throw new ValidationError(
             `Cannot add blacklisted credit person to order: ${
               creditPerson.blacklistReason || "No reason provided"
-            }`
+            }`,
           );
         }
 
@@ -646,7 +667,7 @@ export class OrderService {
         await order.populate("creditPersonId", "name phone");
         await order.populate(
           "ordersProducts.inventoryId",
-          "productName productCode SKU"
+          "productName productCode SKU",
         );
         await order.populate("soldBy", "name role");
 
@@ -677,7 +698,7 @@ export class OrderService {
         error?.message || String(error) || "Unknown error occurred";
       throw new CustomError(
         500,
-        `Failed to update credit person ID: ${errorMessage}`
+        `Failed to update credit person ID: ${errorMessage}`,
       );
     } finally {
       // Always end the session
@@ -712,7 +733,7 @@ export class OrderService {
           { path: "creditPersonId", select: "name phone" },
           { path: "soldBy", select: "name role" },
         ],
-      }
+      },
     );
 
     return orders.map((order) => new OrderResponseDTO(order));
@@ -747,7 +768,7 @@ export class OrderService {
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new ValidationError(
         "Items array is required and must not be empty",
-        "items"
+        "items",
       );
     }
 
@@ -757,21 +778,21 @@ export class OrderService {
       if (!item.inventoryId) {
         throw new ValidationError(
           `Item at index ${i}: Inventory ID is required`,
-          `items[${i}].inventoryId`
+          `items[${i}].inventoryId`,
         );
       }
 
       if (!mongoose.Types.ObjectId.isValid(item.inventoryId)) {
         throw new CastError(
           `Item at index ${i}: Invalid inventory ID format`,
-          `items[${i}].inventoryId`
+          `items[${i}].inventoryId`,
         );
       }
 
       if (!item.quantity || item.quantity < 1) {
         throw new ValidationError(
           `Item at index ${i}: Quantity is required and must be at least 1`,
-          `items[${i}].quantity`
+          `items[${i}].quantity`,
         );
       }
     }
@@ -786,7 +807,10 @@ export class OrderService {
     }
 
     if (finalAmount !== undefined && finalAmount < 0) {
-      throw new ValidationError("Final amount cannot be negative", "finalAmount");
+      throw new ValidationError(
+        "Final amount cannot be negative",
+        "finalAmount",
+      );
     }
 
     if (paidAmount !== undefined && paidAmount < 0) {
@@ -794,7 +818,10 @@ export class OrderService {
     }
 
     if (extraChange !== undefined && extraChange < 0) {
-      throw new ValidationError("Extra change cannot be negative", "extraChange");
+      throw new ValidationError(
+        "Extra change cannot be negative",
+        "extraChange",
+      );
     }
 
     // Start MongoDB session for transaction
@@ -817,27 +844,30 @@ export class OrderService {
         // 1a. Validate order status is completed (only completed orders can be modified after checkout)
         if (order.orderStatus !== "completed") {
           throw new ValidationError(
-            `Cannot add items to order with status '${order.orderStatus}'. Only completed orders can be modified.`
+            `Cannot add items to order with status '${order.orderStatus}'. Only completed orders can be modified.`,
           );
         }
 
         // 2. Get all unique inventory IDs to fetch in batch
         const inventoryIds = items.map(
-          (item) => new mongoose.Types.ObjectId(item.inventoryId)
+          (item) => new mongoose.Types.ObjectId(item.inventoryId),
         );
 
         // 3. Validate all inventory items exist and get their selling prices (uses repository)
-        const inventoryItems = await this.inventoryRepository.find({
-          _id: { $in: inventoryIds },
-        }, { session });
+        const inventoryItems = await this.inventoryRepository.find(
+          {
+            _id: { $in: inventoryIds },
+          },
+          { session },
+        );
 
         if (inventoryItems.length !== inventoryIds.length) {
           const foundIds = inventoryItems.map((item) => item._id.toString());
           const missingIds = inventoryIds.filter(
-            (id) => !foundIds.includes(id.toString())
+            (id) => !foundIds.includes(id.toString()),
           );
           throw new NotFoundError(
-            `Inventory items not found: ${missingIds.join(", ")}`
+            `Inventory items not found: ${missingIds.join(", ")}`,
           );
         }
 
@@ -855,7 +885,7 @@ export class OrderService {
 
           if (!inventoryItem) {
             throw new NotFoundError(
-              `Inventory item not found: ${item.inventoryId}`
+              `Inventory item not found: ${item.inventoryId}`,
             );
           }
 
@@ -864,13 +894,13 @@ export class OrderService {
             inventoryItem.sellingPrice === null
           ) {
             throw new ValidationError(
-              `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) does not have a selling price set`
+              `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) does not have a selling price set`,
             );
           }
 
           if (inventoryItem.sellingPrice < 0) {
             throw new ValidationError(
-              `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) has an invalid selling price: ${inventoryItem.sellingPrice}`
+              `Product '${inventoryItem.productCode}' (${inventoryItem.productName}) has an invalid selling price: ${inventoryItem.sellingPrice}`,
             );
           }
 
@@ -880,12 +910,12 @@ export class OrderService {
               inventoryId: inventoryId,
               storefrontId: order.storefrontId,
             },
-            { session }
+            { session },
           );
 
           if (!stockRecord) {
             throw new NotFoundError(
-              `Stock record not found for product '${inventoryItem.productCode}' in storefront`
+              `Stock record not found for product '${inventoryItem.productCode}' in storefront`,
             );
           }
 
@@ -893,7 +923,7 @@ export class OrderService {
           const availableQuantity = stockRecord.quantity || 0;
           if (availableQuantity < item.quantity) {
             throw new ValidationError(
-              `Insufficient stock for product '${inventoryItem.productCode}' (${inventoryItem.productName}). Available: ${availableQuantity}, Requested: ${item.quantity}`
+              `Insufficient stock for product '${inventoryItem.productCode}' (${inventoryItem.productName}). Available: ${availableQuantity}, Requested: ${item.quantity}`,
             );
           }
 
@@ -911,7 +941,7 @@ export class OrderService {
           // Check if item already exists in order
           const existingItemIndex = order.ordersProducts.findIndex(
             (orderItem) =>
-              orderItem.inventoryId.toString() === inventoryId.toString()
+              orderItem.inventoryId.toString() === inventoryId.toString(),
           );
 
           if (existingItemIndex !== -1) {
@@ -929,7 +959,9 @@ export class OrderService {
           // Deduct stock (uses repository)
           stockRecord.quantity -= item.quantity;
           stockRecord.lastUpdated = new Date();
-          await this.storefrontInventoryRepository.save(stockRecord, { session });
+          await this.storefrontInventoryRepository.save(stockRecord, {
+            session,
+          });
         }
 
         // 6. Update order fields if provided
@@ -964,7 +996,7 @@ export class OrderService {
         await order.populate("storefrontId", "locationName locationCode");
         await order.populate(
           "ordersProducts.inventoryId",
-          "productName productCode SKU"
+          "productName productCode SKU",
         );
         await order.populate("creditPersonId", "name phone");
         await order.populate("soldBy", "name role");
@@ -1030,7 +1062,7 @@ export class OrderService {
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new ValidationError(
         "Items array is required and must not be empty",
-        "items"
+        "items",
       );
     }
 
@@ -1040,21 +1072,21 @@ export class OrderService {
       if (!item.inventoryId) {
         throw new ValidationError(
           `Item at index ${i}: Inventory ID is required`,
-          `items[${i}].inventoryId`
+          `items[${i}].inventoryId`,
         );
       }
 
       if (!mongoose.Types.ObjectId.isValid(item.inventoryId)) {
         throw new CastError(
           `Item at index ${i}: Invalid inventory ID format`,
-          `items[${i}].inventoryId`
+          `items[${i}].inventoryId`,
         );
       }
 
       if (!item.quantity || item.quantity < 1) {
         throw new ValidationError(
           `Item at index ${i}: Quantity is required and must be at least 1`,
-          `items[${i}].quantity`
+          `items[${i}].quantity`,
         );
       }
     }
@@ -1069,7 +1101,10 @@ export class OrderService {
     }
 
     if (finalAmount !== undefined && finalAmount < 0) {
-      throw new ValidationError("Final amount cannot be negative", "finalAmount");
+      throw new ValidationError(
+        "Final amount cannot be negative",
+        "finalAmount",
+      );
     }
 
     if (paidAmount !== undefined && paidAmount < 0) {
@@ -1077,7 +1112,10 @@ export class OrderService {
     }
 
     if (extraChange !== undefined && extraChange < 0) {
-      throw new ValidationError("Extra change cannot be negative", "extraChange");
+      throw new ValidationError(
+        "Extra change cannot be negative",
+        "extraChange",
+      );
     }
 
     // Start MongoDB session for transaction
@@ -1100,7 +1138,7 @@ export class OrderService {
         // 1a. Validate order status is completed (only completed orders can be modified after checkout)
         if (order.orderStatus !== "completed") {
           throw new ValidationError(
-            `Cannot remove items from order with status '${order.orderStatus}'. Only completed orders can be modified.`
+            `Cannot remove items from order with status '${order.orderStatus}'. Only completed orders can be modified.`,
           );
         }
 
@@ -1110,12 +1148,12 @@ export class OrderService {
           const inventoryId = new mongoose.Types.ObjectId(item.inventoryId);
           const existingItemIndex = order.ordersProducts.findIndex(
             (orderItem) =>
-              orderItem.inventoryId.toString() === inventoryId.toString()
+              orderItem.inventoryId.toString() === inventoryId.toString(),
           );
 
           if (existingItemIndex === -1) {
             throw new NotFoundError(
-              `Item with inventoryId '${item.inventoryId}' not found in order. Cannot remove item that doesn't exist.`
+              `Item with inventoryId '${item.inventoryId}' not found in order. Cannot remove item that doesn't exist.`,
             );
           }
 
@@ -1125,7 +1163,7 @@ export class OrderService {
           // Ensure we cannot remove more than what exists in the order
           if (item.quantity > existingItem.quantity) {
             throw new ValidationError(
-              `Cannot remove ${item.quantity} items for inventoryId '${item.inventoryId}'. Only ${existingItem.quantity} items exist in order. Cannot remove more than available.`
+              `Cannot remove ${item.quantity} items for inventoryId '${item.inventoryId}'. Only ${existingItem.quantity} items exist in order. Cannot remove more than available.`,
             );
           }
 
@@ -1150,14 +1188,14 @@ export class OrderService {
         // 4. Validate order will still have at least one item (model requirement)
         if (finalItemsCount === 0) {
           throw new ValidationError(
-            "Cannot remove all items from order. Order must have at least one product."
+            "Cannot remove all items from order. Order must have at least one product.",
           );
         }
 
         // 5. Process all items - remove from order and restore stock
         // Process in reverse order to avoid index shifting issues when removing items
         const sortedItemsToProcess = itemsToProcess.sort(
-          (a, b) => b.existingItemIndex - a.existingItemIndex
+          (a, b) => b.existingItemIndex - a.existingItemIndex,
         );
 
         for (const itemToProcess of sortedItemsToProcess) {
@@ -1183,7 +1221,7 @@ export class OrderService {
               storefrontId: order.storefrontId,
             },
             null,
-            { session }
+            { session },
           );
 
           if (!stockRecord) {
@@ -1199,13 +1237,15 @@ export class OrderService {
                   lastUpdated: new Date(),
                 },
               ],
-              { session }
+              { session },
             );
           } else {
             // Restore stock to existing record (uses repository)
             stockRecord.quantity += quantity;
             stockRecord.lastUpdated = new Date();
-            await this.storefrontInventoryRepository.save(stockRecord, { session });
+            await this.storefrontInventoryRepository.save(stockRecord, {
+              session,
+            });
           }
         }
 
@@ -1241,7 +1281,7 @@ export class OrderService {
         await order.populate("storefrontId", "locationName locationCode");
         await order.populate(
           "ordersProducts.inventoryId",
-          "productName productCode SKU"
+          "productName productCode SKU",
         );
         await order.populate("creditPersonId", "name phone");
         await order.populate("soldBy", "name role");
@@ -1273,7 +1313,7 @@ export class OrderService {
         error?.message || String(error) || "Unknown error occurred";
       throw new CustomError(
         500,
-        `Failed to remove order items: ${errorMessage}`
+        `Failed to remove order items: ${errorMessage}`,
       );
     } finally {
       // Always end the session
