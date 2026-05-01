@@ -78,6 +78,22 @@ class SaleReportController {
       });
     }
   );
+
+  /**
+   * Ask AI about sale report
+   * POST /api/sale-reports/ask-ai
+   */
+  askAiAboutSaleReport = asyncErrorHandler(async (req, res, next) => {
+    // Merge query params and body so it works with both GET/POST params
+    const query = { ...req.query, ...req.body };
+    const result = await this.service.askAiAboutSaleReport(query);
+
+    res.status(200).json({
+      success: true,
+      message: "AI response generated successfully",
+      data: result,
+    });
+  });
 }
 
 // Export instance
@@ -87,6 +103,7 @@ export const {
   getPaymentMethodReportByStorefrontId,
   getCreditSaleReportByStorefrontId,
   getProductSalesReportByStorefrontId,
+  askAiAboutSaleReport,
 } = saleReportController;
 
 export default saleReportController;

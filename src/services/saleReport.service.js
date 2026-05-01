@@ -15,6 +15,7 @@ import CustomError from "../shared/utils/customError.js";
 import { LocationProfileRepository } from "../repositories/locationProfile.repository.js";
 import { OrderRepository } from "../repositories/order.repository.js";
 import { CreditRecordRepository } from "../repositories/creditRecord.repository.js";
+import { getAIResponse } from "./gemini.service.js";
 
 export class SaleReportService {
   /**
@@ -258,7 +259,7 @@ export class SaleReportService {
         totalPaidAmount: 0,
         totalFinalAmount: 0,
         totalOrderCount: 0,
-      }
+      },
     );
 
     // Get date range info
@@ -373,7 +374,7 @@ export class SaleReportService {
       },
       {
         select: "orderId paidAmount paymentMethod paymentDate",
-      }
+      },
     );
 
     // Create a map of orderId to credit records
@@ -403,14 +404,14 @@ export class SaleReportService {
       // Calculate total from credit records
       const totalCreditPaidForOrder = creditRecordsForOrder.reduce(
         (sum, record) => sum + (record.paidAmount || 0),
-        0
+        0,
       );
 
       // Calculate initial paid amount: order.paidAmount - total from credit records
       // Note: order.paidAmount includes initial + all credit payments (denormalized)
       const initialPaidAmount = Math.max(
         0,
-        (order.paidAmount || 0) - totalCreditPaidForOrder
+        (order.paidAmount || 0) - totalCreditPaidForOrder,
       );
 
       // Get initial payment method from order
@@ -452,7 +453,7 @@ export class SaleReportService {
       totalCreditPaidAmount += totalCreditPaidForOrder;
       totalRemainingBalance += Math.max(
         0,
-        (order.finalAmount || 0) - (order.paidAmount || 0)
+        (order.finalAmount || 0) - (order.paidAmount || 0),
       );
       orderCount += 1;
     });
@@ -646,7 +647,7 @@ export class SaleReportService {
         totalQuantity: 0,
         totalRevenue: 0,
         totalUniqueProducts: 0,
-      }
+      },
     );
 
     // Get date range info
@@ -671,5 +672,165 @@ export class SaleReportService {
       },
       products: productSalesReport,
     };
+  }
+
+  /**
+   * Ask AI about sale report data
+   * @param {Object} query - Query parameters (question, history)
+   * @returns {Promise<Object>} AI response
+   */
+  async askAiAboutSaleReport(query) {
+    const { question, history = [] } = query;
+
+    if (!question) {
+      throw new ValidationError("Question is required for AI query");
+    }
+
+    if (!process.env.GOOGLE_CLOUD_PROJECT) {
+      throw new Error(
+        "GOOGLE_CLOUD_PROJECT is not configured in the environment variables",
+      );
+    }
+
+    // Step 1: Use AI to extract parameters from the natural language question
+    const today = new Date().toISOString().split("T")[0]; // e.g. "2024-05-01"
+    const paramExtractionPrompt = `
+You are a parameter extraction AI.
+The user is asking a question about their sales report in natural language (English or Burmese).
+Today's date is: ${today}
+
+Your task is to extract the following parameters from their question if they exist:
+1. "startDate" (YYYY-MM-DD format)
+2. "endDate" (YYYY-MM-DD format)
+3. "locationName" or "storefrontName" (string)
+
+Rules:
+- If they say "from April 1st to today", set startDate to "2024-04-01" and endDate to today's date.
+- If they say "last month", calculate the start and end dates of the previous month.
+- If they say "this month", calculate the start and end dates of the current month.
+- If they mention a specific shop name (e.g., "Mandalay branch", "Main shop"), extract it as locationName.
+- Only return a valid JSON object. Do not include markdown formatting like \`\`\`json.
+- If a parameter is not mentioned, set its value to null.
+
+User Question: "${question}"
+
+Expected JSON format:
+{
+  "startDate": "YYYY-MM-DD" | null,
+  "endDate": "YYYY-MM-DD" | null,
+  "locationName": "string" | null
+}
+`;
+
+    let extractedParams = {
+      startDate: null,
+      endDate: null,
+      locationName: null,
+    };
+    try {
+      const extractionResponseText = await getAIResponse(
+        paramExtractionPrompt,
+        [],
+      );
+      // Clean up the response to ensure it's valid JSON (remove markdown block if AI accidentally included it)
+      const cleanJsonStr = extractionResponseText
+        .replace(/```json/gi, "")
+        .replace(/```/gi, "")
+        .trim();
+      extractedParams = JSON.parse(cleanJsonStr);
+    } catch (error) {
+      console.warn(
+        "Failed to extract parameters with AI. Proceeding without filters.",
+        error.message,
+      );
+    }
+
+    // Step 2: Resolve storefrontId if a location name was mentioned
+    let resolvedStorefrontId = null;
+    let resolvedStorefrontName = null;
+
+    if (extractedParams.locationName) {
+      // Try to find the storefront by name (case-insensitive)
+      const storefront = await this.locationRepository.findOne({
+        locationName: { $regex: new RegExp(extractedParams.locationName, "i") },
+        type: "storefront",
+        isDeleted: false,
+      });
+
+      if (storefront) {
+        resolvedStorefrontId = storefront._id.toString();
+        resolvedStorefrontName = storefront.locationName;
+      }
+    }
+
+    // Step 3: Fetch the necessary report data using extracted parameters
+    const reportQuery = {
+      startDate: extractedParams.startDate,
+      endDate: extractedParams.endDate,
+      storefrontId: resolvedStorefrontId,
+    };
+
+    const generalReport = await this.getSaleReportByStorefrontId(reportQuery);
+    const paymentReport =
+      await this.getPaymentMethodReportByStorefrontId(reportQuery);
+    const productReport =
+      await this.getProductSalesReportByStorefrontId(reportQuery);
+
+    // Take only top 10 products to save tokens
+    let topProducts = productReport.products || [];
+    if (topProducts.length > 10) {
+      topProducts = topProducts.slice(0, 10);
+    }
+
+    const contextData = {
+      generalReport: generalReport.report,
+      dateRange: generalReport.dateRange,
+      storefront: generalReport.storefront,
+      paymentTotals: paymentReport.totals,
+      paymentMethods: paymentReport.paymentMethods,
+      topProducts: topProducts,
+    };
+
+    // Step 4: Provide context data and extracted params to AI for the final answer
+    const prompt = `
+You are an intelligent business analyst AI for a POS and inventory system.
+The user is asking a question about their sales report.
+
+Context regarding their query parameters (extracted automatically):
+- Start Date: ${extractedParams.startDate || "All Time"}
+- End Date: ${extractedParams.endDate || "All Time"}
+- Storefront/Location: ${resolvedStorefrontName || "All Locations"}
+
+Here is the contextual sales report data (in JSON format) fetched based on their query:
+${JSON.stringify(contextData, null, 2)}
+
+User's Question: "${question}"
+
+Please answer the user's question clearly, accurately, and concisely based ONLY on the provided context data. 
+If the required data to answer the question is not present in the context, politely inform the user.
+Please reply in the same language as the user's question (e.g., if the user asks in Burmese, reply in Burmese).
+`;
+
+    try {
+      const responseText = await getAIResponse(prompt, history);
+
+      return {
+        question,
+        answer: responseText,
+        extractedFilters: {
+          startDate: extractedParams.startDate,
+          endDate: extractedParams.endDate,
+          locationName: extractedParams.locationName,
+          resolvedStorefront: resolvedStorefrontName,
+        },
+        contextUsed: {
+          dateRange: generalReport.dateRange,
+          storefront: generalReport.storefront,
+        },
+      };
+    } catch (error) {
+      console.error("Gemini API Error:", error);
+      throw new Error("Failed to generate response from AI: " + error.message);
+    }
   }
 }

@@ -9,6 +9,7 @@ import {
   getPaymentMethodReportByStorefrontId,
   getCreditSaleReportByStorefrontId,
   getProductSalesReportByStorefrontId,
+  askAiAboutSaleReport,
 } from "../controllers/saleReport.controller.js";
 
 const router = Router();
@@ -40,5 +41,12 @@ router.get("/sale-report/credit-orders", getCreditSaleReportByStorefrontId);
  * @access  Public (add protect middleware if needed)
  */
 router.get("/sale-report/products", getProductSalesReportByStorefrontId);
+
+/**
+ * @route   POST /api/v2/sale-report/ask-ai
+ * @desc    Ask AI about the sale report
+ * @access  Public (add protect middleware if needed)
+ */
+router.post("/sale-report/ask-ai", askAiAboutSaleReport);
 
 export default router;
