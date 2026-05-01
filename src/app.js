@@ -40,6 +40,8 @@ import {
   locationProfileRouter,
   socialMediaSaleInventoryRouter,
 } from "./routes/index.js";
+import geminiRouter from "./routes/gemini.routes.js";
+
 // ============================================
 // Express App Setup
 // ============================================
@@ -50,7 +52,7 @@ app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 
 // CORS configuration
@@ -90,6 +92,8 @@ app.use("/api/v2", orderRouter);
 app.use("/api/v2", saleReportRouter);
 app.use("/api/v2", locationProfileRouter);
 app.use("/api/v2", socialMediaSaleInventoryRouter);
+app.use("/api/v2/gemini", geminiRouter);
+
 // ============================================
 // 404 Error Handler - New Architecture
 // ============================================
@@ -97,7 +101,7 @@ app.all("/*any", (req, res, next) => {
   const err = new AppError(
     404,
     `Can't find ${req.originalUrl} on the server!`,
-    "NOT_FOUND"
+    "NOT_FOUND",
   );
   next(err);
 });
