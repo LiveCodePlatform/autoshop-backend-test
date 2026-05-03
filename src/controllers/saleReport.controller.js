@@ -1,4 +1,3 @@
-// Get sale report for a specific storefront or all storefronts
 import mongoose from "mongoose";
 import CustomError from "../utils/customError.js";
 import LocationProfile from "../models/locationProfile.model.js";
@@ -7,6 +6,20 @@ import CreditRecord from "../models/creditRecord.model.js";
 import CreditPerson from "../models/creditPersona.model.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 import { createDateFilter } from "../utils/dateFilter.utils.js";
+import * as saleReportService from "../services/saleReport.service.js";
+
+/**
+ * Ask AI about sale report
+ */
+export const askAiAboutSaleReport = asyncErrorHandler(async (req, res, next) => {
+  const result = await saleReportService.askAiAboutSaleReport(req.body);
+
+  res.status(200).json({
+    success: true,
+    message: "AI response generated successfully",
+    data: result,
+  });
+});
 
 export const getSaleReportByStorefrontId = asyncErrorHandler(
   async (req, res, next) => {

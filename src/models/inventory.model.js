@@ -128,14 +128,22 @@ const inventorySchema = new mongoose.Schema(
         trim: true,
       },
     ],
-    // createdBy: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "User",
-    // },
-    // updatedBy: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "User",
-    // },
+    images: [
+      {
+        url: {
+          type: String,
+          required: [true, "Image URL is required"],
+        },
+        key: {
+          type: String,
+          required: [true, "Image key is required"],
+        },
+        isPrimary: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -164,23 +172,21 @@ inventorySchema.virtual("profitAmount").get(function () {
 });
 
 // Pre-save middleware to ensure only one primary image
-// TODO: Uncomment when images field is added
-// inventorySchema.pre("save", function (next) {
-//   if (this.images && this.images.length > 0) {
-//     const primaryImages = this.images.filter((img) => img.isPrimary);
-//     if (primaryImages.length > 1) {
-//       // Keep only the first one as primary
-//       this.images.forEach((img, index) => {
-//         if (index > 0) img.isPrimary = false;
-//       });
-//     }
-//     if (primaryImages.length === 0) {
-//       // Set first image as primary if none is set
-//       this.images[0].isPrimary = true;
-//     }
-//   }
-//   next();
-// });
+inventorySchema.pre("save", async function () {
+  if (this.images && this.images.length > 0) {
+    const primaryImages = this.images.filter((img) => img.isPrimary);
+    if (primaryImages.length > 1) {
+      // Keep only the first one as primary
+      this.images.forEach((img, index) => {
+        if (index > 0) img.isPrimary = false;
+      });
+    }
+    if (primaryImages.length === 0) {
+      // Set first image as primary if none is set
+      this.images[0].isPrimary = true;
+    }
+  }
+});
 
 const Inventory = mongoose.model("Inventory", inventorySchema);
 export default Inventory;

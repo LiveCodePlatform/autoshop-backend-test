@@ -5,8 +5,8 @@ import {
   getInventoryById,
   updateInventory,
 } from "../controllers/inventory.controller.js";
-import { protect } from "../controllers/administrationPolicy.controller.js";
-import { permissionGranted } from "../controllers/administrationPolicy.controller.js";
+import { protect, permissionGranted } from "../controllers/administrationPolicy.controller.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
 
@@ -15,6 +15,7 @@ router.post(
   "/inventory",
   protect,
   permissionGranted("owner", "admin"),
+  upload.array("images", 5),
   createInventory
 );
 
@@ -39,6 +40,7 @@ router.patch(
   "/inventory/:id",
   protect,
   permissionGranted("owner"),
+  upload.array("images", 5),
   updateInventory
 );
 

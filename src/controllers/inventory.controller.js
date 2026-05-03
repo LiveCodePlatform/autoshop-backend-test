@@ -4,10 +4,25 @@ import WarehouseStock from "../models/warehouse.model.js";
 import StorefrontInventory from "../models/storefrontInventory.model.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 import CustomError from "../utils/customError.js";
+import { uploadImageToR2 } from "../shared/utils/cloudflareR2.utils.js";
 
 // Create new inventory item
 export const createInventory = asyncErrorHandler(async (req, res, next) => {
-  const inventoryData = req.body;
+  const inventoryData = { ...req.body };
+
+  // Handle image uploads if files are provided
+  if (req.files && req.files.length > 0) {
+    const images = [];
+    for (const file of req.files) {
+      const { url, spaceKey } = await uploadImageToR2(file, "inventory");
+      images.push({
+        url,
+        key: spaceKey,
+        isPrimary: images.length === 0, // Set first image as primary
+      });
+    }
+    inventoryData.images = images;
+  }
 
   // Check if productCode already exists
   if (inventoryData.productCode) {
@@ -241,7 +256,7 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
 // Update inventory metadata
 export const updateInventory = asyncErrorHandler(async (req, res, next) => {
   const { id } = req.params;
-  const updateData = req.body;
+  const updateData = { ...req.body };
 
   // Validate MongoDB ObjectId format
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -252,6 +267,20 @@ export const updateInventory = asyncErrorHandler(async (req, res, next) => {
   const existingInventory = await Inventory.findById(id);
   if (!existingInventory) {
     return next(new CustomError(404, "Inventory item not found"));
+  }
+
+  // Handle image uploads if files are provided
+  if (req.files && req.files.length > 0) {
+    const images = [...(existingInventory.images || [])];
+    for (const file of req.files) {
+      const { url, spaceKey } = await uploadImageToR2(file, "inventory");
+      images.push({
+        url,
+        key: spaceKey,
+        isPrimary: images.length === 0,
+      });
+    }
+    updateData.images = images;
   }
 
   // Check for uniqueness conflicts if unique fields are being updated
