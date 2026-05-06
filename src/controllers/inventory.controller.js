@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Inventory from "../models/inventory.model.js";
 import WarehouseStock from "../models/warehouse.model.js";
 import StorefrontInventory from "../models/storefrontInventory.model.js";
+import OnlineStorefrontInventory from "../models/onlineStorefrontInventory.model.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 import CustomError from "../utils/customError.js";
 import {
@@ -140,10 +141,46 @@ export const getAllInventory = asyncErrorHandler(async (req, res, next) => {
   // Execute query
   const inventory = await queryChain;
 
+  // Aggregate stock counts for each inventory item
+  const inventoryWithStock = await Promise.all(
+    inventory.map(async (item) => {
+      const itemObj = item.toObject();
+
+      // Get warehouse stock
+      const warehouseStocks = await WarehouseStock.find({
+        inventoryId: item._id,
+      });
+      itemObj.stockWarehouse = warehouseStocks.reduce(
+        (sum, s) => sum + (s.quantity || 0),
+        0,
+      );
+
+      // Get storefront stock
+      const storefrontStocks = await StorefrontInventory.find({
+        inventoryId: item._id,
+      });
+      itemObj.stockShop = storefrontStocks.reduce(
+        (sum, s) => sum + (s.quantity || 0),
+        0,
+      );
+
+      // Get online storefront stock
+      const onlineStocks = await OnlineStorefrontInventory.find({
+        inventoryId: item._id,
+      });
+      itemObj.stockOnline = onlineStocks.reduce(
+        (sum, s) => sum + (s.quantity || 0),
+        0,
+      );
+
+      return itemObj;
+    }),
+  );
+
   const response = {
     success: true,
     message: "Inventory items retrieved successfully",
-    data: inventory,
+    data: inventoryWithStock,
   };
 
   // Only include pagination info if pagination was applied
@@ -189,6 +226,13 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
     )
     .select("storefrontId quantity lastUpdated");
 
+  // Get stock availability for online storefront
+  const onlineStocks = await OnlineStorefrontInventory.find({
+    inventoryId: id,
+  })
+    .populate("onlineStorefrontId", "name status")
+    .select("onlineStorefrontId quantity lastUpdated");
+
   // Format warehouse stock data - filter out null warehouseId (deleted locations)
   const warehouseStockAvailability = warehouseStocks
     .filter(
@@ -222,6 +266,17 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
       lastUpdated: stock.lastUpdated,
     }));
 
+  // Format online stock data
+  const onlineStockAvailability = onlineStocks
+    .filter((stock) => stock.onlineStorefrontId !== null)
+    .map((stock) => ({
+      locationId: stock.onlineStorefrontId._id,
+      locationName: stock.onlineStorefrontId.name,
+      status: stock.onlineStorefrontId.status,
+      quantity: stock.quantity,
+      lastUpdated: stock.lastUpdated,
+    }));
+
   // Calculate total quantities - only count stocks with valid locations
   const totalWarehouseQuantity = warehouseStocks
     .filter(
@@ -234,7 +289,12 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
         stock.storefrontId !== null && stock.storefrontId !== undefined,
     )
     .reduce((sum, stock) => sum + (stock.quantity || 0), 0);
-  const totalQuantity = totalWarehouseQuantity + totalStorefrontQuantity;
+  const totalOnlineQuantity = onlineStocks.reduce(
+    (sum, stock) => sum + (stock.quantity || 0),
+    0,
+  );
+  const totalQuantity =
+    totalWarehouseQuantity + totalStorefrontQuantity + totalOnlineQuantity;
 
   res.status(200).json({
     success: true,
@@ -251,6 +311,11 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
           count: storefrontStockAvailability.length,
           locations: storefrontStockAvailability,
           totalQuantity: totalStorefrontQuantity,
+        },
+        online: {
+          count: onlineStockAvailability.length,
+          locations: onlineStockAvailability,
+          totalQuantity: totalOnlineQuantity,
         },
         totalQuantity: totalQuantity,
       },

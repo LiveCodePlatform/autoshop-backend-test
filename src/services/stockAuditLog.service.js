@@ -35,7 +35,13 @@ export const createStockAuditLog = async ({
   session = null,
 }) => {
   // Validate required fields
-  if (!inventoryId || !adminId || !locationId || !locationType || !stockRecordId) {
+  if (
+    !inventoryId ||
+    !adminId ||
+    !locationId ||
+    !locationType ||
+    !stockRecordId
+  ) {
     throw new Error("Missing required fields for stock audit log");
   }
 
@@ -48,13 +54,13 @@ export const createStockAuditLog = async ({
   }
 
   if (!["add", "remove", "adjust", "create"].includes(action)) {
-    throw new Error(
-      "action must be one of: add, remove, adjust, create"
-    );
+    throw new Error("action must be one of: add, remove, adjust, create");
   }
 
-  if (locationType !== "warehouse" && locationType !== "storefront") {
-    throw new Error("locationType must be 'warehouse' or 'storefront'");
+  if (!["warehouse", "storefront", "onlineStorefront"].includes(locationType)) {
+    throw new Error(
+      "locationType must be 'warehouse', 'storefront', or 'onlineStorefront'",
+    );
   }
 
   // Create the audit log entry
@@ -76,7 +82,8 @@ export const createStockAuditLog = async ({
   // Remove null values for optional fields
   if (reason === null) delete auditLogData.reason;
   if (relatedTransactionId === null) delete auditLogData.relatedTransactionId;
-  if (relatedTransactionType === null) delete auditLogData.relatedTransactionType;
+  if (relatedTransactionType === null)
+    delete auditLogData.relatedTransactionType;
 
   const auditLog = await StockAuditLog.create([auditLogData], {
     session,
@@ -91,7 +98,10 @@ export const createStockAuditLog = async ({
  * @param {boolean} isInitialCreation - Whether this is the initial stock creation
  * @returns {string} Action type: "create", "add", "remove", or "adjust"
  */
-export const determineActionType = (quantityChange, isInitialCreation = false) => {
+export const determineActionType = (
+  quantityChange,
+  isInitialCreation = false,
+) => {
   if (isInitialCreation) {
     return "create";
   }
@@ -103,4 +113,3 @@ export const determineActionType = (quantityChange, isInitialCreation = false) =
   }
   return "adjust";
 };
-

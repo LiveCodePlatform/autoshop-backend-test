@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import OnlineStorefront from "../models/onlineStorefront.model.js";
 dotenv.config({ path: "./.env" });
 
 export const Db = async () => {
@@ -18,13 +19,13 @@ export const Db = async () => {
       // Find and drop the unique index on purchasingId if it exists
       const uniqueIndex = indexes.find(
         (index) =>
-          index.key && index.key.purchasingId === 1 && index.unique === true
+          index.key && index.key.purchasingId === 1 && index.unique === true,
       );
 
       if (uniqueIndex) {
         await collection.dropIndex(uniqueIndex.name);
         console.log(
-          `✓ Dropped unique index on purchasingId: ${uniqueIndex.name}`
+          `✓ Dropped unique index on purchasingId: ${uniqueIndex.name}`,
         );
       }
     } catch (indexError) {
@@ -34,9 +35,33 @@ export const Db = async () => {
       } else {
         console.log(
           "Note: Could not drop purchasingId unique index:",
-          indexError.message
+          indexError.message,
         );
       }
+    }
+
+    // Ensure default online storefront exists (singleton)
+    try {
+      const existing = await OnlineStorefront.findOne({
+        singletonKey: "default",
+        isDeleted: false,
+      });
+      if (!existing) {
+        await OnlineStorefront.create({
+          singletonKey: "default",
+          name: "Online Storefront",
+          description: "Default online storefront",
+          status: "active",
+        });
+        console.log("✓ Default online storefront created");
+      } else {
+        console.log("✓ Default online storefront already exists");
+      }
+    } catch (osError) {
+      console.log(
+        "Note: Could not create default online storefront:",
+        osError.message,
+      );
     }
   } catch (error) {
     console.log("Database connection failed:", error.message);

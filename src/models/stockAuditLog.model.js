@@ -21,8 +21,9 @@ const stockLogSchema = new Schema(
     locationType: {
       type: String,
       enum: {
-        values: ["warehouse", "storefront"],
-        message: "Location type must be warehouse or storefront",
+        values: ["warehouse", "storefront", "onlineStorefront"],
+        message:
+          "Location type must be warehouse, storefront or onlineStorefront",
       },
       required: [true, "Please provide the location type for the log"],
     },
@@ -86,7 +87,7 @@ const stockLogSchema = new Schema(
     id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Indexes for better query performance
