@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import CustomError from "../utils/customError.js";
 import LocationProfile from "../models/locationProfile.model.js";
 import Order from "../models/orders.model.js";
+import OnlineOrder from "../models/onlineOrder.model.js";
+import OnlineStorefront from "../models/onlineStorefront.model.js";
 import CreditRecord from "../models/creditRecord.model.js";
 import CreditPerson from "../models/creditPersona.model.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
@@ -11,21 +13,26 @@ import * as saleReportService from "../services/saleReport.service.js";
 /**
  * Ask AI about sale report
  */
-export const askAiAboutSaleReport = asyncErrorHandler(async (req, res, next) => {
-  const result = await saleReportService.askAiAboutSaleReport(req.body);
+export const askAiAboutSaleReport = asyncErrorHandler(
+  async (req, res, next) => {
+    const result = await saleReportService.askAiAboutSaleReport(req.body);
 
-  res.status(200).json({
-    success: true,
-    message: "AI response generated successfully",
-    data: result,
-  });
-});
+    res.status(200).json({
+      success: true,
+      message: "AI response generated successfully",
+      data: result,
+    });
+  },
+);
 
 export const getSaleReportByStorefrontId = asyncErrorHandler(
   async (req, res, next) => {
     const { storefrontId, startDate, endDate } = req.query;
 
     let storefront = null;
+    let isOnline = false;
+
+    const onlineStorefrontId = await OnlineStorefront.getSingletonId();
 
     // If storefrontId is provided, validate and fetch storefront
     if (storefrontId) {
@@ -34,57 +41,74 @@ export const getSaleReportByStorefrontId = asyncErrorHandler(
         return next(new CustomError(400, "Invalid storefront ID format"));
       }
 
-      // Validate storefront exists
-      storefront = await LocationProfile.findOne({
-        _id: storefrontId,
-        type: "storefront",
-        isDeleted: false,
-      });
+      isOnline = storefrontId.toString() === onlineStorefrontId.toString();
+
+      if (isOnline) {
+        storefront = await OnlineStorefront.findOne({
+          singletonKey: "default",
+          isDeleted: false,
+        });
+      } else {
+        // Validate storefront exists
+        storefront = await LocationProfile.findOne({
+          _id: storefrontId,
+          type: "storefront",
+          isDeleted: false,
+        });
+      }
 
       if (!storefront) {
         return next(new CustomError(404, "Storefront not found"));
       }
     }
 
-    // Build query filter
-    const filter = {
+    // Build query filters
+    const posFilter = {
       isDeleted: false,
-      orderStatus: "completed", // Only include completed orders
+      orderStatus: "completed",
     };
 
-    // Add storefrontId filter only if provided
+    const onlineFilter = {
+      isDeleted: false,
+      orderStatus: { $in: ["confirmed", "shipped", "delivered"] },
+    };
+
+    // Add storefront filter
     if (storefrontId) {
-      filter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+      if (isOnline) {
+        posFilter._id = null; // No POS orders for online storefront
+        onlineFilter.onlineStorefrontId = new mongoose.Types.ObjectId(
+          storefrontId,
+        );
+      } else {
+        posFilter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+        onlineFilter._id = null; // No online orders for physical storefront
+      }
     }
 
-    // Add date range filter using dateFilter utility
+    // Add date range filter
     let parsedStartDate = null;
     let parsedEndDate = null;
     try {
       const dateFilter = createDateFilter(req.query, "createdAt", false);
-      Object.assign(filter, dateFilter);
 
-      // Extract parsed dates from the filter for response
       if (dateFilter.createdAt) {
-        if (dateFilter.createdAt.$gte) {
+        posFilter.createdAt = dateFilter.createdAt;
+        onlineFilter.createdAt = dateFilter.createdAt;
+
+        if (dateFilter.createdAt.$gte)
           parsedStartDate = dateFilter.createdAt.$gte;
-        }
-        if (dateFilter.createdAt.$lte) {
+        if (dateFilter.createdAt.$lte)
           parsedEndDate = dateFilter.createdAt.$lte;
-        }
       }
     } catch (error) {
-      // If it's a CustomError, pass it to error handler
-      if (error instanceof CustomError) {
-        return next(error);
-      }
-      // For other errors, wrap and pass
+      if (error instanceof CustomError) return next(error);
       return next(new CustomError(400, error.message || "Invalid date filter"));
     }
 
-    // Aggregate sale data
-    const saleReport = await Order.aggregate([
-      { $match: filter },
+    // Aggregate POS data
+    const posReportResult = await Order.aggregate([
+      { $match: posFilter },
       {
         $group: {
           _id: null,
@@ -105,8 +129,26 @@ export const getSaleReportByStorefrontId = asyncErrorHandler(
       },
     ]);
 
-    // If no orders found, return zero values
-    const report = saleReport[0] || {
+    // Aggregate Online data
+    const onlineReportResult = await OnlineOrder.aggregate([
+      { $match: onlineFilter },
+      {
+        $group: {
+          _id: null,
+          totalFinalAmount: { $sum: "$finalAmount" },
+          totalPaidAmount: { $sum: "$finalAmount" }, // Online orders are usually fully paid
+          totalSubTotal: { $sum: "$subTotal" },
+          totalTax: { $sum: "$tax" },
+          totalDiscount: { $sum: "$discount" },
+          totalExtraChange: { $sum: 0 },
+          orderCount: { $sum: 1 },
+          creditOrderCount: { $sum: 0 },
+          paidOrderCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const p = posReportResult[0] || {
       totalFinalAmount: 0,
       totalPaidAmount: 0,
       totalSubTotal: 0,
@@ -118,7 +160,18 @@ export const getSaleReportByStorefrontId = asyncErrorHandler(
       paidOrderCount: 0,
     };
 
-    // Get date range info - use parsed dates from filter if available, otherwise use query params
+    const o = onlineReportResult[0] || {
+      totalFinalAmount: 0,
+      totalPaidAmount: 0,
+      totalSubTotal: 0,
+      totalTax: 0,
+      totalDiscount: 0,
+      totalExtraChange: 0,
+      orderCount: 0,
+      creditOrderCount: 0,
+      paidOrderCount: 0,
+    };
+
     const dateRange = {
       startDate: parsedStartDate || (startDate ? new Date(startDate) : null),
       endDate: parsedEndDate || (endDate ? new Date(endDate) : null),
@@ -131,33 +184,39 @@ export const getSaleReportByStorefrontId = asyncErrorHandler(
         storefront: storefront
           ? {
               _id: storefront._id,
-              locationName: storefront.locationName,
-              locationCode: storefront.locationCode,
+              locationName: storefront.locationName || storefront.name,
+              locationCode: storefront.locationCode || "ONLINE",
+              isOnline,
             }
           : null,
         dateRange,
         report: {
-          finalAmount: report.totalFinalAmount, // Main metric as requested
-          paidAmount: report.totalPaidAmount,
-          subTotal: report.totalSubTotal,
-          tax: report.totalTax,
-          discount: report.totalDiscount,
-          extraChange: report.totalExtraChange,
-          orderCount: report.orderCount,
-          creditOrderCount: report.creditOrderCount,
-          paidOrderCount: report.paidOrderCount,
+          finalAmount: p.totalFinalAmount + o.totalFinalAmount,
+          paidAmount: p.totalPaidAmount + o.totalPaidAmount,
+          subTotal: p.totalSubTotal + o.totalSubTotal,
+          tax: p.totalTax + o.totalTax,
+          discount: p.totalDiscount + o.totalDiscount,
+          extraChange: p.totalExtraChange + o.totalExtraChange,
+          orderCount: p.orderCount + o.orderCount,
+          creditOrderCount: p.creditOrderCount + o.creditOrderCount,
+          paidOrderCount: p.paidOrderCount + o.paidOrderCount,
+          posStats: p,
+          onlineStats: o,
         },
       },
     });
-  }
+  },
 );
 
 // Get payment method breakdown report for a specific storefront or all storefronts (paid orders only)
 export const getPaymentMethodReportByStorefrontId = asyncErrorHandler(
   async (req, res, next) => {
-    const { storefrontId } = req.query;
+    const { storefrontId, startDate, endDate } = req.query;
 
     let storefront = null;
+    let isOnline = false;
+
+    const onlineStorefrontId = await OnlineStorefront.getSingletonId();
 
     // If storefrontId is provided, validate and fetch storefront
     if (storefrontId) {
@@ -166,88 +225,140 @@ export const getPaymentMethodReportByStorefrontId = asyncErrorHandler(
         return next(new CustomError(400, "Invalid storefront ID format"));
       }
 
-      // Validate storefront exists
-      storefront = await LocationProfile.findOne({
-        _id: storefrontId,
-        type: "storefront",
-        isDeleted: false,
-      });
+      isOnline = storefrontId.toString() === onlineStorefrontId.toString();
+
+      if (isOnline) {
+        storefront = await OnlineStorefront.findOne({
+          singletonKey: "default",
+          isDeleted: false,
+        });
+      } else {
+        // Validate storefront exists
+        storefront = await LocationProfile.findOne({
+          _id: storefrontId,
+          type: "storefront",
+          isDeleted: false,
+        });
+      }
 
       if (!storefront) {
         return next(new CustomError(404, "Storefront not found"));
       }
     }
 
-    // Build query filter - only paid orders
-    const filter = {
+    // Build query filters
+    const posFilter = {
       isDeleted: false,
-      orderStatus: "completed", // Only include completed orders
-      paymentType: "paid", // Only paid orders
+      orderStatus: "completed",
+      paymentType: "paid",
     };
 
-    // Add storefrontId filter only if provided
+    const onlineFilter = {
+      isDeleted: false,
+      orderStatus: { $in: ["confirmed", "shipped", "delivered"] },
+    };
+
+    // Add storefront filter
     if (storefrontId) {
-      filter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+      if (isOnline) {
+        posFilter._id = null;
+        onlineFilter.onlineStorefrontId = new mongoose.Types.ObjectId(
+          storefrontId,
+        );
+      } else {
+        posFilter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+        onlineFilter._id = null;
+      }
     }
 
-    // Add date range filter using dateFilter utility
+    // Add date range filter
     let parsedStartDate = null;
     let parsedEndDate = null;
     try {
       const dateFilter = createDateFilter(req.query, "createdAt", false);
-      Object.assign(filter, dateFilter);
-
-      // Extract parsed dates from the filter for response
       if (dateFilter.createdAt) {
-        if (dateFilter.createdAt.$gte) {
+        posFilter.createdAt = dateFilter.createdAt;
+        onlineFilter.createdAt = dateFilter.createdAt;
+
+        if (dateFilter.createdAt.$gte)
           parsedStartDate = dateFilter.createdAt.$gte;
-        }
-        if (dateFilter.createdAt.$lte) {
+        if (dateFilter.createdAt.$lte)
           parsedEndDate = dateFilter.createdAt.$lte;
-        }
       }
     } catch (error) {
-      // If it's a CustomError, pass it to error handler
-      if (error instanceof CustomError) {
-        return next(error);
-      }
-      // For other errors, wrap and pass
+      if (error instanceof CustomError) return next(error);
       return next(new CustomError(400, error.message || "Invalid date filter"));
     }
 
-    // Aggregate payment method breakdown
-    const paymentMethodReport = await Order.aggregate([
-      { $match: filter },
+    // Aggregate POS payment methods
+    const posPaymentMethods = await Order.aggregate([
+      { $match: posFilter },
       {
         $group: {
-          _id: "$paymentMethod", // Group by payment method
+          _id: "$paymentMethod",
           totalPaidAmount: { $sum: "$paidAmount" },
           orderCount: { $sum: 1 },
           totalFinalAmount: { $sum: "$finalAmount" },
         },
       },
+    ]);
+
+    // Aggregate Online payment methods
+    const onlinePaymentMethods = await OnlineOrder.aggregate([
+      { $match: onlineFilter },
       {
-        $sort: { totalPaidAmount: -1 }, // Sort by total paid amount descending
+        $group: {
+          _id: "$paymentMethod",
+          totalPaidAmount: { $sum: "$finalAmount" },
+          orderCount: { $sum: 1 },
+          totalFinalAmount: { $sum: "$finalAmount" },
+        },
       },
     ]);
 
-    // Calculate totals across all payment methods
-    const totals = paymentMethodReport.reduce(
+    // Merge payment methods
+    const mergedMethods = {};
+
+    posPaymentMethods.forEach((m) => {
+      const method = m._id || "unknown";
+      mergedMethods[method] = {
+        paymentMethod: method,
+        totalPaidAmount: m.totalPaidAmount,
+        totalFinalAmount: m.totalFinalAmount,
+        orderCount: m.orderCount,
+      };
+    });
+
+    onlinePaymentMethods.forEach((m) => {
+      const method = m._id || "unknown";
+      if (mergedMethods[method]) {
+        mergedMethods[method].totalPaidAmount += m.totalPaidAmount;
+        mergedMethods[method].totalFinalAmount += m.totalFinalAmount;
+        mergedMethods[method].orderCount += m.orderCount;
+      } else {
+        mergedMethods[method] = {
+          paymentMethod: method,
+          totalPaidAmount: m.totalPaidAmount,
+          totalFinalAmount: m.totalFinalAmount,
+          orderCount: m.orderCount,
+        };
+      }
+    });
+
+    const paymentMethodsList = Object.values(mergedMethods).sort(
+      (a, b) => b.totalPaidAmount - a.totalPaidAmount,
+    );
+
+    const totals = paymentMethodsList.reduce(
       (acc, item) => {
         acc.totalPaidAmount += item.totalPaidAmount;
         acc.totalFinalAmount += item.totalFinalAmount;
         acc.totalOrderCount += item.orderCount;
         return acc;
       },
-      {
-        totalPaidAmount: 0,
-        totalFinalAmount: 0,
-        totalOrderCount: 0,
-      }
+      { totalPaidAmount: 0, totalFinalAmount: 0, totalOrderCount: 0 },
     );
 
-    // Get date range info
-    const { startDate, endDate } = req.query;
     const dateRange = {
       startDate: parsedStartDate || (startDate ? new Date(startDate) : null),
       endDate: parsedEndDate || (endDate ? new Date(endDate) : null),
@@ -260,25 +371,17 @@ export const getPaymentMethodReportByStorefrontId = asyncErrorHandler(
         storefront: storefront
           ? {
               _id: storefront._id,
-              locationName: storefront.locationName,
-              locationCode: storefront.locationCode,
+              locationName: storefront.locationName || storefront.name,
+              locationCode: storefront.locationCode || "ONLINE",
+              isOnline,
             }
           : null,
         dateRange,
-        totals: {
-          totalPaidAmount: totals.totalPaidAmount,
-          totalFinalAmount: totals.totalFinalAmount,
-          totalOrderCount: totals.totalOrderCount,
-        },
-        paymentMethods: paymentMethodReport.map((item) => ({
-          paymentMethod: item._id || "unknown",
-          totalPaidAmount: item.totalPaidAmount,
-          totalFinalAmount: item.totalFinalAmount,
-          orderCount: item.orderCount,
-        })),
+        totals,
+        paymentMethods: paymentMethodsList,
       },
     });
-  }
+  },
 );
 
 // Get credit sale report with credit records breakdown for a specific storefront or all storefronts
@@ -546,7 +649,7 @@ export const getCreditSaleReportByStorefrontId = asyncErrorHandler(
 
     // Get all credit orders
     const creditOrders = await Order.find(filter).select(
-      "_id orderNumber finalAmount paidAmount paymentMethod createdAt"
+      "_id orderNumber finalAmount paidAmount paymentMethod createdAt",
     );
 
     const orderIds = creditOrders.map((order) => order._id);
@@ -584,14 +687,14 @@ export const getCreditSaleReportByStorefrontId = asyncErrorHandler(
       // Calculate total from credit records
       const totalCreditPaidForOrder = creditRecordsForOrder.reduce(
         (sum, record) => sum + (record.paidAmount || 0),
-        0
+        0,
       );
 
       // Calculate initial paid amount: order.paidAmount - total from credit records
       // Note: order.paidAmount includes initial + all credit payments (denormalized)
       const initialPaidAmount = Math.max(
         0,
-        (order.paidAmount || 0) - totalCreditPaidForOrder
+        (order.paidAmount || 0) - totalCreditPaidForOrder,
       );
 
       // Get initial payment method from order
@@ -633,7 +736,7 @@ export const getCreditSaleReportByStorefrontId = asyncErrorHandler(
       totalCreditPaidAmount += totalCreditPaidForOrder;
       totalRemainingBalance += Math.max(
         0,
-        (order.finalAmount || 0) - (order.paidAmount || 0)
+        (order.finalAmount || 0) - (order.paidAmount || 0),
       );
       orderCount += 1;
     });
@@ -679,15 +782,18 @@ export const getCreditSaleReportByStorefrontId = asyncErrorHandler(
         creditPayments: creditPayments,
       },
     });
-  }
+  },
 );
 
 // Get product/stock sales statistics for a specific storefront or all storefronts
 export const getProductSalesReportByStorefrontId = asyncErrorHandler(
   async (req, res, next) => {
-    const { storefrontId } = req.query;
+    const { storefrontId, startDate, endDate } = req.query;
 
     let storefront = null;
+    let isOnline = false;
+
+    const onlineStorefrontId = await OnlineStorefront.getSingletonId();
 
     // If storefrontId is provided, validate and fetch storefront
     if (storefrontId) {
@@ -696,60 +802,74 @@ export const getProductSalesReportByStorefrontId = asyncErrorHandler(
         return next(new CustomError(400, "Invalid storefront ID format"));
       }
 
-      // Validate storefront exists
-      storefront = await LocationProfile.findOne({
-        _id: storefrontId,
-        type: "storefront",
-        isDeleted: false,
-      });
+      isOnline = storefrontId.toString() === onlineStorefrontId.toString();
+
+      if (isOnline) {
+        storefront = await OnlineStorefront.findOne({
+          singletonKey: "default",
+          isDeleted: false,
+        });
+      } else {
+        // Validate storefront exists
+        storefront = await LocationProfile.findOne({
+          _id: storefrontId,
+          type: "storefront",
+          isDeleted: false,
+        });
+      }
 
       if (!storefront) {
         return next(new CustomError(404, "Storefront not found"));
       }
     }
 
-    // Build query filter
-    const filter = {
+    // Build query filters
+    const posFilter = {
       isDeleted: false,
-      orderStatus: "completed", // Only include completed orders
+      orderStatus: "completed",
     };
 
-    // Add storefrontId filter only if provided
+    const onlineFilter = {
+      isDeleted: false,
+      orderStatus: { $in: ["confirmed", "shipped", "delivered"] },
+    };
+
+    // Add storefront filter
     if (storefrontId) {
-      filter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+      if (isOnline) {
+        posFilter._id = null;
+        onlineFilter.onlineStorefrontId = new mongoose.Types.ObjectId(
+          storefrontId,
+        );
+      } else {
+        posFilter.storefrontId = new mongoose.Types.ObjectId(storefrontId);
+        onlineFilter._id = null;
+      }
     }
 
-    // Add date range filter using dateFilter utility
+    // Add date range filter
     let parsedStartDate = null;
     let parsedEndDate = null;
     try {
       const dateFilter = createDateFilter(req.query, "createdAt", false);
-      Object.assign(filter, dateFilter);
-
-      // Extract parsed dates from the filter for response
       if (dateFilter.createdAt) {
-        if (dateFilter.createdAt.$gte) {
+        posFilter.createdAt = dateFilter.createdAt;
+        onlineFilter.createdAt = dateFilter.createdAt;
+
+        if (dateFilter.createdAt.$gte)
           parsedStartDate = dateFilter.createdAt.$gte;
-        }
-        if (dateFilter.createdAt.$lte) {
+        if (dateFilter.createdAt.$lte)
           parsedEndDate = dateFilter.createdAt.$lte;
-        }
       }
     } catch (error) {
-      // If it's a CustomError, pass it to error handler
-      if (error instanceof CustomError) {
-        return next(error);
-      }
-      // For other errors, wrap and pass
+      if (error instanceof CustomError) return next(error);
       return next(new CustomError(400, error.message || "Invalid date filter"));
     }
 
-    // Aggregate product sales statistics
-    const productSalesReport = await Order.aggregate([
-      { $match: filter },
-      // Unwind the ordersProducts array to get individual products
+    // Aggregate product sales from POS
+    const posProductSales = await Order.aggregate([
+      { $match: posFilter },
       { $unwind: "$ordersProducts" },
-      // Group by inventoryId to aggregate statistics
       {
         $group: {
           _id: "$ordersProducts.inventoryId",
@@ -762,77 +882,112 @@ export const getProductSalesReportByStorefrontId = asyncErrorHandler(
               ],
             },
           },
-          orderCount: { $addToSet: "$_id" }, // Count unique orders
+          orderCount: { $addToSet: "$_id" },
           averageUnitPrice: { $avg: "$ordersProducts.unitPrice" },
-          minUnitPrice: { $min: "$ordersProducts.unitPrice" },
-          maxUnitPrice: { $max: "$ordersProducts.unitPrice" },
-        },
-      },
-      // Calculate orderCount as array length
-      {
-        $addFields: {
-          orderCount: { $size: "$orderCount" },
-        },
-      },
-      // Sort by total quantity descending
-      {
-        $sort: { totalQuantity: -1 },
-      },
-      // Lookup inventory details
-      {
-        $lookup: {
-          from: "inventories",
-          localField: "_id",
-          foreignField: "_id",
-          as: "inventory",
-        },
-      },
-      // Unwind inventory array (should be single item)
-      {
-        $unwind: {
-          path: "$inventory",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      // Project final structure
-      {
-        $project: {
-          _id: 0,
-          inventoryId: "$_id",
-          productName: "$inventory.productName",
-          productCode: "$inventory.productCode",
-          SKU: "$inventory.SKU",
-          category: "$inventory.category",
-          subCategory: "$inventory.subCategory",
-          brand: "$inventory.brand",
-          unitOfMeasure: "$inventory.unitOfMeasure",
-          totalQuantity: 1,
-          totalRevenue: 1,
-          orderCount: 1,
-          averageUnitPrice: { $round: ["$averageUnitPrice", 2] },
-          minUnitPrice: 1,
-          maxUnitPrice: 1,
         },
       },
     ]);
 
+    // Aggregate product sales from Online
+    const onlineProductSales = await OnlineOrder.aggregate([
+      { $match: onlineFilter },
+      { $unwind: "$ordersProducts" },
+      {
+        $group: {
+          _id: "$ordersProducts.inventoryId",
+          totalQuantity: { $sum: "$ordersProducts.quantity" },
+          totalRevenue: {
+            $sum: {
+              $multiply: [
+                "$ordersProducts.quantity",
+                "$ordersProducts.unitPrice",
+              ],
+            },
+          },
+          orderCount: { $addToSet: "$_id" },
+          averageUnitPrice: { $avg: "$ordersProducts.unitPrice" },
+        },
+      },
+    ]);
+
+    // Merge results
+    const mergedResults = new Map();
+
+    const processResults = (results) => {
+      results.forEach((res) => {
+        const id = res._id.toString();
+        if (mergedResults.has(id)) {
+          const existing = mergedResults.get(id);
+          existing.totalQuantity += res.totalQuantity;
+          existing.totalRevenue += res.totalRevenue;
+          res.orderCount.forEach((o) =>
+            existing.orderCountSet.add(o.toString()),
+          );
+          // Average price is tricky to merge exactly without weights, but this is a good approximation for reporting
+          existing.totalUnitPriceSum +=
+            res.averageUnitPrice * res.totalQuantity;
+        } else {
+          mergedResults.set(id, {
+            inventoryId: res._id,
+            totalQuantity: res.totalQuantity,
+            totalRevenue: res.totalRevenue,
+            orderCountSet: new Set(res.orderCount.map((o) => o.toString())),
+            totalUnitPriceSum: res.averageUnitPrice * res.totalQuantity,
+          });
+        }
+      });
+    };
+
+    processResults(posProductSales);
+    processResults(onlineProductSales);
+
+    const mergedList = Array.from(mergedResults.values()).map((item) => ({
+      inventoryId: item.inventoryId,
+      totalQuantity: item.totalQuantity,
+      totalRevenue: item.totalRevenue,
+      orderCount: item.orderCountSet.size,
+      averageUnitPrice:
+        item.totalQuantity > 0
+          ? Math.round((item.totalUnitPriceSum / item.totalQuantity) * 100) /
+            100
+          : 0,
+    }));
+
+    // Sort by quantity desc
+    mergedList.sort((a, b) => b.totalQuantity - a.totalQuantity);
+
+    // Lookup inventory details for the merged list
+    const inventoryIds = mergedList.map((item) => item.inventoryId);
+    const inventories = await Inventory.find({ _id: { $in: inventoryIds } });
+    const inventoryMap = new Map(
+      inventories.map((inv) => [inv._id.toString(), inv]),
+    );
+
+    const finalProductReport = mergedList.map((item) => {
+      const inv = inventoryMap.get(item.inventoryId.toString());
+      return {
+        ...item,
+        productName: inv?.productName || "Unknown",
+        productCode: inv?.productCode || "N/A",
+        SKU: inv?.SKU || "N/A",
+        category: inv?.category || "Uncategorized",
+        subCategory: inv?.subCategory || "N/A",
+        brand: inv?.brand || "N/A",
+        unitOfMeasure: inv?.unitOfMeasure || "Unit",
+      };
+    });
+
     // Calculate totals across all products
-    const totals = productSalesReport.reduce(
+    const totals = finalProductReport.reduce(
       (acc, item) => {
         acc.totalQuantity += item.totalQuantity;
         acc.totalRevenue += item.totalRevenue;
         acc.totalUniqueProducts += 1;
         return acc;
       },
-      {
-        totalQuantity: 0,
-        totalRevenue: 0,
-        totalUniqueProducts: 0,
-      }
+      { totalQuantity: 0, totalRevenue: 0, totalUniqueProducts: 0 },
     );
 
-    // Get date range info
-    const { startDate, endDate } = req.query;
     const dateRange = {
       startDate: parsedStartDate || (startDate ? new Date(startDate) : null),
       endDate: parsedEndDate || (endDate ? new Date(endDate) : null),
@@ -845,20 +1000,17 @@ export const getProductSalesReportByStorefrontId = asyncErrorHandler(
         storefront: storefront
           ? {
               _id: storefront._id,
-              locationName: storefront.locationName,
-              locationCode: storefront.locationCode,
+              locationName: storefront.locationName || storefront.name,
+              locationCode: storefront.locationCode || "ONLINE",
+              isOnline,
             }
           : null,
         dateRange,
-        totals: {
-          totalQuantity: totals.totalQuantity,
-          totalRevenue: totals.totalRevenue,
-          totalUniqueProducts: totals.totalUniqueProducts,
-        },
-        products: productSalesReport,
+        totals,
+        products: finalProductReport,
       },
     });
-  }
+  },
 );
 
 // Get credit persona product report - shows what products a credit person bought and how much
@@ -1015,7 +1167,7 @@ export const getCreditPersonaProductReport = asyncErrorHandler(
         totalQuantity: 0,
         totalUniqueProducts: 0,
         totalOrderCount: 0,
-      }
+      },
     );
 
     // Get date range info
@@ -1050,7 +1202,7 @@ export const getCreditPersonaProductReport = asyncErrorHandler(
         products: productReport,
       },
     });
-  }
+  },
 );
 
 // Get sale products analytics by credit person - shows for each product, which credit persons bought it and their quantities
@@ -1098,7 +1250,7 @@ export const getSaleProductsAnalyticsByCreditPerson = asyncErrorHandler(
         return next(new CustomError(400, "Invalid inventory ID format"));
       }
       filter["ordersProducts.inventoryId"] = new mongoose.Types.ObjectId(
-        inventoryId
+        inventoryId,
       );
     }
 
@@ -1270,7 +1422,7 @@ export const getSaleProductsAnalyticsByCreditPerson = asyncErrorHandler(
         totalOrders: 0,
         totalUniqueProducts: 0,
         totalUniqueCreditPersons: 0,
-      }
+      },
     );
 
     // Get date range info
@@ -1301,5 +1453,5 @@ export const getSaleProductsAnalyticsByCreditPerson = asyncErrorHandler(
         products: productAnalytics,
       },
     });
-  }
+  },
 );
