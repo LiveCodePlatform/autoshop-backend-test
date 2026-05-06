@@ -4,8 +4,13 @@ import {
   getAllOnlineOrders,
   getOnlineOrderById,
   updateOnlineOrderStatus,
+  addOnlineOrderItems,
+  removeOnlineOrderItems,
 } from "../controllers/onlineOrder.controller.js";
-import { protect, permissionGranted } from "../controllers/administrationPolicy.controller.js";
+import {
+  protect,
+  permissionGranted,
+} from "../controllers/administrationPolicy.controller.js";
 
 const router = express.Router();
 
@@ -17,21 +22,43 @@ router.get(
   "/online-orders",
   protect,
   permissionGranted("owner", "admin", "cashier"),
-  getAllOnlineOrders
+  getAllOnlineOrders,
 );
 
 router.get(
   "/online-orders/:id",
   protect,
   permissionGranted("owner", "admin", "cashier"),
-  getOnlineOrderById
+  getOnlineOrderById,
+);
+
+// Singular alias as requested by user
+router.get(
+  "/online-order/:id",
+  protect,
+  permissionGranted("owner", "admin", "cashier"),
+  getOnlineOrderById,
 );
 
 router.patch(
   "/online-orders/:id/status",
   protect,
   permissionGranted("owner", "admin", "cashier"),
-  updateOnlineOrderStatus
+  updateOnlineOrderStatus,
+);
+
+router.post(
+  "/online-orders/:id/items/add",
+  protect,
+  permissionGranted("owner", "admin", "cashier"),
+  addOnlineOrderItems,
+);
+
+router.post(
+  "/online-orders/:id/items/remove",
+  protect,
+  permissionGranted("owner", "admin", "cashier"),
+  removeOnlineOrderItems,
 );
 
 export default router;
