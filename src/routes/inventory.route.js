@@ -4,8 +4,12 @@ import {
   getAllInventory,
   getInventoryById,
   updateInventory,
+  deleteInventoryImage,
 } from "../controllers/inventory.controller.js";
-import { protect, permissionGranted } from "../controllers/administrationPolicy.controller.js";
+import {
+  protect,
+  permissionGranted,
+} from "../controllers/administrationPolicy.controller.js";
 import upload from "../middlewares/upload.middleware.js";
 
 const router = express.Router();
@@ -16,7 +20,7 @@ router.post(
   protect,
   permissionGranted("owner", "admin"),
   upload.array("images", 5),
-  createInventory
+  createInventory,
 );
 
 // Get all inventory items
@@ -24,7 +28,7 @@ router.get(
   "/inventory",
   protect,
   permissionGranted("owner", "admin"),
-  getAllInventory
+  getAllInventory,
 );
 
 // Get inventory item by ID
@@ -32,7 +36,7 @@ router.get(
   "/inventory/:id",
   protect,
   permissionGranted("owner", "admin"),
-  getInventoryById
+  getInventoryById,
 );
 
 // Update inventory metadata
@@ -41,7 +45,15 @@ router.patch(
   protect,
   permissionGranted("owner"),
   upload.array("images", 5),
-  updateInventory
+  updateInventory,
+);
+
+// Delete a single image from an inventory item
+router.delete(
+  "/inventory/:id/image",
+  protect,
+  permissionGranted("owner"),
+  deleteInventoryImage,
 );
 
 export default router;

@@ -4,7 +4,10 @@ import WarehouseStock from "../models/warehouse.model.js";
 import StorefrontInventory from "../models/storefrontInventory.model.js";
 import { asyncErrorHandler } from "../utils/asyncErrorHandler.js";
 import CustomError from "../utils/customError.js";
-import { uploadImageToR2 } from "../shared/utils/cloudflareR2.utils.js";
+import {
+  uploadImageToR2,
+  deleteImageFromR2,
+} from "../shared/utils/cloudflareR2.utils.js";
 
 // Create new inventory item
 export const createInventory = asyncErrorHandler(async (req, res, next) => {
@@ -172,7 +175,7 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
   })
     .populate(
       "warehouseId",
-      "locationName locationCode locationAddress type status"
+      "locationName locationCode locationAddress type status",
     )
     .select("warehouseId quantity lastUpdated");
 
@@ -182,14 +185,14 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
   })
     .populate(
       "storefrontId",
-      "locationName locationCode locationAddress type status"
+      "locationName locationCode locationAddress type status",
     )
     .select("storefrontId quantity lastUpdated");
 
   // Format warehouse stock data - filter out null warehouseId (deleted locations)
   const warehouseStockAvailability = warehouseStocks
     .filter(
-      (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined
+      (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined,
     )
     .map((stock) => ({
       locationId: stock.warehouseId._id,
@@ -205,7 +208,8 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
   // Format storefront stock data - filter out null storefrontId (deleted locations)
   const storefrontStockAvailability = storefrontStocks
     .filter(
-      (stock) => stock.storefrontId !== null && stock.storefrontId !== undefined
+      (stock) =>
+        stock.storefrontId !== null && stock.storefrontId !== undefined,
     )
     .map((stock) => ({
       locationId: stock.storefrontId._id,
@@ -221,12 +225,13 @@ export const getInventoryById = asyncErrorHandler(async (req, res, next) => {
   // Calculate total quantities - only count stocks with valid locations
   const totalWarehouseQuantity = warehouseStocks
     .filter(
-      (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined
+      (stock) => stock.warehouseId !== null && stock.warehouseId !== undefined,
     )
     .reduce((sum, stock) => sum + (stock.quantity || 0), 0);
   const totalStorefrontQuantity = storefrontStocks
     .filter(
-      (stock) => stock.storefrontId !== null && stock.storefrontId !== undefined
+      (stock) =>
+        stock.storefrontId !== null && stock.storefrontId !== undefined,
     )
     .reduce((sum, stock) => sum + (stock.quantity || 0), 0);
   const totalQuantity = totalWarehouseQuantity + totalStorefrontQuantity;
@@ -359,8 +364,8 @@ export const updateInventory = asyncErrorHandler(async (req, res, next) => {
     return next(
       new CustomError(
         400,
-        `Selling price (${finalSellingPrice}) should be greater than or equal to buying price (${finalBuyingPrice})`
-      )
+        `Selling price (${finalSellingPrice}) should be greater than or equal to buying price (${finalBuyingPrice})`,
+      ),
     );
   }
 
@@ -381,3 +386,59 @@ export const updateInventory = asyncErrorHandler(async (req, res, next) => {
     data: updatedInventory,
   });
 });
+
+// Delete a single image from an inventory item
+export const deleteInventoryImage = asyncErrorHandler(
+  async (req, res, next) => {
+    const { id } = req.params;
+    const { imageKey } = req.body;
+
+    // Validate MongoDB ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(new CustomError(400, "Invalid inventory ID format"));
+    }
+
+    if (!imageKey || typeof imageKey !== "string") {
+      return next(new CustomError(400, "imageKey is required"));
+    }
+
+    const inventory = await Inventory.findById(id);
+    if (!inventory) {
+      return next(new CustomError(404, "Inventory item not found"));
+    }
+
+    const imageIndex = inventory.images.findIndex(
+      (img) => img.key === imageKey,
+    );
+    if (imageIndex === -1) {
+      return next(
+        new CustomError(404, "Image not found on this inventory item"),
+      );
+    }
+
+    const wasPrimary = inventory.images[imageIndex].isPrimary;
+
+    // Remove image from the array
+    inventory.images.splice(imageIndex, 1);
+
+    // If deleted image was primary and there are remaining images, set first as primary
+    if (wasPrimary && inventory.images.length > 0) {
+      inventory.images[0].isPrimary = true;
+    }
+
+    await inventory.save();
+
+    // Delete from Cloudflare R2 (non-blocking: don't fail API if storage delete fails)
+    try {
+      await deleteImageFromR2(imageKey);
+    } catch (err) {
+      console.error("Failed to delete image from R2:", err.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+      data: inventory,
+    });
+  },
+);
