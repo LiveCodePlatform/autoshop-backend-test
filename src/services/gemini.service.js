@@ -1,5 +1,6 @@
 import { VertexAI } from "@google-cloud/vertexai";
 import path from "path";
+import fs from "fs";
 
 /**
  * Gemini Service
@@ -7,16 +8,44 @@ import path from "path";
  */
 
 // 1. Application Default Credentials (ADC) Logic
-// Programmatically set the GOOGLE_APPLICATION_CREDENTIALS environment variable
-// to the local service account JSON key file.
-const keyPath = path.resolve(process.cwd(), "service-account-key.json");
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+// Support both environment variable (for Vercel) and local file (for development)
+if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+  // For Vercel deployment: Use base64-encoded service account key from environment variable
+  try {
+    const serviceAccountKey = Buffer.from(
+      process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
+      "base64",
+    ).toString("utf-8");
+
+    // Write to a temporary file that Google Cloud SDK can read
+    const tempKeyPath = path.resolve(
+      process.cwd(),
+      ".temp-service-account-key.json",
+    );
+    fs.writeFileSync(tempKeyPath, serviceAccountKey);
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempKeyPath;
+  } catch (error) {
+    console.error(
+      "Failed to decode GOOGLE_SERVICE_ACCOUNT_KEY:",
+      error.message,
+    );
+  }
+} else if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  // For local development: Use local service account JSON key file
+  const keyPath = path.resolve(process.cwd(), "service-account-key.json");
+  if (fs.existsSync(keyPath)) {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+  } else {
+    console.warn(
+      "Warning: service-account-key.json not found and GOOGLE_SERVICE_ACCOUNT_KEY not set",
+    );
+  }
 }
 
 // 2. Initialize Vertex AI
 // Load configuration from environment variables
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || "project-5bc4d3cc-d5ba-4f3a-a30";
+const PROJECT_ID =
+  process.env.GOOGLE_CLOUD_PROJECT || "project-5bc4d3cc-d5ba-4f3a-a30";
 const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
 
 const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
@@ -51,7 +80,8 @@ export async function getAIResponse(userMessage, chatHistory = []) {
     const result = await chat.sendMessage(userMessage);
 
     // Safely extract the text from the response
-    const responseText = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const responseText =
+      result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!responseText) {
       throw new Error("No valid response received from Vertex AI");

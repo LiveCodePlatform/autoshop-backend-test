@@ -10,3 +10,7 @@ multi-scenario-concurrent-testing.js
 postman-examples-inventory.json
 postman-examples-warehouse-profile.json
 postman-examples-transfer.json
+
+# Google Cloud Service Account Keys
+service-account-key.json
+.temp-service-account-key.json
