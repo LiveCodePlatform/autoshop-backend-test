@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import OnlineStorefront from "../models/onlineStorefront.model.js";
-dotenv.config({ path: "./.env" });
+dotenv.config();
 
 export const Db = async () => {
   try {

@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" });
+dotenv.config();
 import express from "express";
 import helmet from "helmet";
 import { mmTimeZoneMiddleware } from "./configs/timezoneConvertor.config.js";
@@ -47,6 +47,17 @@ app.use(express.json({ limit: "10kb" }));
 app.use(mmTimeZoneMiddleware);
 
 //Route Mounting
+// Health check endpoint for debugging
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    mongodb_uri: process.env.MONGODB_URI ? "configured" : "missing",
+  });
+});
+
 app.use("/api/v1", inventoryRouter);
 app.use("/api/v1", warehouseProfileRouter);
 app.use("/api/v1", storefrontProfileRouter);
