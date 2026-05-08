@@ -7,34 +7,36 @@ import fs from "fs";
  * Handles interaction with Google Cloud Vertex AI Gemini models.
  */
 
-// 1. Application Default Credentials (ADC) Logic
-// Support both environment variable (for Vercel) and local file (for development)
-if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-  // For Vercel deployment: Use base64-encoded service account key from environment variable
-  try {
-    const serviceAccountKey = Buffer.from(
-      process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
-      "base64",
-    ).toString("utf-8");
+// Service account credentials for Vercel deployment
+let serviceAccountCredentials = null;
 
-    // Write to a temporary file that Google Cloud SDK can read
-    const tempKeyPath = path.resolve(
-      process.cwd(),
-      ".temp-service-account-key.json",
+// For Vercel deployment: Use base64-encoded service account key from environment variable
+if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+  try {
+    serviceAccountCredentials = JSON.parse(
+      Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_KEY, "base64").toString(
+        "utf-8",
+      ),
     );
-    fs.writeFileSync(tempKeyPath, serviceAccountKey);
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempKeyPath;
+    console.log(
+      "✅ Service account credentials loaded from environment variable",
+    );
   } catch (error) {
     console.error(
       "Failed to decode GOOGLE_SERVICE_ACCOUNT_KEY:",
       error.message,
     );
   }
-} else if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+} else {
   // For local development: Use local service account JSON key file
   const keyPath = path.resolve(process.cwd(), "service-account-key.json");
   if (fs.existsSync(keyPath)) {
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
+    try {
+      serviceAccountCredentials = JSON.parse(fs.readFileSync(keyPath, "utf-8"));
+      console.log("✅ Service account credentials loaded from file");
+    } catch (error) {
+      console.error("Failed to read service-account-key.json:", error.message);
+    }
   } else {
     console.warn(
       "Warning: service-account-key.json not found and GOOGLE_SERVICE_ACCOUNT_KEY not set",
@@ -48,7 +50,16 @@ const PROJECT_ID =
   process.env.GOOGLE_CLOUD_PROJECT || "project-5bc4d3cc-d5ba-4f3a-a30";
 const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
 
-const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
+// Initialize Vertex AI with service account credentials
+const vertexAI = serviceAccountCredentials
+  ? new VertexAI({
+      project: PROJECT_ID,
+      location: LOCATION,
+      googleAuthOptions: {
+        credentials: serviceAccountCredentials,
+      },
+    })
+  : new VertexAI({ project: PROJECT_ID, location: LOCATION });
 
 // 3. Instantiate the Model
 // Using gemini-2.5-flash as requested (Note: ensure this model is available in your region)
