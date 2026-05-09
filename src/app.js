@@ -47,6 +47,11 @@ app.use(express.json({ limit: "10kb" }));
 app.use(mmTimeZoneMiddleware);
 
 //Route Mounting
+// Simple root health check
+app.get("/", (req, res) => {
+  res.send("Server is healthy and running!");
+});
+
 app.use("/api/v1", inventoryRouter);
 app.use("/api/v1", warehouseProfileRouter);
 app.use("/api/v1", storefrontProfileRouter);
